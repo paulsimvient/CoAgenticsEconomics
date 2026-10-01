@@ -1,9 +1,37 @@
 #!/usr/bin/env python3
 """Localhost workbench controller: v27 paced CDA + DV026 evidence runner + batch validation."""
-import json, os, subprocess, threading, time, urllib.parse
+import json, os, re, subprocess, threading, time, urllib.parse
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent
+CAMPAIGN_DIR=ROOT/'results'/'dv026_ollama_campaign'
+
+def _model_cell_slug(model:str)->str:
+ """Match runner filenames: cell_{model_with_colon_as_underscore}_{seed}.jsonl"""
+ return str(model or '').replace(':', '_')
+
+def _parse_cell_filename(name:str):
+ """Return (slug, seed) from cell_*.jsonl basename, or None."""
+ if not name.startswith('cell_') or not name.endswith('.jsonl'):
+  return None
+ stem=name[5:-6]
+ m=re.match(r'^(.*)_(\d+)$', stem)
+ if not m: return None
+ return m.group(1), int(m.group(2))
+
+def _safe_campaign_cell_path(model:str, seed:int)->Path:
+ """Resolve cell file under CAMPAIGN_DIR only (no path traversal)."""
+ slug=_model_cell_slug(model)
+ if not slug or '/' in slug or '\\' in slug or '..' in slug:
+  raise ValueError('invalid model')
+ seed=int(seed)
+ path=(CAMPAIGN_DIR/f'cell_{slug}_{seed}.jsonl').resolve()
+ root=CAMPAIGN_DIR.resolve()
+ if root not in path.parents and path!=root:
+  raise ValueError('path escape')
+ if not str(path).startswith(str(root)+os.sep):
+  raise ValueError('path escape')
+ return path
 
 CLAIM_BATCH=(
  "Scripted Phase I software-path seed sweep only. "
@@ -439,13 +467,157 @@ class Session:
    'n_seeds':n_seeds,
    'partial':running,
   }
+ def campaign_cells_index(self):
+  """List cell_*.jsonl files with model/seed/turns + cells.jsonl cell_ok join."""
+  camp=CAMPAIGN_DIR
+  summary={}
+  cells_path=camp/'cells.jsonl'
+  if cells_path.is_file():
+   for line in cells_path.read_text().splitlines():
+    line=line.strip()
+    if not line: continue
+    try: row=json.loads(line)
+    except Exception: continue
+    if not isinstance(row,dict) or row.get('skipped'): continue
+    key=(str(row.get('model') or ''), int(row.get('seed') or 0))
+    summary[key]={
+     'cell_ok':bool(row.get('cell_ok')),
+     'treatment_efficiency':row.get('treatment_efficiency'),
+     'latency_ms':row.get('latency_ms'),
+     'units_filled':row.get('units_filled'),
+     'error':row.get('error') or '',
+    }
+  items=[]
+  if camp.is_dir():
+   for path in sorted(camp.glob('cell_*.jsonl')):
+    parsed=_parse_cell_filename(path.name)
+    if not parsed: continue
+    slug, seed=parsed
+    model=None
+    turns=0
+    try:
+     lines=[ln for ln in path.read_text().splitlines() if ln.strip()]
+     turns=len(lines)
+     if lines:
+      first=json.loads(lines[0])
+      md=first.get('model')
+      if isinstance(md,dict):
+       model=md.get('name') or md.get('model')
+      elif isinstance(md,str):
+       model=md
+    except Exception:
+     pass
+    if not model:
+     # Best-effort reverse of colon→underscore slug when file unreadable
+     model=slug.replace('_', ':', 1) if '_' in slug else slug
+    meta=summary.get((str(model), int(seed))) or {}
+    items.append({
+     'model':model,
+     'seed':seed,
+     'slug':slug,
+     'file':path.name,
+     'turns':turns,
+     'cell_ok':meta.get('cell_ok'),
+     'treatment_efficiency':meta.get('treatment_efficiency'),
+     'latency_ms':meta.get('latency_ms'),
+     'units_filled':meta.get('units_filled'),
+     'error':meta.get('error') or '',
+    })
+  with self.lock:
+   running=bool(self.campaign.running)
+   current_model=self.campaign.current_model
+   current_seed=self.campaign.current_seed
+  return {
+   'cells':items,
+   'count':len(items),
+   'running':running,
+   'current_model':current_model,
+   'current_seed':current_seed,
+  }
+ def campaign_cell_detail(self, model:str, seed:int):
+  """Load one cell_*.jsonl with per-turn bid I/O."""
+  try:
+   path=_safe_campaign_cell_path(model, seed)
+  except ValueError as e:
+   return {'error':str(e)}
+  if not path.is_file():
+   # Retry via index match if slug guess wrong
+   idx=self.campaign_cells_index()
+   match=None
+   for c in idx.get('cells') or []:
+    if str(c.get('model'))==str(model) and int(c.get('seed') or -1)==int(seed):
+     match=c; break
+   if match:
+    try:
+     path=_safe_campaign_cell_path(match['model'], match['seed'])
+    except ValueError:
+     path=None
+   if not path or not path.is_file():
+    return {'error':f'cell file not found for model={model} seed={seed}'}
+  turns=[]
+  try:
+   for i,line in enumerate(path.read_text().splitlines()):
+    line=line.strip()
+    if not line: continue
+    try: row=json.loads(line)
+    except Exception: continue
+    if not isinstance(row,dict): continue
+    pa=row.get('parsed_action') if isinstance(row.get('parsed_action'),dict) else {}
+    sub=row.get('submission') if isinstance(row.get('submission'),dict) else {}
+    turns.append({
+     'i':i,
+     'time':row.get('time'),
+     'agent_id':row.get('agent_id'),
+     'latency_ms':row.get('latency_ms'),
+     'prompt_tokens':row.get('prompt_tokens'),
+     'completion_tokens':row.get('completion_tokens'),
+     'parsed_action':pa,
+     'action':pa.get('action'),
+     'price':pa.get('price'),
+     'quantity':pa.get('quantity'),
+     'asset':pa.get('asset'),
+     'submission':sub,
+     'accepted':sub.get('accepted'),
+     'filled_quantity':sub.get('filled_quantity'),
+     'parse':row.get('parse'),
+     'action_validation':row.get('action_validation'),
+     'canonical_request':row.get('canonical_request'),
+     'raw_provider_response':row.get('raw_provider_response'),
+     'market_state':row.get('market_state'),
+     'agent_state_before':row.get('agent_state_before'),
+     'agent_state_after':row.get('agent_state_after'),
+     'model':row.get('model'),
+     'request_id':row.get('request_id'),
+     'run_id':row.get('run_id'),
+    })
+  except Exception as e:
+   return {'error':f'failed to read cell file: {e}'}
+  meta=None
+  cells_path=CAMPAIGN_DIR/'cells.jsonl'
+  if cells_path.is_file():
+   for line in cells_path.read_text().splitlines():
+    line=line.strip()
+    if not line: continue
+    try: row=json.loads(line)
+    except Exception: continue
+    if not isinstance(row,dict): continue
+    if str(row.get('model') or '')==str(model) and int(row.get('seed') or -1)==int(seed):
+     meta=row; break
+  return {
+   'model':model,
+   'seed':int(seed),
+   'file':path.name,
+   'turns':turns,
+   'turn_count':len(turns),
+   'cell':meta,
+  }
  def proposal_narrative(self):
-  """Plain-language checklist: white-paper expectations vs live evidence."""
+  """Operational what’s-happening summary from best available live evidence."""
   fixture_path=ROOT/'docs'/'DV026_PROPOSAL_EXPECTATIONS.json'
   try:
    fixture=json.loads(fixture_path.read_text())
   except Exception as e:
-   return {'error':f'missing expectations fixture: {e}','text':'','items':[]}
+   return {'error':f'missing expectations fixture: {e}','text':'','items':[],'summary':''}
   charts=self.campaign_charts()
   summary_path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
   summ={}
@@ -462,7 +634,6 @@ class Session:
    checks=list(c.readiness_checks or [])
    if not checks and not running:
     checks=list(camp.get('checks') or summ.get('checks') or [])
-   # Claim / scope only when the campaign gate has been scored (not mid-run).
    if running:
     scope='not_ready'
     darpa=False
@@ -478,44 +649,82 @@ class Session:
    if isinstance(la,dict) and (la.get('layer_a_pass') or la.get('pass')):
     layer_a_pass=True
    n_seeds=int(c.n_seeds or charts.get('n_seeds') or summ.get('n_seeds') or 20)
-  # Always prefer live cells.jsonl counts for model coverage (honest mid-run).
+   cur_model=c.current_model
+   cur_seed=c.current_seed
+   done=int(c.done or 0)
+   total=int(c.total or 0)
+   eta_sec=None
+   if c.running and c.done>0 and c.total>c.done and c.started_at:
+    eta_sec=round(((time.time()-c.started_at)/c.done)*(c.total-c.done),1)
   by_model=charts.get('by_model') or []
   mok=sum(1 for b in by_model if int(b.get('cell_ok') or 0)>=1)
   full_cov=sum(1 for b in by_model if int(b.get('cell_ok') or 0)>=n_seeds)
   if not running and mok==0:
    mok=int(camp.get('distinct_live_models_ok') or summ.get('distinct_live_models_ok') or 0)
+  incomplete_models=[]
+  for b in by_model:
+   ok=int(b.get('cell_ok') or 0)
+   if ok<n_seeds:
+    incomplete_models.append({'model':b.get('model'),'cell_ok':ok,'n_seeds':n_seeds})
+  incomplete_models.sort(key=lambda x:(x['cell_ok'], str(x['model'] or '')))
+  incomplete_str=', '.join(f"{m['model']} ({m['cell_ok']}/{n_seeds})" for m in incomplete_models[:6])
+  if len(incomplete_models)>6:
+   incomplete_str+=f', +{len(incomplete_models)-6} more'
   pipe=charts.get('pipeline') or {}
   attempted=int(pipe.get('attempted') or 0)
   parse_ok=int(pipe.get('parse_ok') or 0)
   action_valid=int(pipe.get('action_valid') or 0)
   replay_ok=int(pipe.get('replay_ok') or 0)
+  mkt_ok=int(pipe.get('market_action_ok') or 0)
+  mkt_acc=int(pipe.get('market_accepted') or 0)
+  cell_ok_n=int(pipe.get('cell_ok') or 0)
   iface_num=min(parse_ok, action_valid) if attempted else 0
   iface_rate=(iface_num/attempted) if attempted else None
   prov_rate=(replay_ok/attempted) if attempted else None
+  mkt_rate=(mkt_ok/attempted) if attempted else None
+  acc_rate=(mkt_acc/mkt_ok) if mkt_ok else None
+  href_human=charts.get('human_ref') or {}
+  live_eta=href_human.get('live_mean_efficiency')
+  live_eta_n=href_human.get('live_mean_n')
+  lit_means=list(href_human.get('literature_means') or [])
+  lit_mean=href_human.get('literature_mean')
+  lit_min=min(lit_means) if lit_means else None
+  lit_max=max(lit_means) if lit_means else None
   def check_pass(cid):
    for ch in checks:
     if isinstance(ch,dict) and ch.get('id')==cid:
      return bool(ch.get('pass')), str(ch.get('detail') or '')
    return None, ''
-  # Mid-run: ignore finished-gate checks for live rates; use cells.
-  # human_ref MET only from real campaign gate — never auto-true.
-  href_p,_=check_pass('human_ref')
-  if href_p is None:
-   href_p=bool(summ.get('human_ref_gate')) if summ.get('human_ref_gate') is not None else None
+  def check_detail(cid):
+   return check_pass(cid)[1]
+  href_p,href_d=check_pass('human_ref')
+  if href_p is None and summ.get('human_ref_gate') is not None:
+   href_p=bool(summ.get('human_ref_gate')); href_d=''
+  iface_d=prov_d=mkt_d=acc_d=live_d=cov_d=layer_d=''
   if running:
-   # Prior finished gate must not count as MET while a new campaign is in progress.
-   href_p=None
+   href_p=None; href_d=''
    prov_p=(prov_rate is not None and prov_rate>=0.95)
    iface_p=(iface_rate is not None and iface_rate>=0.90)
+   mkt_p=(mkt_rate is not None and mkt_rate>=0.80)
+   acc_p=(acc_rate is not None and acc_rate>=0.80)
   else:
-   if href_p is None:
-    href_p=False
-   prov_p,_=check_pass('provenance')
+   if href_p is None: href_p=False
+   prov_p,prov_d=check_pass('provenance')
    if prov_p is None and attempted:
-    prov_p=prov_rate>=0.95
-   iface_p,_=check_pass('interface_health')
+    prov_p=prov_rate>=0.95; prov_d=''
+   iface_p,iface_d=check_pass('interface_health')
    if iface_p is None and iface_rate is not None:
-    iface_p=iface_rate>=0.90
+    iface_p=iface_rate>=0.90; iface_d=''
+   mkt_p,mkt_d=check_pass('market_action')
+   if mkt_p is None and mkt_rate is not None:
+    mkt_p=mkt_rate>=0.80
+   acc_p,acc_d=check_pass('market_acceptance')
+   if acc_p is None and acc_rate is not None:
+    acc_p=acc_rate>=0.80
+   live_d=check_detail('live_count'); cov_d=check_detail('coverage'); layer_d=check_detail('layer_a')
+   if not iface_d: iface_d=check_detail('interface_health')
+   if not prov_d: prov_d=check_detail('provenance')
+   if not href_d: href_d=check_detail('human_ref')
   layer_present=layer_a_pass or (summ.get('mean_efficiency_cda') is not None) or (camp.get('mean_efficiency_cda') is not None)
   cda=summ.get('mean_efficiency_cda', camp.get('mean_efficiency_cda'))
   sealed=summ.get('mean_efficiency_sealed', camp.get('mean_efficiency_sealed'))
@@ -525,103 +734,164 @@ class Session:
   def rate_pct(r):
    if r is None: return '—'
    return f'{100.0*float(r):.0f}%'
+  def fmt_eta(sec):
+   if sec is None: return '—'
+   try: sec=float(sec)
+   except (TypeError,ValueError): return '—'
+   if sec<60: return f'{int(sec)}s'
+   return f'{int(sec//60)}m {int(sec%60)}s'
 
   def score(gate):
-   """Return (status, found, still_needed|None)."""
    if gate=='layer_a_present':
     if layer_a_pass:
-     return 'MET', 'Market qualification ran and passed (CDA and sealed-bid rules exercised).', None
+     detail=layer_d or f'means CDA {pct(cda)} / sealed {pct(sealed)}'
+     return 'MET', f'Market engine qualification finished (CDA + sealed-bid exercised; {detail}).', None
     if layer_present:
      return 'PARTIAL', 'Market metrics exist but qualification did not pass.', 'Re-run Layer A until every trial clears above 90%.'
-    return 'NOT_YET', 'Market qualification has not been run yet.', 'Run Layer A market qualification.'
+    return 'NOT_YET', 'Market engine qualification has not been run yet.', 'Run Layer A market qualification before the live campaign.'
    if gate=='layer_a_qualified':
     if layer_a_pass:
-     return 'MET', f'Market qualification passed; mean efficiency CDA {pct(cda)}, sealed-bid {pct(sealed)}.', None
-    return 'NOT_YET', 'Market qualification not passed.', 'Every Layer A trial must clear above 90% efficiency on CDA and sealed-bid.'
+     return 'MET', layer_d or f'Every Layer A trial cleared >90%. Means: CDA {pct(cda)}, sealed {pct(sealed)}.', None
+    return 'NOT_YET', 'Market efficiency gate is not passed yet.', 'Every Layer A trial must clear above 90% on CDA and sealed-bid.'
    if gate=='interface_health':
+    happening=(f'Of {attempted} live cells, {rate_pct(iface_rate)} parse+validate (need ≥90%); '
+               f'{rate_pct(mkt_rate)} non-HOLD (need ≥80%); acceptance {rate_pct(acc_rate)} (need ≥80%).')
+    if not running and iface_d:
+     happening=f'{iface_d}. Non-HOLD {rate_pct(mkt_rate)}; acceptance {rate_pct(acc_rate)}'+(f'; market_action: {mkt_d}' if mkt_d else '')+(f'; acceptance: {acc_d}' if acc_d else '')+'.'
+    if running:
+     okish=bool(iface_p) and (mkt_p is None or mkt_p) and (acc_p is None or acc_p)
+     if okish:
+      return 'PROVISIONAL', happening, 'Final interface/execution score waits until the campaign finishes.'
+     if attempted:
+      return 'PARTIAL', happening, 'More cells still need valid non-HOLD accepted actions; final score at campaign end.'
+     return 'NOT_YET', 'No live agent cells yet — campaign has not produced parseable actions.', 'Continue the live campaign.'
     if iface_p:
-     return 'MET', f'Parse/validate rate {rate_pct(iface_rate)} on {attempted} live cells (need at least 90%).', None
+     return 'MET', happening, None
     if attempted:
-     return 'PARTIAL', f'Parse/validate rate {rate_pct(iface_rate)} on {attempted} live cells so far (need at least 90%).', 'Improve action-schema compliance on remaining cells.'
+     return 'PARTIAL', happening, 'Improve action-schema / non-HOLD compliance on failing cells.'
     return 'NOT_YET', 'No live agent cells yet.', 'Start a live Ollama campaign.'
    if gate=='ten_models_covered':
-    found=f'{mok} models with at least 1 accepted cell; {full_cov} models completed all {n_seeds} seeds.'
+    incomplete=max(0,10-full_cov)
+    if not running and (live_d or cov_d):
+     happening=f'{live_d or ("distinct_ok="+str(mok))} · {cov_d or ("full_coverage="+str(full_cov))}'
+     happening+=f' · Incomplete: {incomplete_str}' if incomplete_str else f' · All tracked models at {n_seeds}/{n_seeds}.'
+    else:
+     happening=f'{full_cov} models finished {n_seeds}/{n_seeds}; {mok} with ≥1 accepted cell'
+     happening+=f'. Incomplete: {incomplete_str}' if incomplete_str else '.'
+    if running:
+     if mok>=10 and full_cov>=10:
+      return 'PROVISIONAL', happening, 'Coverage looks complete so far; gate locks when the campaign finishes.'
+     if mok>=1:
+      return 'PARTIAL', happening, f'Need {incomplete} more model{"s" if incomplete!=1 else ""} with full {n_seeds}-seed coverage.'
+     return 'NOT_YET', 'No successful live model cells yet.', f'Exercise at least 10 models across {n_seeds} seeds each.'
     if mok>=10 and full_cov>=10:
-     return 'MET', found, None
+     return 'MET', happening, None
     if mok>=1:
-     need=max(0,10-full_cov)
-     return 'PARTIAL', found, f'{need} more model{"s" if need!=1 else ""} with full {n_seeds}-seed coverage before this is MET.'
+     return 'PARTIAL', happening, f'Need {incomplete} more model{"s" if incomplete!=1 else ""} with full {n_seeds}-seed coverage.'
     return 'NOT_YET', 'No successful live model cells yet.', f'Exercise at least 10 models across {n_seeds} seeds each.'
    if gate=='human_ref':
+    if lit_min is not None and lit_max is not None and lit_mean is not None:
+     band=f'archival Table 2 band {lit_min:.1f}–{lit_max:.1f}% (mean {float(lit_mean):.1f}%)'
+    elif lit_min is not None and lit_max is not None:
+     band=f'archival Table 2 band {lit_min:.1f}–{lit_max:.1f}%'
+    else:
+     band='archival Table 2 band unavailable'
+    live_bit=(f'LLM cell mean η={float(live_eta):.1f}% (n={live_eta_n})' if live_eta is not None else 'LLM cell mean η not available yet')
+    if running:
+     return 'PROVISIONAL', f'{live_bit} vs {band}. HumanComparison gate waits until this campaign finishes.', 'Wait for campaign finish for the final human-ref score.'
     if href_p is True:
-     return 'MET', 'HumanComparison DESCRIPTIVE gate passed (archival literature + LiveProvider evidence).', None
-    if href_p is None:
-     return 'PARTIAL', 'Human-ref gate not scored yet (campaign in progress).', 'Wait for campaign finish; gate requires provenance-matched HumanComparison.'
-    return 'NOT_YET', 'HumanComparison DESCRIPTIVE gate not passed.', 'Need LiveProvider observations matched to archival literature via HumanComparison.'
+     return 'MET', f'{(href_d or "HumanComparison DESCRIPTIVE passed")}. {live_bit} vs {band}.', None
+    return 'NOT_YET', f'HumanComparison DESCRIPTIVE has not passed. {live_bit} vs {band}.', 'Need LiveProvider observations matched to archival literature.'
    if gate=='provenance':
-    found=f'Evidence chain retained on {replay_ok}/{attempted} cells ({rate_pct(prov_rate)}; need at least 95%).' if attempted else 'No live cells yet.'
+    if not running and prov_d:
+     happening=f'{prov_d}. cell_ok={cell_ok_n}/{attempted}.'
+    elif attempted:
+     happening=f'Evidence chain retained on {replay_ok}/{attempted} cells ({rate_pct(prov_rate)}; need ≥95%); cell_ok={cell_ok_n}.'
+    else:
+     happening='No live cells yet — no observation→action→outcome chain recorded.'
+    if running:
+     if prov_p:
+      return 'PROVISIONAL', happening, 'Provenance looks healthy so far; final score waits until the campaign finishes.'
+     if attempted:
+      return 'PARTIAL', happening, 'Raise replay/provenance retention; final score at campaign end.'
+     return 'NOT_YET', happening, 'Continue the campaign so cells retain full evidence chains.'
     if prov_p:
-     return 'MET', found, None
+     return 'MET', happening, None
     if attempted:
-     return 'PARTIAL', found, 'Raise replay/provenance retention to at least 95% of attempted cells.'
-    return 'NOT_YET', found, 'Run live cells so observation → response → action → outcome is retained.'
+     return 'PARTIAL', happening, 'Raise replay/provenance retention to at least 95% of attempted cells.'
+    return 'NOT_YET', happening, 'Run live cells so observation → response → action → outcome is retained.'
    if gate=='claim_boundary':
     if running:
-     return 'MET', 'Console keeps software fixtures distinct from live LLM evidence; local PoC gate is not decided while the campaign is running. Phase II and FAQ 31 accuracy remain unclaimed.', None
+     return 'MET', 'Claim boundary held: local Ollama evidence only; Phase II and FAQ 31 accuracy not claimed; PoC gate not decided until the campaign ends.', None
     if scope=='local_ollama_poc' and darpa:
-     return 'MET', 'Claim scope is local Ollama PoC only. Phase II construct validation and FAQ 31 classifier accuracy remain unclaimed.', None
+     return 'MET', 'Claim boundary held: READY only under scope=local_ollama_poc; Phase II and FAQ 31 remain unclaimed.', None
     if attempted or layer_present:
-     return 'MET', 'Boundary stated: local executable evidence only; commercial multi-provider readiness and Phase II remain unclaimed.', None
-    return 'PARTIAL', 'Boundary text is ready, but little live evidence has been collected yet.', 'Collect Layer A and/or live campaign evidence under local PoC scope.'
+     return 'MET', 'Claim boundary held: evidence is local executable only; commercial multi-provider readiness is not claimed.', None
+    return 'PARTIAL', 'Boundary text is ready, but little live evidence has been collected yet.', 'Collect Layer A and/or live campaign evidence.'
    return 'NOT_YET', f'Unknown gate {gate}.', None
 
-  items=[]
-  counts={'MET':0,'PARTIAL':0,'NOT_YET':0}
+  items=[]; counts={'MET':0,'PROVISIONAL':0,'PARTIAL':0,'NOT_YET':0}
   for exp in fixture.get('expectations') or []:
-   st, found, still=score(exp.get('gate'))
+   st, happening, nxt=score(exp.get('gate'))
    counts[st]=counts.get(st,0)+1
    items.append({
     'id':exp.get('id'),'milestone':exp.get('milestone'),'title':exp.get('title'),
     'text':exp.get('text'),'gate':exp.get('gate'),'status':st,
-    'evidence':found,'still_needed':still
+    'happening':happening,'next':nxt,'evidence':happening,'still_needed':nxt
    })
 
   camp_label='IN PROGRESS' if running else ('READY' if darpa and scope=='local_ollama_poc' else 'NOT READY')
-  lines=[]
-  lines.append('DV026 Phase I — proposal checklist (local evidence)')
-  lines.append('')
-  lines.append(f"Snapshot: campaign {camp_label} · {counts['MET']} MET · {counts['PARTIAL']} PARTIAL · {counts['NOT_YET']} NOT YET")
-  lines.append('Evidence base: Layer A market qualification + local Ollama live cells')
-  lines.append('Not claimed: commercial 10-provider matrix · Phase II constructs · FAQ 31 classifier accuracy')
-  lines.append('')
-  lines.append('────────────────────────────────')
+  if running:
+   la_bit=(f'market engine already qualified (CDA {pct(cda)}, sealed {pct(sealed)})' if layer_a_pass
+           else 'market engine not yet qualified')
+   now_bit=''
+   if cur_model:
+    now_bit=f'Now running {cur_model}'+(f' seed {cur_seed}' if cur_seed is not None else '')
+    if total: now_bit+=f' · {done}/{total} cells'
+    if eta_sec is not None: now_bit+=f' · ETA {fmt_eta(eta_sec)}'
+    now_bit+=' · '
+   gap=f' Incomplete: {incomplete_str}.' if incomplete_str else ''
+   summary=(f'{now_bit}Live campaign in progress · {attempted} cells in cells.jsonl · '
+            f'{full_cov}/10 models finished all {n_seeds} seeds · {la_bit}.{gap} '
+            f'Gate scores finalize when the campaign ends.')
+  elif darpa and scope=='local_ollama_poc':
+   summary=(f'Campaign finished READY under local_ollama_poc · {attempted} cells · '
+            f'{full_cov}/10 models at {n_seeds} seeds · Layer A CDA {pct(cda)} / sealed {pct(sealed)}'
+            +(f' · LLM η {pct(live_eta)} (n={live_eta_n})' if live_eta is not None else '')+
+            '. Local PoC claim only — not commercial multi-provider readiness.')
+  elif attempted or layer_a_pass:
+   gap=f' Incomplete: {incomplete_str}.' if incomplete_str else ''
+   summary=(f'Campaign not READY (scope={scope}) · {attempted} cells attempted · '
+            f'{full_cov}/10 models finished all {n_seeds} seeds · '
+            f'Layer A {"qualified" if layer_a_pass else "not qualified"} '
+            f'(CDA {pct(cda)}, sealed {pct(sealed)}).{gap}')
+  else:
+   summary='Nothing measured yet: run Layer A market qualification, then start the live Ollama campaign.'
+
+  lines=['DV026 Phase I — what’s happening (local evidence)','',f'SUMMARY: {summary}',
+         f"Snapshot: campaign {camp_label} · {counts['MET']} MET · {counts['PROVISIONAL']} PROVISIONAL · {counts['PARTIAL']} PARTIAL · {counts['NOT_YET']} NOT YET",
+         'MET = finished gate · PROVISIONAL = looks good mid-run (not final)','']
   for it in items:
-   title=it.get('title') or it.get('id') or 'Expectation'
+   title=it.get('title') or it.get('id') or 'Item'
    ms=it.get('milestone') or ''
    ms_tag=f' ({ms})' if ms and ms!='cross-cutting' else ''
    lines.append(f"{it['status']}  · {title}{ms_tag}")
-   lines.append(f"Asks: {it.get('text')}")
-   lines.append(f"Found: {it.get('evidence')}")
-   if it.get('still_needed'):
-    lines.append(f"Still needed: {it['still_needed']}")
+   lines.append(f"  {it.get('happening')}")
+   if it.get('next'): lines.append(f"  Next: {it['next']}")
    lines.append('')
-  lines.append('────────────────────────────────')
-  if running:
-   bottom=f'Local PoC gate not ready (campaign still running).'
-  elif darpa and scope=='local_ollama_poc':
-   bottom='Local PoC gate READY under scope=local_ollama_poc (not a commercial multi-provider claim).'
-  else:
-   bottom=f'Local PoC gate not ready (scope={scope}).'
-  lines.append(f'Bottom line: {bottom}')
-  lines.append(f'  Models with accepted cells: {mok}/10 · Full-coverage models: {full_cov}/10 · Cells attempted: {attempted}')
-  text='\n'.join(lines)
+  text='\n'.join(lines).rstrip()+'\n'
   return {
-   'text':text,
-   'items':items,
+   'text':text,'summary':summary,'items':items,
    'meta':{
     'darpa_claim_ready':darpa,'scope':scope,'running':running,'campaign_label':camp_label,
     'distinct_ok':mok,'coverage':full_cov,'n_seeds':n_seeds,'attempted':attempted,
-    'layer_a_pass':layer_a_pass,'counts':counts
+    'layer_a_pass':layer_a_pass,'counts':counts,
+    'mean_efficiency_cda':cda,'mean_efficiency_sealed':sealed,
+    'current_model':cur_model,'current_seed':cur_seed,'done':done,'total':total,
+    'eta_sec':eta_sec,'incomplete_models':incomplete_models,
+    'live_mean_efficiency':live_eta,'live_mean_n':live_eta_n,
+    'literature_band':({'min':lit_min,'max':lit_max,'mean':lit_mean} if lit_min is not None else None),
+    'rates':{'interface':iface_rate,'provenance':prov_rate,'market_action':mkt_rate,'market_acceptance':acc_rate}
    }
   }
  def _campaign_worker(self):
@@ -826,6 +1096,21 @@ class Handler(BaseHTTPRequestHandler):
    self.reply(S.campaign_status());return
   if url.path=='/api/dv026/campaign/charts':
    self.reply(S.campaign_charts());return
+  if url.path=='/api/dv026/campaign/cells':
+   self.reply(S.campaign_cells_index());return
+  if url.path=='/api/dv026/campaign/cell':
+   q=urllib.parse.parse_qs(url.query)
+   model=(q.get('model',[''])[0] or '').strip()
+   seed_raw=(q.get('seed',[''])[0] or '').strip()
+   if not model or not seed_raw:
+    self.reply({'error':'model and seed query params required'},400);return
+   try:
+    seed=int(seed_raw)
+   except ValueError:
+    self.reply({'error':'seed must be an integer'},400);return
+   payload=S.campaign_cell_detail(model, seed)
+   code=400 if payload.get('error') else 200
+   self.reply(payload, code);return
   if url.path=='/api/dv026/proposal-narrative':
    q=urllib.parse.parse_qs(url.query)
    fmt=(q.get('format',['json'])[0] or 'json').lower()

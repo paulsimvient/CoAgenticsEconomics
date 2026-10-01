@@ -4,277 +4,305 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EconomicGoagentics · DV026 Research Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#07111d;--surface:#0d1a29;--surface2:#112235;--surface3:#162a40;--line:#24415a;
-  --text:#edf5fb;--muted:#91a8bb;--blue:#4ea7ff;--blue2:#1f73d1;--green:#42d392;
-  --amber:#f3b85f;--red:#ff6f7d;--cyan:#62d8e8;--shadow:0 16px 45px rgba(0,0,0,.28)
+  --ink:#0e2438; --muted:#5a7388; --line:#b7c6d4; --panel:#f4f7faee;
+  --accent:#0b6e99; --accent-deep:#084e6d; --warn:#9a6412; --ok:#1a7a45; --bad:#b33a3a;
+  --bg1:#d9e4ec; --bg2:#eef3f7; --rail:#123047; --text:var(--ink);
+  --green:var(--ok); --amber:var(--warn); --red:var(--bad); --blue:var(--accent); --cyan:#0b6e99;
+  font-family:"IBM Plex Sans",sans-serif; color:var(--ink);
 }
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{min-height:100vh}.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
-.sidebar{background:#081522;border-right:1px solid #183149;padding:22px 16px;position:sticky;top:0;height:100vh}
-.brand{font-weight:760;font-size:18px;letter-spacing:-.02em;margin:0 8px 4px}.brand-sub{font-size:11px;color:var(--muted);margin:0 8px 22px}
-.nav-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#607b91;margin:18px 9px 7px}.nav a{display:flex;gap:10px;align-items:center;padding:10px 10px;border-radius:8px;color:#a9bdcc;text-decoration:none;font-size:13px;margin:2px 0}.nav a.active{background:#14345a;color:#fff;box-shadow:inset 3px 0 0 var(--blue)}.nav a:hover{background:#10283d;color:#fff}
-.sidebar-bottom{position:absolute;bottom:18px;left:16px;right:16px}.integrity{border:1px solid var(--line);background:#0d1d2c;border-radius:10px;padding:11px;font-size:11px;color:var(--muted);line-height:1.5}.integrity strong{display:block;color:#dce9f3;margin-bottom:4px}
-main{min-width:0;padding:24px 28px 34px;max-width:1700px;width:100%;margin:auto}.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.eyebrow{font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:.13em;font-weight:700}.title{font-size:28px;letter-spacing:-.035em;margin:5px 0 5px}.subtitle{color:var(--muted);font-size:13px}.top-actions{display:flex;gap:8px;align-items:center}.status{min-width:240px;display:flex;align-items:center;justify-content:flex-start;gap:7px;border:1px solid #27543f;background:#0c2119;padding:8px 11px;border-radius:8px;color:#83e3b1;font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(66,211,146,.65)}
-button,select,input{font:inherit;color:var(--text);background:#102337;border:1px solid #31516b;border-radius:7px;padding:9px 11px;font-size:12px}button{cursor:pointer}button:hover{background:#17344d}button.primary{background:var(--blue2);border-color:#398fe7}button.primary:hover{background:#2785e4}button.danger{border-color:#743844;color:#ffabb3;background:#25131a}button:disabled{opacity:.45;cursor:not-allowed}.toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:15px;box-shadow:var(--shadow)}.toolbar label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px}.toolbar input{width:100px}.toolbar select{min-width:145px}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.metric{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px}.metric-label{font-size:11px;color:var(--muted)}.metric-value{font-size:24px;font-weight:730;margin-top:7px;letter-spacing:-.02em}.metric-note{font-size:10px;color:#6f879a;margin-top:4px}.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
-.grid-main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,.85fr);gap:14px;margin-bottom:14px}.panel{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:17px;min-width:0;box-shadow:var(--shadow)}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.panel-title{font-size:14px;font-weight:700}.panel-note{font-size:10px;color:var(--muted)}
-.market-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:13px}.mini{background:#0a1725;border:1px solid #1d354b;border-radius:8px;padding:10px}.mini b{display:block;font-size:15px;margin-top:4px}.mini span{font-size:10px;color:var(--muted)}
-.order-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.book{border:1px solid #1c3449;border-radius:8px;overflow:hidden}.book-title{padding:9px 10px;background:#102336;font-size:11px;font-weight:700}.book table,.trades table{width:100%;border-collapse:collapse;font-size:11px}.book td,.book th,.trades td,.trades th{padding:7px 9px;border-bottom:1px solid #1c3348;text-align:left}.book th,.trades th{color:#7891a4;font-weight:600}.book tr:last-child td,.trades tr:last-child td{border-bottom:0}.buy{color:#64d9a1}.sell{color:#ff8e98}.muted{color:var(--muted)}
-.chart-wrap{height:250px;margin-top:12px;border:1px solid #1c3449;border-radius:8px;background:#091622;padding:10px}.chart{width:100%;height:100%}.legend{display:flex;gap:15px;font-size:10px;color:var(--muted);margin-top:8px}.legend span{display:flex;align-items:center;gap:5px}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%}
-.agent-card{border:1px solid #1e3b53;border-radius:9px;padding:12px;background:#0a1725;margin-bottom:10px}.agent-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.agent-name{font-size:14px;font-weight:700}.agent-role{font-size:10px;color:var(--blue);margin-top:2px}.model-badge{font-size:10px;padding:4px 7px;border-radius:6px;border:1px solid #31506a;background:#102438}.state-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:11px}.state-grid div{background:#0d2031;border-radius:7px;padding:8px}.state-grid span{font-size:9px;color:var(--muted);display:block}.state-grid b{font-size:12px;display:block;margin-top:3px}.visibility{margin-top:10px}.visibility-title{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#718ba0}.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}.check{font-size:10px;color:#b7c8d4}.check::before{content:'✓';color:var(--green);margin-right:5px}
-.models{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;max-height:280px;overflow:auto}.model{padding:9px;border:1px solid #203c54;border-radius:8px;background:#0a1725}.model-name{font-size:11px;font-weight:650}.model-meta{font-size:9px;color:var(--muted);margin-top:3px}.live-pill{font-size:9px;color:var(--green);float:right}.missing .live-pill{color:var(--amber)}
-.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.readiness{display:grid;gap:7px}.readiness-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #1b3347;font-size:10px}.readiness-row:last-child{border-bottom:0}.badge-ready,.badge-no,.badge-pending{padding:3px 6px;border-radius:5px;font-size:9px;white-space:nowrap}.badge-ready{color:#75e2ad;background:#0c281d;border:1px solid #235b43}.badge-no{color:#ff9aa3;background:#2a151b;border:1px solid #64313a}.badge-pending{color:#f3c16f;background:#2b2110;border:1px solid #67501f}.logs{height:235px;overflow:auto;background:#08131e;border:1px solid #1b3348;border-radius:8px;padding:9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px}.log{padding:5px 0;border-bottom:1px solid #13283a}.log time{color:#5e8098;margin-right:7px}.claim{background:#0d1e2d;border:1px solid #25445d;border-radius:8px;padding:11px;font-size:10px;line-height:1.55;color:#9eb4c5}.claim strong{color:#e6f0f6}.human-ref{border-left:3px solid var(--cyan);padding-left:10px;margin-top:10px}
-
-.runtime-detail{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:14px;display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(260px,1fr);gap:14px}.runtime-state{display:flex;align-items:center;gap:10px}.runtime-icon{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#13263a;border:1px solid #31516b;font-size:12px}.runtime-icon.checking{animation:pulse 1.2s infinite}.runtime-title{font-size:12px;font-weight:700}.runtime-sub{font-size:10px;color:var(--muted);margin-top:3px}.runtime-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.runtime-step{border:1px solid #1e394f;background:#0a1725;border-radius:7px;padding:7px 8px;font-size:9px;color:#70889b}.runtime-step.active{color:#f3c16f;border-color:#67501f;background:#241d10}.runtime-step.done{color:#75e2ad;border-color:#235b43;background:#0c2119}.runtime-step.fail{color:#ff9aa3;border-color:#64313a;background:#2a151b}.runtime-error{grid-column:1/-1;color:#ff9aa3;background:#24141a;border:1px solid #64313a;border-radius:7px;padding:8px;font-size:10px;line-height:1.4;display:none}.runtime-error.show{display:block}.progress-shell{margin-top:13px;border:1px solid #1d354b;background:#091622;border-radius:8px;padding:11px}.progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:10px;color:var(--muted)}.progress-head strong{color:var(--text);font-size:11px}.progress-track{height:8px;background:#13283a;border-radius:999px;overflow:hidden;margin-top:8px}.progress-bar{height:100%;width:0;background:linear-gradient(90deg,#2e8be8,#62d8e8);transition:width .35s ease}.progress-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.progress-meta div{font-size:9px;color:var(--muted)}.progress-meta b{display:block;color:var(--text);font-size:11px;margin-top:2px}.spinner{width:10px;height:10px;border:2px solid #36536b;border-top-color:#62d8e8;border-radius:50%;animation:spin .8s linear infinite;display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(98,216,232,.1)}50%{box-shadow:0 0 0 6px rgba(98,216,232,.08)}}
-
-.footer{margin-top:16px;color:#607b90;font-size:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.hidden{display:none}.error{color:var(--red);font-size:11px;margin-top:10px}
-.tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:6px;padding:0;border-radius:50%;border:1px solid #3a5a74;background:#13283a;color:#9ec3df;font-size:10px;font-weight:700;cursor:help;vertical-align:middle;flex:0 0 auto;line-height:1}
-.tip:hover,.tip:focus{border-color:var(--blue);color:#fff;outline:none}
-.tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:min(320px,70vw);padding:10px 12px;border-radius:8px;background:#0b1a29;border:1px solid #3a5f7c;color:#d7e7f4;font-size:11px;font-weight:500;line-height:1.45;text-align:left;white-space:normal;box-shadow:0 12px 28px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:40}
-.tip::before{content:"";position:absolute;left:50%;bottom:calc(100% + 2px);transform:translateX(-50%);border:6px solid transparent;border-top-color:#3a5f7c;opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:41}
-.tip:hover::after,.tip:focus::after,.tip:hover::before,.tip:focus::before{opacity:1}
-.tip.tip-right::after{left:0;transform:none}.tip.tip-right::before{left:10px;transform:none}
-.tip.tip-left::after{left:auto;right:0;transform:none}.tip.tip-left::before{left:auto;right:10px;transform:none}
-.tip.tip-below::after{bottom:auto;top:calc(100% + 8px)}.tip.tip-below::before{bottom:auto;top:calc(100% + 2px);border-top-color:transparent;border-bottom-color:#3a5f7c}
-.panel-title,.metric-label,.mini span,.progress-meta div,.runtime-title{display:inline-flex;align-items:center;flex-wrap:wrap}
-.claim-surface{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:16px 17px;margin-bottom:14px;box-shadow:var(--shadow)}
-.claim-surface .panel-head{margin-bottom:12px}
-.three-green{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.tg{border:1px solid #1d354b;background:#0a1725;border-radius:8px;padding:10px 11px}
-.tg .tg-k{font-size:10px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.tg .tg-v{font-size:16px;font-weight:730;margin-top:5px;letter-spacing:-.02em}
-.tg .tg-n{font-size:9px;color:#6f879a;margin-top:4px;line-height:1.35}
-.gate-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
-.gate-block{border:1px solid #1c3449;border-radius:8px;background:#091622;padding:12px}
-.gate-block h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#7ea0b8}
-.gate-eq{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.65;color:#c9dcec}
-.gate-eq .sym{color:var(--cyan)}.gate-eq .thr{color:var(--amber)}.gate-eq .val{color:#e8f3fb;font-weight:650}
-.gate-eq .pass{color:var(--green)}.gate-eq .fail{color:var(--red)}.gate-eq .pend{color:var(--amber)}
-.gate-pred{margin-top:10px;padding-top:9px;border-top:1px solid #1c3449;font-size:10px;color:#9eb4c5;line-height:1.5}
-.gate-pred code{font-size:10px;color:#dce9f3}
-.gate-table{width:100%;border-collapse:collapse;font-size:10px}
-.gate-table th{text-align:left;padding:6px 7px;color:#7ea0b8;font-weight:650;border-bottom:1px solid #1c3449;background:#0c1a28}
-.gate-table td{padding:7px;border-bottom:1px solid #16283a;color:#c9dcec;vertical-align:middle}
-.gate-table tr:last-child td{border-bottom:0}
-.gate-table .gt-check{color:#9eb4c5;width:34%}.gate-table .gt-val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:650}
-.gate-table .gt-req{color:#f3b85f;font-size:9px}.gate-table .gt-st{text-align:right;width:58px}
-.gate-def{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:10px;color:#7ea0b8}
-.modal-backdrop{position:fixed;inset:0;background:rgba(3,10,18,.72);display:none;align-items:center;justify-content:center;z-index:80;padding:18px}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:
+  radial-gradient(1200px 600px at 10% -10%,#c5d8e6 0%,transparent 55%),
+  radial-gradient(900px 500px at 100% 0%,#b9cfe0 0%,transparent 50%),
+  linear-gradient(165deg,var(--bg1),var(--bg2));
+  background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(rgba(14,36,56,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(14,36,56,.04) 1px,transparent 1px);background-size:28px 28px}
+button,input,select{font:inherit}button{cursor:pointer}
+button{background:linear-gradient(#fff,#e8eef4);border:1px solid var(--line);border-radius:2px;padding:8px 12px;color:var(--ink)}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent-deep);font-weight:600}
+button.danger{background:#fff5f5;border-color:#e0b4b4;color:var(--bad)}
+input,select{padding:6px 8px;border:1px solid var(--line);background:#fff;border-radius:2px}
+input[type=number]{width:96px}
+.shell{position:relative;z-index:1;max-width:1480px;margin:0 auto;padding:18px 22px 36px}
+.brandbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:8px 0 14px}
+.brand{font-family:"Source Serif 4",Georgia,serif;font-size:clamp(26px,3.5vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1;color:var(--rail)}
+.brand span{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.status{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #c5d2de;background:#fff;font-size:12px;color:var(--ink);border-radius:2px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.spinner{width:10px;height:10px;border:2px solid #c5d2de;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ribbon{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;border:1px solid var(--line);background:#f7fafce8;border-radius:2px;margin-bottom:12px}
+.ribbon label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.howto{margin:0 0 12px;border:1px solid var(--line);background:#fff}
+.howto summary{cursor:pointer;list-style:none;padding:10px 14px;font-size:13px;font-weight:600;color:var(--accent-deep);user-select:none}
+.howto summary::-webkit-details-marker{display:none}
+.howto summary::before{content:"▸ ";font-size:11px;color:var(--muted)}
+.howto[open] summary::before{content:"▾ "}
+.howto .howto-body{padding:0 14px 12px;font-size:13px;line-height:1.5;border-top:1px solid #e4ebf1}
+.howto .howto-body p{margin:8px 0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+@media(max-width:900px){.grid4{grid-template-columns:repeat(2,1fr)}}
+.metric{padding:12px;background:#fff;border:1px solid var(--line)}
+.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.metric-value{font-family:"Source Serif 4",Georgia,serif;font-size:26px;font-weight:700;color:var(--accent-deep);margin:4px 0}
+.metric-note{font-size:11px;color:var(--muted)}
+.metric-value.ok{color:var(--ok)}.metric-value.warn{color:var(--warn)}.metric-value.bad{color:var(--bad)}
+.main-split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
+@media(max-width:1100px){.main-split{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:2px;overflow:hidden;backdrop-filter:blur(6px)}
+.panel > h3,.panel-h{margin:0;padding:9px 12px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid #d5e0ea;background:#ffffffaa;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.panel .body{padding:12px}
+.gate-table,.detail-table,.bid-table{width:100%;border-collapse:collapse;font-size:11px}
+.gate-table th,.detail-table th,.bid-table th{text-align:left;padding:7px 8px;color:var(--muted);font-weight:650;border-bottom:1px solid #d5e0ea;background:#f7fafc}
+.gate-table td,.detail-table td,.bid-table td{padding:7px 8px;border-bottom:1px solid #e4ebf1;color:var(--ink);vertical-align:top;line-height:1.4}
+.gate-table tr:last-child td,.detail-table tr:last-child td,.bid-table tr:last-child td{border-bottom:0}
+.gate-table .gt-val,.mono{font-family:"IBM Plex Mono",monospace;font-weight:500}
+.gate-table .gt-req{color:var(--warn);font-size:10px}
+.badge-ready,.badge-no,.badge-pending{padding:2px 6px;border-radius:2px;font-size:9px;font-weight:700;white-space:nowrap;border:1px solid}
+.badge-ready{color:var(--ok);background:#e8f6ee;border-color:#b7ddc4}
+.badge-no{color:var(--bad);background:#fceeee;border-color:#e0b4b4}
+.badge-pending{color:var(--warn);background:#fff6e8;border-color:#e5d0a4}
+.mini-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+@media(max-width:700px){.mini-row{grid-template-columns:repeat(2,1fr)}}
+.mini{padding:8px 10px;background:#fff;border:1px solid #d5e0ea}
+.mini span{display:block;font-size:10px;color:var(--muted)}.mini b{display:block;margin-top:3px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.progress-shell{border:1px solid #d5e0ea;background:#fff;padding:10px;margin-top:8px}
+.progress-head{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted)}
+.progress-head strong{color:var(--ink)}
+.progress-track{height:8px;background:#e4ebf1;border-radius:999px;overflow:hidden;margin-top:8px}
+.progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),#3aa0c8);transition:width .35s ease}
+.progress-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px;font-size:10px;color:var(--muted)}
+.progress-meta b{display:block;color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:11px;margin-top:2px}
+.proposal-snap{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.proposal-snap .ps-label{font-size:11px;color:var(--muted);margin-right:4px}
+.proposal-pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:2px;border:1px solid}
+.proposal-pill.met{color:var(--ok);background:#e8f6ee;border-color:#b7ddc4}
+.proposal-pill.provisional{color:#0b6e99;background:#e7f3f8;border-color:#a9cfe0}
+.proposal-pill.partial{color:var(--warn);background:#fff6e8;border-color:#e5d0a4}
+.proposal-pill.notyet{color:var(--bad);background:#fceeee;border-color:#e0b4b4}
+.proposal-pill.camp{color:var(--ink);background:#f0f4f8;border-color:#c5d2de}
+.proposal-pill.now{color:var(--accent-deep);background:#e7f3f8;border-color:#a9cfe0;font-family:"IBM Plex Mono",monospace}
+.proposal-summary{font-size:13px;line-height:1.5;background:#fff;border:1px solid #d5e0ea;padding:12px;margin:0 0 10px}
+.proposal-body{max-height:380px;overflow:auto;background:#fff;border:1px solid #d5e0ea;padding:10px}
+.proposal-item{border-top:1px solid #e4ebf1;padding:10px 0}
+.proposal-item:first-of-type{border-top:0;padding-top:0}
+.proposal-item-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.proposal-status{font-size:9px;font-weight:760;letter-spacing:.04em;padding:3px 7px;border-radius:2px;border:1px solid;flex:0 0 auto}
+.proposal-status.MET{color:var(--ok);background:#e8f6ee;border-color:#b7ddc4}
+.proposal-status.PROVISIONAL{color:#0b6e99;background:#e7f3f8;border-color:#a9cfe0}
+.proposal-status.PARTIAL{color:var(--warn);background:#fff6e8;border-color:#e5d0a4}
+.proposal-status.NOT_YET{color:var(--bad);background:#fceeee;border-color:#e0b4b4}
+.proposal-title{font-size:12px;font-weight:700}
+.proposal-ms{font-size:10px;color:var(--muted);font-weight:500}
+.proposal-happening{font-size:12px;line-height:1.45;margin:0;color:var(--ink)}
+.proposal-next{font-size:11px;line-height:1.4;color:var(--warn);margin:4px 0 0}
+.proposal-note{font-size:11px;color:var(--muted)}
+.proposal-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.proposal-actions .btn-link{display:inline-flex;align-items:center;padding:8px 12px;border:1px solid var(--line);background:linear-gradient(#fff,#e8eef4);color:var(--ink);text-decoration:none;font-size:12px;border-radius:2px}
+.bid-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.bid-pick label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.bid-pick select{min-width:140px}
+.bid-table{background:#fff;border:1px solid #d5e0ea}
+.bid-table tr{cursor:pointer}
+.bid-table tr:hover td{background:#f0f6fa}
+.bid-table tr.active td{background:#e7f3f8}
+.bid-io{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+@media(max-width:900px){.bid-io{grid-template-columns:1fr}}
+.bid-block{border:1px solid #d5e0ea;background:#fff;min-height:120px}
+.bid-block h4{margin:0;padding:7px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid #e4ebf1;background:#f7fafc}
+.bid-block pre{margin:0;padding:10px;font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:1.4;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.detail-empty,.muted{font-size:12px;color:var(--muted)}
+.claim-result{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding:10px;border:1px solid #d5e0ea;background:#fff;font-size:11px}
+.claim-result .cr-label{color:var(--muted)}.claim-result .cr-val{font-family:"IBM Plex Mono",monospace;font-weight:700}
+.claim-partial{font-size:9px;color:var(--warn);margin-left:auto}
+.readiness.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.readiness-row{border:1px solid #d5e0ea;background:#fff;padding:5px 7px;font-size:9px;display:flex;gap:8px;align-items:center}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:1100px){.bottom-grid{grid-template-columns:1fr}}
+.chart-wrap{height:250px;margin-top:4px;border:1px solid #d5e0ea;background:#fff;padding:10px}
+.chart{width:100%;height:100%}
+.panel-note{font-size:10px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+.error{color:var(--bad);font-size:12px;margin-top:10px;min-height:1.2em}
+.footer{margin-top:14px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.modal-backdrop{position:fixed;inset:0;background:rgba(14,36,56,.45);display:none;align-items:center;justify-content:center;z-index:80;padding:18px}
 .modal-backdrop.show{display:flex}
-.modal{width:min(560px,100%);background:#0d1a29;border:1px solid #31516b;border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.5);padding:18px}
-.modal h2{margin:0 0 6px;font-size:16px}.modal p{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.45}
+.modal{width:min(560px,100%);background:#fff;border:1px solid var(--line);border-radius:2px;box-shadow:0 24px 60px rgba(14,36,56,.25);padding:18px}
+.modal.modal-wide{width:min(920px,100%);max-height:90vh;overflow:auto}
+.modal h2{margin:0 0 6px;font-size:16px;font-family:"Source Serif 4",Georgia,serif}
+.modal p{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.45}
 .modal-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
 .modal-actions .spacer{flex:1}
-.modal .mini-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.modal .mini-row{grid-template-columns:repeat(3,1fr)}
 .modal .chart-wrap{height:160px}
-.boundary-table{width:100%;border-collapse:collapse;font-size:10px}
-.boundary-table th{text-align:left;padding:7px 9px;background:#102336;color:#9ec3df;font-weight:650;border-bottom:1px solid #1c3449}
-.boundary-table td{padding:8px 9px;border-bottom:1px solid #16283a;color:#9eb4c5;vertical-align:top;line-height:1.45}
-.boundary-table tr:last-child td{border-bottom:0}
-.boundary-table .ok-col{border-right:1px solid #1c3449;width:50%}
-.claim-result{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid #25445d;background:#0d1e2d;font-size:11px}
-.claim-result .cr-label{color:var(--muted)}.claim-result .cr-val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700}
-.claim-partial{font-size:9px;color:var(--amber);margin-left:auto}
-.boundary-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:9px;line-height:1.4}
-.boundary-strip span{padding:8px 10px;border-radius:7px;border:1px solid #1d354b;background:#0a1725;color:#9eb4c5}
-.boundary-strip .bs-ok{border-color:#235b43}.boundary-strip .bs-no{border-color:#64313a}
-.boundary-strip b{color:#dce9f3}
-.obs-chip{margin-top:10px;font-size:10px;color:#9eb4c5;padding:8px 10px;border-radius:7px;border:1px dashed #2a455c;background:#0a1725}
-.proposal-narr{margin-top:12px;border:1px solid #1c3449;border-radius:8px;background:#091622;padding:12px}
-.proposal-narr .panel-head{margin-bottom:8px}
-.proposal-narr pre{margin:0;max-height:280px;overflow:auto;padding:10px;border:1px solid #1b3348;border-radius:7px;background:#08131e;color:#c9dcec;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
-.proposal-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.proposal-actions .btn-link{display:inline-flex;align-items:center;padding:9px 11px;border-radius:7px;border:1px solid #31516b;background:#102337;color:var(--text);text-decoration:none;font-size:12px}
-.proposal-actions .btn-link:hover{background:#17344d}
-.chart-sm{height:260px}.gate-block h3{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.readiness.chips{display:flex;flex-wrap:wrap;gap:6px}
-.readiness.chips .readiness-row{border:1px solid #1d354b;border-radius:6px;padding:5px 7px;background:#0a1725;font-size:9px;flex:0 0 auto;max-width:100%}
-.readiness.chips .readiness-row .muted{display:none}
-@media(max-width:1200px){.runtime-detail{grid-template-columns:1fr}.runtime-steps{grid-template-columns:repeat(2,1fr)}.grid-main{grid-template-columns:1fr}.bottom-grid{grid-template-columns:1fr}.grid4{grid-template-columns:repeat(2,1fr)}.gate-grid,.three-green,.boundary-strip{grid-template-columns:1fr}}@media(max-width:850px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.sidebar-bottom{position:static;margin-top:18px}.main{padding:18px}.order-grid,.market-summary{grid-template-columns:1fr}.state-grid{grid-template-columns:repeat(2,1fr)}.topbar{flex-direction:column}.models{grid-template-columns:1fr}}
+.detail-section{margin:14px 0 0}
+.detail-section h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.detail-table .req{color:var(--warn);font-size:10px}
+.tip{display:none}
+.hidden{display:none}
+.tg{display:none}
 </style>
 </head>
 <body>
-<div class="app">
-<aside class="sidebar">
-  <div class="brand">EconomicGoagentics</div>
-  <div class="brand-sub">CoAgentics · DV026 research console</div>
-  <nav class="nav">
-    <div class="nav-title">Experiments</div>
-    <a class="active" href="#console">◈ Research Console</a>
-    <a href="#market">◫ Market Qualification</a>
-    <a href="#population">◎ LLM Population</a>
-    <a href="#information">◇ Information Treatments</a>
-    <a href="#comparison">◌ Human Reference</a>
-    <div class="nav-title">Analysis</div>
-    <a href="#evidence">▤ Evidence & Provenance</a>
-    <a href="#readiness">✓ DV026 Readiness</a>
-    <div class="nav-title">System</div>
-    <a href="#models">◉ LLM Providers</a>
-    <a href="#settings">⚙ Experiment Settings</a>
-  </nav>
-  <div class="sidebar-bottom">
-    <div class="integrity"><strong>Experimental boundary</strong>Live LLMs are supported. Human reference data is archival/literature-based; this interface does not imply new human-subject collection.<span class="tip tip-right tip-below" tabindex="0" data-tip="This console measures live local-model market behavior under a fixed claim boundary. It does not claim Phase II construct validation, classifier accuracy, or a commercial multi-provider matrix.">?</span></div>
-  </div>
-</aside>
-<main>
-<section id="console">
-  <div class="topbar">
-    <div><div class="eyebrow">Controlled AI-agent experimentation</div><div class="title">DV026 Research Console<span class="tip tip-right tip-below" tabindex="0" data-tip="Workflow: (1) confirm Ollama runtime, (2) qualify the market engine with 5 trials, (3) run a live LLM campaign of model×seed cells, (4) read readiness PASS/FAIL and export evidence. Mid-run, only cell progress is live — the readiness gate is scored at the end.">?</span></div><div class="subtitle">Qualified market environment → live LLM population → observable behavior → evidence.</div></div>
-    <div class="top-actions"><div id="liveStatus" class="status" title="Live status of the local Ollama runtime used for campaign cells"><span id="statusIcon" class="spinner"></span><span id="statusText">Checking LLM runtime…</span></div></div>
+<div class="shell">
+  <div class="brandbar">
+    <div class="brand">EconomicGoagentics<span>DV026 research console · readiness + bid inspector</span></div>
+    <div id="liveStatus" class="status"><span id="statusIcon" class="spinner"></span><span id="statusText">Checking LLM runtime…</span></div>
   </div>
 
-  <div class="toolbar" id="settings">
-    <label>Seed <span class="tip" tabindex="0" data-tip="Base RNG seed for Layer A and the first campaign cell. Later cells use base_seed, base_seed+1, …">?</span><input id="seed" type="number" min="0" value="424242"></label>
-    <label>LLM seeds <span class="tip" tabindex="0" data-tip="How many seeds per model in a full campaign. Full gate expects 20. Total cells ≈ (# available catalog models) × (LLM seeds).">?</span><input id="nSeeds" type="number" min="1" max="100" value="20"></label>
-    <label>Campaign <span class="tip" tabindex="0" data-tip="Full campaign: all available catalog models × N seeds. Smoke: short software-path check (≤2 models × ≤2 seeds) — not a DARPA readiness claim.">?</span><select id="campaignMode"><option value="full">Full campaign</option><option value="smoke">Smoke / software path</option></select></label>
-    <button id="preflight" title="Re-query Ollama for installed models matching the DV026 catalog">Refresh LLM availability</button>
-    <button id="startCampaign" class="primary" title="Start live Ollama campaign after runtime + Layer A qualification">Start live LLM campaign</button>
-    <button id="cancelCampaign" class="danger" disabled title="Stop the running campaign process">Cancel campaign</button>
-    <a id="exportCampaign" href="/api/dv026/campaign/export" style="color:#7fc7ff;font-size:11px;padding:9px" title="Download the last campaign summary JSON (evidence package)">Export campaign evidence</a>
+  <div class="ribbon" id="settings">
+    <label>Seed <input id="seed" type="number" min="0" value="424242"></label>
+    <label>LLM seeds <input id="nSeeds" type="number" min="1" max="100" value="20"></label>
+    <label>Campaign <select id="campaignMode"><option value="full">Full campaign</option><option value="smoke">Smoke</option></select></label>
+    <button id="preflight">Refresh LLM</button>
+    <button id="runLayerA">Qualify market</button>
+    <button id="startCampaign" class="primary">Start live campaign</button>
+    <button id="cancelCampaign" class="danger" disabled>Cancel</button>
+    <a id="exportCampaign" href="/api/dv026/campaign/export" style="font-size:12px;color:var(--accent-deep);padding:8px">Export evidence</a>
   </div>
+
+  <details class="howto">
+    <summary>How this console works</summary>
+    <div class="howto-body">
+      <p><b>Gate</b> — Layer A market qualification, campaign coverage, and readiness rates (MET / PROVISIONAL / PARTIAL / NOT YET).</p>
+      <p><b>Bids</b> — Per-turn agent I/O from <code>cell_*.jsonl</code>: request → raw response → parsed BUY/SELL/HOLD.</p>
+      <p>Workflow: refresh LLM → qualify market (η&gt;90%) → start campaign → inspect bids as cells land.</p>
+    </div>
+  </details>
 
   <div class="grid4">
-    <div class="metric"><div class="metric-label">Live LLM runtime<span class="tip" tabindex="0" data-tip="READY = Ollama reachable and catalog readable. OFFLINE = start Ollama. ERROR = runner/preflight failure. CHECKING = probe in flight. Required before starting a campaign.">?</span></div><div id="runtime" class="metric-value">—</div><div id="runtimeNote" class="metric-note">Checking Ollama…</div></div>
-    <div class="metric"><div class="metric-label">Available models<span class="tip" tabindex="0" data-tip="installed_matching / catalog_size. Numerator = catalog identities found on this machine. Gate target: ≥10 distinct live models that complete cells successfully.">?</span></div><div id="modelCount" class="metric-value">—</div><div class="metric-note">Target: ≥10 distinct model identities</div></div>
-    <div class="metric"><div class="metric-label">Market qualification<span class="tip" tabindex="0" data-tip="Layer A software gate: CDA and sealed-bid market arms must each clear &gt;90% allocative efficiency on every required trial. Separate from LLM behavior — it qualifies the market engine.">?</span></div><div id="marketQual" class="metric-value">—</div><div class="metric-note">CDA + sealed-bid · multiple trials</div></div>
-    <div class="metric"><div class="metric-label">DV026 readiness<span class="tip tip-left" tabindex="0" data-tip="READY only when the finished campaign passes all readiness checks under scope=local_ollama_poc. RUNNING while cells execute. NOT READY if any gate fails or no completed campaign.">?</span></div><div id="readiness" class="metric-value">—</div><div class="metric-note">Readiness scope is explicit</div></div>
+    <div class="metric"><div class="metric-label">Live LLM runtime</div><div id="runtime" class="metric-value">—</div><div id="runtimeNote" class="metric-note">Checking Ollama…</div></div>
+    <div class="metric"><div class="metric-label">Available models</div><div id="modelCount" class="metric-value">—</div><div class="metric-note">Target ≥10 identities</div></div>
+    <div class="metric"><div class="metric-label">Market qualification</div><div id="marketQual" class="metric-value">—</div><div class="metric-note">CDA + sealed-bid</div></div>
+    <div class="metric"><div class="metric-label">DV026 readiness</div><div id="readiness" class="metric-value">—</div><div class="metric-note">Scored at campaign end</div></div>
   </div>
-  <div class="runtime-detail" id="runtimeDetail">
-    <div>
-      <div class="runtime-state"><div id="runtimeIcon" class="runtime-icon checking"><span class="spinner"></span></div><div><div id="runtimeTitle" class="runtime-title">Checking live LLM runtime<span class="tip tip-right tip-below" tabindex="0" data-tip="Four-step preflight: locate dv026-workbench-runner → ping Ollama → resolve catalog tags on disk → mark Ready when ≥1 matching model is installed (campaign gate still needs ≥10 successful models).">?</span></div><div id="runtimeSub" class="runtime-sub">Verifying the EconomicGoagentics runner, Ollama endpoint, and installed model catalog.</div></div></div>
-    </div>
-    <div class="runtime-steps">
-      <div id="stepRunner" class="runtime-step active" title="Locate the local dv026-workbench-runner binary">01 · Runner</div>
-      <div id="stepOllama" class="runtime-step" title="HTTP reachability of Ollama (default http://127.0.0.1:11434)">02 · Ollama</div>
-      <div id="stepCatalog" class="runtime-step" title="Match DV026 catalog model names to installed Ollama tags">03 · Model catalog</div>
-      <div id="stepReady" class="runtime-step" title="Runtime can start live cells (not the same as darpa_claim_ready)">04 · Ready</div>
-    </div>
-    <div id="runtimeError" class="runtime-error"></div>
-  </div>
+  <div id="error" class="error"></div>
 
-  <section class="claim-surface" id="claimSurface" aria-label="DARPA claim surface">
-    <div class="panel-head">
-      <div>
-        <div class="panel-title">DARPA claim surface<span class="tip tip-right tip-below" tabindex="0" data-tip="Maps 1:1 to docs/DV026_DARPA_PHASE_I_READINESS.md. Quantities are measured from Layer A and campaign cells only. Mid-run rates are partial numerators; the gate is scored when the campaign finishes.">?</span></div>
-        <div class="panel-note">Formal readiness gate · local Ollama PoC scope · no invented interaction graphs</div>
-      </div>
-    </div>
-    <div class="three-green">
-      <div class="tg"><div class="tg-k">software_green</div><div id="tgSoftware" class="tg-v warn">—</div><div class="tg-n">Scripted Phase I A/B/C/D. Not live economics.</div></div>
-      <div class="tg"><div class="tg-k">live_llm</div><div id="tgLive" class="tg-v warn">—</div><div class="tg-n">This session talked to Ollama. Not darpa_claim_ready.</div></div>
-      <div class="tg"><div class="tg-k">darpa_claim_ready</div><div id="tgDarpa" class="tg-v warn">—</div><div class="tg-n">Full gate + scope=local_ollama_poc only.</div></div>
-    </div>
-    <div class="gate-grid">
-      <div class="gate-block">
-        <h3>Readiness predicate</h3>
+  <div class="main-split">
+    <div class="panel" id="gate">
+      <div class="panel-h"><span>Gate · readiness</span><span class="panel-note">Aggregates from cells.jsonl</span></div>
+      <div class="body">
         <table class="gate-table" id="gateEq">
-          <thead><tr><th>Check</th><th>Value</th><th>Require</th><th class="gt-st">Status</th></tr></thead>
+          <thead><tr><th>Check</th><th>Value</th><th>Require</th><th></th></tr></thead>
           <tbody>
-            <tr><td class="gt-check">Layer A η̄<sub>CDA</sub> / η̄<sub>sealed</sub></td><td class="gt-val"><span id="gEtaCda">—</span>% / <span id="gEtaSealed">—</span>%</td><td class="gt-req">η<sub>t</sub> &gt; 90% ∀ trials</td><td class="gt-st" id="gLayerAMark">—</td></tr>
-            <tr><td class="gt-check">Live count |M<sub>ok</sub>|</td><td class="gt-val" id="gMok">—</td><td class="gt-req">≥ 10</td><td class="gt-st" id="gLiveMark">—</td></tr>
-            <tr><td class="gt-check">Coverage (≥N seeds)</td><td class="gt-val"><span id="gCover">—</span> · N=<span id="gN">—</span></td><td class="gt-req">≥ 10 models</td><td class="gt-st" id="gCoverMark">—</td></tr>
-            <tr><td class="gt-check">Provenance</td><td class="gt-val" id="gProv">—</td><td class="gt-req">≥ 0.95</td><td class="gt-st" id="gProvMark">—</td></tr>
-            <tr><td class="gt-check">Interface</td><td class="gt-val" id="gIface">—</td><td class="gt-req">≥ 0.90</td><td class="gt-st" id="gIfaceMark">—</td></tr>
-            <tr><td class="gt-check">Market action</td><td class="gt-val" id="gMkt">—</td><td class="gt-req">≥ 0.80 non-HOLD</td><td class="gt-st" id="gMktMark">—</td></tr>
-            <tr><td class="gt-check">Acceptance</td><td class="gt-val" id="gAcc">—</td><td class="gt-req">≥ 0.80</td><td class="gt-st" id="gAccMark">—</td></tr>
-            <tr><td class="gt-check">Human ref</td><td class="gt-val" id="gHref">—</td><td class="gt-req">DESCRIPTIVE</td><td class="gt-st" id="gHrefMark">—</td></tr>
+            <tr><td>Layer A η̄<sub>CDA</sub> / η̄<sub>sealed</sub></td><td class="gt-val"><span id="gEtaCda">—</span>% / <span id="gEtaSealed">—</span>%</td><td class="gt-req">η<sub>t</sub> &gt; 90%</td><td id="gLayerAMark">—</td></tr>
+            <tr><td>Live count |M<sub>ok</sub>|</td><td class="gt-val" id="gMok">—</td><td class="gt-req">≥ 10</td><td id="gLiveMark">—</td></tr>
+            <tr><td>Coverage (≥N seeds)</td><td class="gt-val"><span id="gCover">—</span> · N=<span id="gN">—</span></td><td class="gt-req">≥ 10 models</td><td id="gCoverMark">—</td></tr>
+            <tr><td>Provenance</td><td class="gt-val" id="gProv">—</td><td class="gt-req">≥ 0.95</td><td id="gProvMark">—</td></tr>
+            <tr><td>Interface</td><td class="gt-val" id="gIface">—</td><td class="gt-req">≥ 0.90</td><td id="gIfaceMark">—</td></tr>
+            <tr><td>Market action</td><td class="gt-val" id="gMkt">—</td><td class="gt-req">≥ 0.80 non-HOLD</td><td id="gMktMark">—</td></tr>
+            <tr><td>Acceptance</td><td class="gt-val" id="gAcc">—</td><td class="gt-req">≥ 0.80</td><td id="gAccMark">—</td></tr>
+            <tr><td>Human ref</td><td class="gt-val" id="gHref">—</td><td class="gt-req">DESCRIPTIVE</td><td id="gHrefMark">—</td></tr>
           </tbody>
         </table>
-        <div class="gate-def">
-          <button type="button" class="tip tip-right tip-below" id="cellOkDef" tabindex="0" data-tip="cell_ok ⇔ interface_ok ∧ market_action_ok ∧ market_accepted ∧ replay_ok. HOLD-only does not qualify as economic execution. Gate scored when the campaign finishes." aria-label="cell_ok definition">?</button>
-          <span>cell_ok definition</span>
-        </div>
-      </div>
-      <div class="gate-block" id="campaignProgressTop">
-        <h3>Campaign progress <span id="populationState" class="badge-pending" title="Campaign process state">idle</span></h3>
-        <div class="market-summary">
-          <div class="mini"><span>Cells</span><b id="cells">0</b></div>
-          <div class="mini"><span>Accepted</span><b id="cellsOk">0</b></div>
-          <div class="mini"><span>|M<sub>ok</sub>|</span><b id="distinct">0</b></div>
-          <div class="mini"><span>Scope</span><b id="scope">not_ready</b></div>
-        </div>
-        <div class="progress-shell" style="margin-top:0">
-          <div class="progress-head"><strong id="progressTitle">Campaign idle</strong><span id="progressPct">0%</span></div>
+        <div class="progress-shell">
+          <div class="progress-head"><strong id="progressTitle">Campaign idle</strong><span><span id="populationState" class="badge-pending">idle</span> · <span id="progressPct">0%</span></span></div>
           <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
-          <div class="progress-meta"><div>Done<b id="progressDone">0 / —</b></div><div>Model<b id="progressModel">—</b></div><div>Seed<b id="progressSeed">—</b></div><div>ETA<b id="progressEta">—</b></div></div>
+          <div class="progress-meta">
+            <div>Done<b id="progressDone">0 / —</b></div>
+            <div>Model<b id="progressModel">—</b></div>
+            <div>Seed<b id="progressSeed">—</b></div>
+            <div>ETA<b id="progressEta">—</b></div>
+          </div>
+          <div class="mini-row" style="margin-top:10px;margin-bottom:0">
+            <div class="mini"><span>Cells</span><b id="cells">0</b></div>
+            <div class="mini"><span>Accepted</span><b id="cellsOk">0</b></div>
+            <div class="mini"><span>|M<sub>ok</sub>|</span><b id="distinct">0</b></div>
+            <div class="mini"><span>Scope</span><b id="scope">not_ready</b></div>
+          </div>
+          <div class="readiness chips" id="readinessList"></div>
         </div>
-        <div class="readiness chips" id="readinessList" style="margin-top:10px"></div>
+        <div class="claim-result">
+          <span class="cr-label">Claim</span><span class="cr-val" id="gClaimReady">darpa_claim_ready=false</span>
+          <span class="cr-label">Scope</span><span class="cr-val" id="gClaimScope">not_ready</span>
+          <span class="claim-partial" id="gPartialNote"></span>
+        </div>
+
+        <div id="proposalPanel" style="margin-top:12px">
+          <div class="panel-h" style="border:1px solid #d5e0ea;margin:0 0 8px;background:#fff">
+            <span>Summary · what’s happening</span>
+            <div class="proposal-actions">
+              <button type="button" id="proposalRefresh">Refresh</button>
+              <button type="button" id="proposalDetails">Details</button>
+              <button type="button" id="proposalCopy">Copy</button>
+              <a class="btn-link" id="proposalDownload" href="/api/dv026/proposal-narrative?format=txt" download="dv026-whats-happening.txt">Download</a>
+            </div>
+          </div>
+          <div id="proposalNarrative" class="proposal-body">Loading summary…</div>
+        </div>
       </div>
     </div>
-    <div class="claim-result">
-      <span class="cr-label">Result</span>
-      <span class="cr-val" id="gClaimReady">darpa_claim_ready=false</span>
-      <span class="cr-label">scope</span>
-      <span class="cr-val" id="gClaimScope">not_ready</span>
-      <span class="claim-partial" id="gPartialNote"></span>
-    </div>
-    <div class="boundary-strip" title="Claim boundary from DV026_DARPA_PHASE_I_READINESS.md">
-      <span class="bs-ok"><b>Allowed:</b> local Ollama Layer B gate · observable market/provenance · HumanComparison DESCRIPTIVE</span>
-      <span class="bs-no"><b>Forbidden:</b> Phase II validation · FAQ 31 accuracy · commercial 10-provider without 2nd matrix</span>
-    </div>
-    <div class="obs-chip">Observation = market + own state <span class="muted">(+ optional news / history / peers)</span><span class="tip tip-right tip-below" tabindex="0" data-tip="Control: baseline market + own state. Treatment may add news, history, or peer observations. Condition labels are audit-only and never placed in the agent-visible payload.">?</span></div>
-    <div class="proposal-narr" id="proposalPanel">
-      <div class="panel-head">
-        <div>
-          <div class="panel-title">Proposal expectations (auto)<span class="tip tip-right tip-below" tabindex="0" data-tip="White-paper M2/M6/M9/M12 expectations vs live Layer A + campaign evidence. Statuses are MET / PARTIAL / NOT_YET only — not acceptance package claims.">?</span></div>
-          <div class="panel-note">Phase I white paper · scored from console evidence · exportable</div>
+
+    <div class="panel" id="bids">
+      <div class="panel-h"><span>Bids · agent I/O</span><span class="panel-note">From cell_*.jsonl</span></div>
+      <div class="body">
+        <div class="bid-pick">
+          <label>Model <select id="bidModel"></select></label>
+          <label>Seed <select id="bidSeed"></select></label>
+          <button type="button" id="bidRefresh">Refresh</button>
+          <span id="bidMeta" class="muted"></span>
         </div>
-        <div class="proposal-actions">
-          <button type="button" id="proposalRefresh" title="Refresh narrative from live evidence">Refresh</button>
-          <button type="button" id="proposalCopy" title="Copy plain text">Copy</button>
-          <a class="btn-link" id="proposalDownload" href="/api/dv026/proposal-narrative?format=txt" download="dv026-proposal-expectations.txt" title="Download .txt">Download .txt</a>
+        <div id="bidEmpty" class="detail-empty">No cell files yet — start a campaign or wait for the first cell.</div>
+        <div id="bidContent" class="hidden">
+          <table class="bid-table">
+            <thead><tr><th>Agent</th><th>Action</th><th>Price</th><th>Qty</th><th>Latency</th><th>Tokens</th><th>Accepted</th></tr></thead>
+            <tbody id="bidTurns"></tbody>
+          </table>
+          <div class="bid-io">
+            <div class="bid-block"><h4>Input · canonical_request</h4><pre id="bidInput">—</pre></div>
+            <div class="bid-block"><h4>Output · raw response</h4><pre id="bidOutput">—</pre></div>
+            <div class="bid-block"><h4>Parsed bid + submission</h4><pre id="bidParsed">—</pre></div>
+          </div>
         </div>
       </div>
-      <pre id="proposalNarrative">Loading proposal expectations…</pre>
+    </div>
+  </div>
+
+  <section class="bottom-grid" id="charts">
+    <div class="panel">
+      <div class="panel-h"><span>Models × seeds</span><span class="panel-note">Incomplete first</span></div>
+      <div class="body"><div class="chart-wrap chart-sm"><svg id="modelChart" class="chart" viewBox="0 0 420 260"></svg></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><span>η · literature vs LLM</span><span class="panel-note">DESCRIPTIVE</span></div>
+      <div class="body"><div class="chart-wrap chart-sm"><svg id="humanChart" class="chart" viewBox="0 0 420 260"></svg></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><span>Pipeline</span><span class="panel-note">% of attempted</span></div>
+      <div class="body"><div class="chart-wrap chart-sm"><svg id="pipelineChart" class="chart" viewBox="0 0 420 260"></svg></div></div>
     </div>
   </section>
-</section>
 
-<section id="market" class="grid-main">
-  <div class="panel">
-    <div class="panel-head"><div><div class="panel-title">Market qualification<span class="tip tip-right tip-below" tabindex="0" data-tip="Layer A: CDA and sealed-bid allocative efficiency. Gate η_t &gt; 90% every trial. Separate from LLM campaign charts.">?</span></div><div class="panel-note">Engine qualification · not LLM behavior</div></div><button id="runLayerA" title="Run 5-trial CDA + sealed-bid qualification">Run 5-trial market qualification</button></div>
-    <div class="market-summary">
-      <div class="mini"><span>η̄_CDA</span><b id="cdaEff">—</b></div>
-      <div class="mini"><span>η̄_sealed</span><b id="sealedEff">—</b></div>
-      <div class="mini"><span>Rule</span><b>&gt;90% / trial</b></div>
-      <div class="mini"><span>Trials</span><b id="trialCount">—</b></div>
+  <div class="panel" style="margin-top:12px" id="market">
+    <div class="panel-h"><span>Layer A efficiency</span><span class="panel-note">Market engine · not LLM</span></div>
+    <div class="body">
+      <div class="chart-wrap"><svg id="effChart" class="chart" viewBox="0 0 760 230"></svg></div>
     </div>
-    <div class="chart-wrap" title="Layer A efficiency series"><svg id="effChart" class="chart" viewBox="0 0 760 230"></svg></div>
   </div>
-  <div class="panel">
-    <div class="panel-head"><div><div class="panel-title">Live LLM population<span class="tip tip-left tip-below" tabindex="0" data-tip="Installed catalog tags. LIVE ≠ cell_ok.">?</span></div></div></div>
-    <div id="models" class="models"><div class="muted" style="font-size:11px">Refresh availability…</div></div>
-  </div>
-</section>
 
-<section id="charts" class="bottom-grid">
-  <div class="panel">
-    <div class="panel-head"><div><div class="panel-title">Models × seeds<span class="tip tip-right tip-below" tabindex="0" data-tip="Progress toward N seeds per model. Incomplete models listed first. Gray=attempted, green=cell_ok, dashed line=N.">?</span></div><div class="panel-note">Incomplete first · from cells.jsonl</div></div></div>
-    <div class="chart-wrap chart-sm"><svg id="modelChart" class="chart" viewBox="0 0 420 260"></svg></div>
-  </div>
-  <div id="comparison" class="panel">
-    <div class="panel-head"><div><div class="panel-title">Human reference η<span class="tip tip-below" tabindex="0" data-tip="Archival Gode–Sunder 1993 Table 2 range from docs/GODE_SUNDER_1993_TABLE2.json vs mean treatment_efficiency on cell_ok LLM cells only. Never Layer A CDA. DESCRIPTIVE only.">?</span></div><div class="panel-note">Archival band vs LLM cells</div></div></div>
-    <div class="chart-wrap chart-sm"><svg id="humanChart" class="chart" viewBox="0 0 420 260"></svg></div>
-  </div>
-  <div id="evidence" class="panel">
-    <div class="panel-head"><div><div class="panel-title">Evidence pipeline<span class="tip tip-left tip-below" tabindex="0" data-tip="Each stage as percent of attempted cells (not absolute bar length). Threshold ticks mark readiness cutoffs where they apply.">?</span></div><div class="panel-note">% of attempted</div></div></div>
-    <div class="chart-wrap chart-sm"><svg id="pipelineChart" class="chart" viewBox="0 0 420 260"></svg></div>
-  </div>
-</section>
-
-<section id="readiness" class="panel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-title">Readiness checks</div><div class="panel-note">PASS/FAIL chips · detail in predicate above</div></div></div><div id="checksFull" class="readiness chips"><div class="readiness-row"><span>Waiting for campaign evidence.</span><span class="badge-pending">PENDING</span></div></div></section>
-
-<div id="error" class="error"></div>
-<div class="footer"><span>EconomicGoagentics · CoAgentics · DV026</span><span>Live LLMs supported · human reference data is archival/literature-based · no new human-subject collection implied</span></div>
-</main>
+  <div class="footer"><span>Measured evidence only · local Ollama PoC scope</span><span>No invented bids or graphs</span></div>
 </div>
+
+<!-- hidden stubs for legacy JS hooks -->
+<span id="tgSoftware" class="tg"></span><span id="tgLive" class="tg"></span><span id="tgDarpa" class="tg"></span>
+<span id="runtimeIcon" class="hidden"></span><span id="runtimeTitle" class="hidden"></span><span id="runtimeSub" class="hidden"></span>
+<span id="runtimeError" class="hidden"></span>
+<span id="stepRunner" class="hidden"></span><span id="stepOllama" class="hidden"></span><span id="stepCatalog" class="hidden"></span><span id="stepReady" class="hidden"></span>
+<span id="cdaEff" class="hidden"></span><span id="sealedEff" class="hidden"></span><span id="trialCount" class="hidden"></span>
+<div id="models" class="hidden"></div><div id="checksFull" class="hidden"></div>
 
 <div id="calibModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="calibTitle">
   <div class="modal">
     <h2 id="calibTitle">Market calibration required</h2>
-    <p>Qualify the market engine (no LLMs) before the live campaign. Rule: every Layer A trial must clear η<sub>t</sub> &gt; 90% on CDA and sealed-bid.</p>
+    <p>Qualify the market engine (no LLMs) before the live campaign. Every Layer A trial must clear η<sub>t</sub> &gt; 90% on CDA and sealed-bid.</p>
     <div class="mini-row">
       <div class="mini"><span>η̄_CDA</span><b id="calibCda">—</b></div>
       <div class="mini"><span>η̄_sealed</span><b id="calibSealed">—</b></div>
@@ -283,15 +311,30 @@ button,select,input{font:inherit;color:var(--text);background:#102337;border:1px
     <div class="chart-wrap"><svg id="calibChart" class="chart" viewBox="0 0 760 230"></svg></div>
     <div class="modal-actions">
       <button type="button" id="calibRun" class="primary">Run 5-trial market qualification</button>
-      <button type="button" id="calibScroll">Open full panel</button>
+      <button type="button" id="calibScroll">Open efficiency chart</button>
       <span class="spacer"></span>
       <button type="button" id="calibDismiss">Dismiss</button>
     </div>
   </div>
 </div>
+
+<div id="proposalDetailsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="proposalDetailsTitle">
+  <div class="modal modal-wide">
+    <h2 id="proposalDetailsTitle">Summary details · realtime evidence</h2>
+    <p>Measured values from the live campaign / Layer A — same payload as the Summary panel.</p>
+    <div id="proposalDetailsBody"></div>
+    <div class="modal-actions">
+      <button type="button" id="proposalDetailsRefresh">Refresh</button>
+      <span class="spacer"></span>
+      <button type="button" id="proposalDetailsClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const $=id=>document.getElementById(id);
-let preflight=null, campaign=null, layerA=null, preflightBusy=false, preflightTimer=null;
+let preflight=null, campaign=null, layerA=null, preflightBusy=false;
+let bidIndex=[], bidTurnsData=[], bidSelectedTurn=0, bidLoading=false;
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 async function get(path, timeoutMs=10000){
   const ctl=new AbortController(); const timer=setTimeout(()=>ctl.abort(),timeoutMs);
@@ -305,74 +348,57 @@ async function post(path,data,timeoutMs=15000){
   catch(e){if(e.name==='AbortError')throw Error(`Request timed out after ${Math.round(timeoutMs/1000)}s: ${path}`);throw e}
   finally{clearTimeout(timer)}
 }
-function setError(e){$('error').textContent=e?String(e):''}
-function setStep(id,state){const el=$(id);el.className='runtime-step '+state}
+function setError(e){const el=$('error'); if(el) el.textContent=e?String(e):''}
+function setStep(id,state){const el=$(id); if(el) el.className='runtime-step '+state}
 function setRuntimeState(state, detail=''){
-  const icon=$('runtimeIcon'), top=$('liveStatus'), statusIcon=$('statusIcon'), title=$('runtimeTitle'), sub=$('runtimeSub'), err=$('runtimeError');
-  icon.className='runtime-icon '+(state==='checking'?'checking':'');
-  statusIcon.className=state==='checking'?'spinner':'dot';
+  const top=$('liveStatus'), statusIcon=$('statusIcon');
+  if(statusIcon) statusIcon.className=state==='checking'?'spinner':'dot';
   if(state==='checking'){
-    icon.innerHTML='<span class="spinner"></span>'; top.style.borderColor='#31516b'; top.style.background='#0f1f2d';
-    $('statusText').textContent='Checking LLM runtime…'; title.textContent='Checking live LLM runtime'; sub.textContent='Verifying the runner, Ollama endpoint, and installed model catalog.'; err.classList.remove('show');
+    if(top){ top.style.borderColor='#c5d2de'; top.style.background='#fff'; }
+    $('statusText').textContent='Checking LLM runtime…';
     $('runtime').textContent='CHECKING'; $('runtime').className='metric-value warn'; $('runtimeNote').textContent='Checking Ollama…';
     $('preflight').disabled=true; return;
   }
   if(state==='ready'){
-    icon.innerHTML='✓'; icon.style.color='var(--green)'; top.style.borderColor='#27543f'; top.style.background='#0c2119';
+    if(top){ top.style.borderColor='#b7ddc4'; top.style.background='#e8f6ee'; }
     $('statusText').textContent=`LIVE LLMs ready · ${preflight?.available_models?.length||0} available`;
-    title.textContent='Live LLM runtime ready'; sub.textContent='Ollama is reachable and the installed model catalog has been read.';
     $('runtime').textContent='READY'; $('runtime').className='metric-value ok'; $('runtimeNote').textContent='Ollama reachable';
-    err.classList.remove('show'); $('preflight').disabled=false;
-    setStep('stepRunner','done'); setStep('stepOllama','done'); setStep('stepCatalog',(preflight?.available_models?.length||0)>0?'done':'fail'); setStep('stepReady',(preflight?.available_models?.length||0)>0?'done':'fail');
+    $('preflight').disabled=false;
   } else if(state==='offline'){
-    icon.innerHTML='!'; icon.style.color='var(--amber)'; top.style.borderColor='#66501e'; top.style.background='#211b0e';
-    $('statusText').textContent='Live LLMs supported · runtime unavailable'; title.textContent='Live LLM runtime unavailable'; sub.textContent='The console is operational, but live execution is unavailable until Ollama responds.';
+    if(top){ top.style.borderColor='#e5d0a4'; top.style.background='#fff6e8'; }
+    $('statusText').textContent='Runtime unavailable';
     $('runtime').textContent='OFFLINE'; $('runtime').className='metric-value warn'; $('runtimeNote').textContent='Start Ollama to run live models';
-    err.textContent=detail||'Ollama did not respond. Start the Ollama service and press Refresh LLM availability.'; err.classList.add('show'); $('preflight').disabled=false;
-    setStep('stepRunner','done'); setStep('stepOllama','fail'); setStep('stepCatalog','fail'); setStep('stepReady','fail');
+    setError(detail||'Ollama did not respond. Start Ollama and press Refresh LLM.');
+    $('preflight').disabled=false;
   } else {
-    icon.innerHTML='×'; icon.style.color='var(--red)'; top.style.borderColor='#64313a'; top.style.background='#24141a';
-    $('statusText').textContent='Runtime check error'; title.textContent='Runtime check could not complete'; sub.textContent='The research console is running, but the DV026 runner returned an error.';
-    $('runtime').textContent='ERROR'; $('runtime').className='metric-value bad'; $('runtimeNote').textContent='See diagnostic below';
-    err.textContent=detail||'Unknown runtime error'; err.classList.add('show'); $('preflight').disabled=false;
-    setStep('stepRunner','fail'); setStep('stepOllama','fail'); setStep('stepCatalog','fail'); setStep('stepReady','fail');
+    if(top){ top.style.borderColor='#e0b4b4'; top.style.background='#fceeee'; }
+    $('statusText').textContent='Runtime check error';
+    $('runtime').textContent='ERROR'; $('runtime').className='metric-value bad'; $('runtimeNote').textContent='See error below';
+    setError(detail||'Unknown runtime error'); $('preflight').disabled=false;
   }
 }
 function setLiveStatus(ok,count){
-  if(ok) setRuntimeState('ready');
-  else setRuntimeState('offline');
+  if(ok) setRuntimeState('ready'); else setRuntimeState('offline');
   $('modelCount').textContent=(ok?count:0)+'/'+(preflight?.catalog_size||10);
   updateControls();
 }
 function renderModels(){
+  const el=$('models'); if(!el) return;
   const arr=(preflight?.available_models||[]), missing=(preflight?.missing_models||[]);
-  let html=arr.map(m=>`<div class="model"><span class="live-pill">LIVE</span><div class="model-name">${esc(m.model)}</div><div class="model-meta">${esc(m.provider)} · ${esc(m.version)}</div></div>`).join('');
-  html+=missing.map(m=>`<div class="model missing"><span class="live-pill">NOT INSTALLED</span><div class="model-name">${esc(m.model)}</div><div class="model-meta">${esc(m.provider)} · pull required</div></div>`).join('');
-  $('models').innerHTML=html||'<div class="muted" style="font-size:11px">No model catalog is available yet.</div>';
+  let html=arr.map(m=>`<div class="model"><span class="live-pill">LIVE</span><div class="model-name">${esc(m.model)}</div></div>`).join('');
+  html+=missing.map(m=>`<div class="model missing"><span class="live-pill">NOT INSTALLED</span><div class="model-name">${esc(m.model)}</div></div>`).join('');
+  el.innerHTML=html||'<div class="muted">No model catalog yet.</div>';
 }
-const CHECK_TIPS={
-  layer_a:'Market engine qualification (no LLMs). Requires enough trials with CDA and sealed-bid efficiency every trial >90%.',
-  live_count:'Count of distinct model identities with at least one successful cell_ok. Gate needs ≥10.',
-  coverage:'Models that completed all N seeds successfully. Gate needs ≥10 models each covering every seed.',
-  provenance:'Fraction of cells with replay/cross-event provenance intact. Required ≥0.95.',
-  interface_health:'Fraction of cells with parseable + schema-valid actions. Required ≥0.90.',
-  market_action:'Fraction of cells that submitted a non-HOLD market action. HOLD-only does not count as economic execution. Required ≥0.80.',
-  market_acceptance:'Among non-HOLD actions, fraction accepted by the market. Required ≥0.80.',
-  human_ref:'HumanComparison DESCRIPTIVE on live allocative_efficiency with LiveProvider provenance — archival reference, not new subjects.',
-  non_claims:'Explicit non-claims: no Phase II construct validation; no commercial 10-provider matrix without a second matrix.'
-};
-function tipMark(text, cls=''){return `<button type="button" class="tip ${cls}" tabindex="0" data-tip="${esc(text)}" aria-label="More info">?</button>`}
+const CHECK_TIPS={};
+function tipMark(){return ''}
 function renderChecks(target,checks){
   if(!target) return;
   if(!checks||!checks.length){target.innerHTML='<span class="badge-pending">PENDING</span>';return}
-  target.innerHTML=checks.map(c=>{
-    const tip=CHECK_TIPS[c.id]||'Readiness gate component.';
-    return `<div class="readiness-row" title="${esc(c.detail||'')}"><b>${esc(c.id)}</b>${tipMark(tip)}<span class="${c.pass?'badge-ready':'badge-no'}">${c.pass?'PASS':'FAIL'}</span></div>`;
-  }).join('');
+  target.innerHTML=checks.map(c=>`<div class="readiness-row" title="${esc(c.detail||'')}"><b>${esc(c.id)}</b><span class="${c.pass?'badge-ready':'badge-no'}">${c.pass?'PASS':'FAIL'}</span></div>`).join('');
 }
 function emptyChart(svgId, msg){
   const el=$(svgId); if(!el) return;
-  el.innerHTML=`<text x="210" y="130" fill="#7891a4" font-size="12" text-anchor="middle">${esc(msg)}</text>`;
+  el.innerHTML=`<text x="210" y="130" fill="#5a7388" font-size="12" text-anchor="middle">${esc(msg)}</text>`;
 }
 function drawModelChart(byModel, nSeeds){
   const el=$('modelChart'); if(!el) return;
@@ -380,14 +406,14 @@ function drawModelChart(byModel, nSeeds){
   const rows=(byModel||[]).slice().sort((a,b)=>{
     const aOk=Number(a.cell_ok||0), bOk=Number(b.cell_ok||0);
     const aDone=aOk>=N?1:0, bDone=bOk>=N?1:0;
-    if(aDone!==bDone) return aDone-bDone; // incomplete first
-    if(aOk!==bOk) return aOk-bOk; // least progress first among incomplete
+    if(aDone!==bDone) return aDone-bDone;
+    if(aOk!==bOk) return aOk-bOk;
     return String(a.model||'').localeCompare(String(b.model||''));
   }).slice(0,12);
   if(!rows.length){emptyChart('modelChart','No cells yet');return}
   const W=420,H=260,L=118,R=18,T=28,B=18;
   const rowH=Math.min(22,(H-T-B)/Math.max(1,rows.length));
-  let s=`<text x="${L}" y="14" fill="#7891a4" font-size="9">gray=attempted · green=cell_ok · dashed=N</text>`;
+  let s=`<text x="${L}" y="14" fill="#5a7388" font-size="9">gray=attempted · green=cell_ok · dashed=N</text>`;
   rows.forEach((r,i)=>{
     const y=T+i*rowH+rowH*0.15;
     const ok=Number(r.cell_ok||0), att=Number(r.attempted||0);
@@ -395,13 +421,13 @@ function drawModelChart(byModel, nSeeds){
     const wAtt=(W-L-R)*Math.min(1,att/N);
     const label=String(r.model||'').replace(/:latest$/,'');
     const incomplete=ok<N;
-    s+=`<text x="${L-6}" y="${y+rowH*0.55}" fill="${incomplete?'#f3c16f':'#9eb4c5'}" font-size="9" text-anchor="end">${esc(label.slice(0,16))}</text>`;
-    s+=`<rect x="${L}" y="${y}" width="${Math.max(0,wAtt)}" height="${rowH*0.55}" fill="#24384c"/>`;
-    s+=`<rect x="${L}" y="${y}" width="${Math.max(0,wOk)}" height="${rowH*0.55}" fill="#42d392"/>`;
-    s+=`<text x="${L+Math.max(wOk,wAtt,4)+4}" y="${y+rowH*0.5}" fill="#c9dcec" font-size="9">${ok}/${N}</text>`;
+    s+=`<text x="${L-6}" y="${y+rowH*0.55}" fill="${incomplete?'#9a6412':'#5a7388'}" font-size="9" text-anchor="end">${esc(label.slice(0,16))}</text>`;
+    s+=`<rect x="${L}" y="${y}" width="${Math.max(0,wAtt)}" height="${rowH*0.55}" fill="#c5d2de"/>`;
+    s+=`<rect x="${L}" y="${y}" width="${Math.max(0,wOk)}" height="${rowH*0.55}" fill="#1a7a45"/>`;
+    s+=`<text x="${L+Math.max(wOk,wAtt,4)+4}" y="${y+rowH*0.5}" fill="#0e2438" font-size="9">${ok}/${N}</text>`;
   });
   const xN=L+(W-L-R);
-  s+=`<line x1="${xN}" x2="${xN}" y1="${T}" y2="${H-B}" stroke="#f3b85f" stroke-dasharray="3 3"/>`;
+  s+=`<line x1="${xN}" x2="${xN}" y1="${T}" y2="${H-B}" stroke="#9a6412" stroke-dasharray="3 3"/>`;
   el.innerHTML=s;
 }
 function drawHumanChart(href){
@@ -412,8 +438,8 @@ function drawHumanChart(href){
   const W=420,H=260,L=52,R=24,T=28,B=40;
   if(!lit.length){
     const msg=(href&&href.literature_error)||'No archival reference loaded';
-    el.innerHTML=`<text x="${W/2}" y="${H/2-8}" fill="#7891a4" font-size="12" text-anchor="middle">${esc(msg)}</text>`+
-      (live!=null&&Number.isFinite(live)?`<text x="${W/2}" y="${H/2+14}" fill="#75e2ad" font-size="11" text-anchor="middle">LLM cell mean ${live.toFixed(1)}% (n=${liveN||'?'})</text>`:'');
+    el.innerHTML=`<text x="${W/2}" y="${H/2-8}" fill="#5a7388" font-size="12" text-anchor="middle">${esc(msg)}</text>`+
+      (live!=null&&Number.isFinite(live)?`<text x="${W/2}" y="${H/2+14}" fill="#1a7a45" font-size="11" text-anchor="middle">LLM cell mean ${live.toFixed(1)}% (n=${liveN||'?'})</text>`:'');
     return;
   }
   const litMean=(href&&href.literature_mean!=null)?Number(href.literature_mean):(lit.reduce((a,b)=>a+b,0)/lit.length);
@@ -422,29 +448,24 @@ function drawHumanChart(href){
   const lo=Math.min(80,...all), hi=Math.max(100,...all);
   const Y=v=>H-B-((v-lo)/Math.max(1e-6,hi-lo))*(H-T-B);
   const xBand=L+70, xLive=L+220, bandW=56;
-  let s='';
-  s+=`<text x="${L}" y="16" fill="#7891a4" font-size="9">archival Table 2 band vs LLM cell_ok mean (DESCRIPTIVE)</text>`;
+  let s=`<text x="${L}" y="16" fill="#5a7388" font-size="9">archival Table 2 band vs LLM cell_ok mean</text>`;
   [90,95,100].forEach(v=>{
     if(v<lo||v>hi) return;
-    s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#1c3449"/>`;
-    s+=`<text x="${L-6}" y="${Y(v)+3}" fill="#7891a4" font-size="9" text-anchor="end">${v}</text>`;
+    s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#d5e0ea"/>`;
+    s+=`<text x="${L-6}" y="${Y(v)+3}" fill="#5a7388" font-size="9" text-anchor="end">${v}</text>`;
   });
-  s+=`<line x1="${L}" x2="${W-R}" y1="${Y(90)}" y2="${Y(90)}" stroke="#f3b85f" stroke-dasharray="4 3"/>`;
-  s+=`<text x="${W-R}" y="${Y(90)-4}" fill="#f3b85f" font-size="9" text-anchor="end">90% gate</text>`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${Y(90)}" y2="${Y(90)}" stroke="#9a6412" stroke-dasharray="4 3"/>`;
   const yTop=Y(litMax), yBot=Y(litMin);
-  s+=`<rect x="${xBand}" y="${yTop}" width="${bandW}" height="${Math.max(2,yBot-yTop)}" fill="#1f4f7a" opacity="0.55" rx="3"/>`;
-  s+=`<line x1="${xBand}" x2="${xBand+bandW}" y1="${Y(litMean)}" y2="${Y(litMean)}" stroke="#4ea7ff" stroke-width="2"/>`;
-  s+=`<text x="${xBand+bandW/2}" y="${H-22}" fill="#9ec3df" font-size="10" text-anchor="middle">literature</text>`;
-  s+=`<text x="${xBand+bandW/2}" y="${yTop-6}" fill="#4ea7ff" font-size="9" text-anchor="middle">${litMin.toFixed(1)}–${litMax.toFixed(1)}</text>`;
-  s+=`<text x="${xBand+bandW/2}" y="${Y(litMean)+12}" fill="#9ec3df" font-size="9" text-anchor="middle">mean ${litMean.toFixed(1)}</text>`;
+  s+=`<rect x="${xBand}" y="${yTop}" width="${bandW}" height="${Math.max(2,yBot-yTop)}" fill="#a9cfe0" opacity="0.7" rx="2"/>`;
+  s+=`<line x1="${xBand}" x2="${xBand+bandW}" y1="${Y(litMean)}" y2="${Y(litMean)}" stroke="#0b6e99" stroke-width="2"/>`;
+  s+=`<text x="${xBand+bandW/2}" y="${H-22}" fill="#5a7388" font-size="10" text-anchor="middle">literature</text>`;
+  s+=`<text x="${xBand+bandW/2}" y="${yTop-6}" fill="#0b6e99" font-size="9" text-anchor="middle">${litMin.toFixed(1)}–${litMax.toFixed(1)}</text>`;
   if(live!=null&&Number.isFinite(live)){
-    s+=`<circle cx="${xLive}" cy="${Y(live)}" r="8" fill="#42d392"/>`;
-    s+=`<line x1="${xLive-18}" x2="${xLive+18}" y1="${Y(live)}" y2="${Y(live)}" stroke="#42d392" stroke-width="2"/>`;
-    s+=`<text x="${xLive}" y="${Y(live)-12}" fill="#75e2ad" font-size="11" text-anchor="middle">${live.toFixed(1)}%</text>`;
-    s+=`<text x="${xLive}" y="${H-22}" fill="#75e2ad" font-size="10" text-anchor="middle">LLM cells${liveN!=null?' n='+liveN:''}</text>`;
+    s+=`<circle cx="${xLive}" cy="${Y(live)}" r="8" fill="#1a7a45"/>`;
+    s+=`<text x="${xLive}" y="${Y(live)-12}" fill="#1a7a45" font-size="11" text-anchor="middle">${live.toFixed(1)}%</text>`;
+    s+=`<text x="${xLive}" y="${H-22}" fill="#1a7a45" font-size="10" text-anchor="middle">LLM cells${liveN!=null?' n='+liveN:''}</text>`;
   } else {
-    s+=`<text x="${xLive}" y="${(T+H-B)/2}" fill="#7891a4" font-size="11" text-anchor="middle">Awaiting LLM cell η</text>`;
-    s+=`<text x="${xLive}" y="${H-22}" fill="#7891a4" font-size="10" text-anchor="middle">not Layer A</text>`;
+    s+=`<text x="${xLive}" y="${(T+H-B)/2}" fill="#5a7388" font-size="11" text-anchor="middle">Awaiting LLM cell η</text>`;
   }
   el.innerHTML=s;
 }
@@ -464,22 +485,19 @@ function drawPipelineChart(pipe){
   const W=420,H=260,L=78,R=88,T=24,B=14;
   const rowH=(H-T-B)/stages.length;
   const denom=Math.max(1,attempted);
-  let s=`<text x="${L}" y="14" fill="#7891a4" font-size="9">bar = % of attempted · ticks = gate thresholds</text>`;
+  let s=`<text x="${L}" y="14" fill="#5a7388" font-size="9">bar = % of attempted · ticks = gate thresholds</text>`;
   stages.forEach((st,i)=>{
     const y=T+i*rowH+4;
     const count=st[1], thr=st[2];
     const pct=attempted?count/denom:0;
     const w=(W-L-R)*Math.min(1,pct);
-    const isLast=i===stages.length-1;
-    const fill=isLast?'#42d392':'#2e8be8';
-    s+=`<text x="${L-6}" y="${y+12}" fill="#9eb4c5" font-size="10" text-anchor="end">${esc(st[0])}</text>`;
+    const fill=i===stages.length-1?'#1a7a45':'#0b6e99';
+    s+=`<text x="${L-6}" y="${y+12}" fill="#5a7388" font-size="10" text-anchor="end">${esc(st[0])}</text>`;
     s+=`<rect x="${L}" y="${y}" width="${Math.max(attempted||i===0?2:0,w)}" height="14" fill="${fill}" opacity="0.85"/>`;
-    const pctLabel=attempted?`${count} (${(100*pct).toFixed(0)}%)`:`${count}`;
-    s+=`<text x="${L+Math.max(w,8)+4}" y="${y+11}" fill="#c9dcec" font-size="10">${pctLabel}</text>`;
+    s+=`<text x="${L+Math.max(w,8)+4}" y="${y+11}" fill="#0e2438" font-size="10">${attempted?`${count} (${(100*pct).toFixed(0)}%)`:`${count}`}</text>`;
     if(thr!=null){
       const xThr=L+(W-L-R)*thr;
-      s+=`<line x1="${xThr}" x2="${xThr}" y1="${y-1}" y2="${y+15}" stroke="#f3b85f" stroke-width="1.5"/>`;
-      s+=`<text x="${xThr}" y="${y-2}" fill="#f3b85f" font-size="8" text-anchor="middle">${(100*thr).toFixed(0)}%</text>`;
+      s+=`<line x1="${xThr}" x2="${xThr}" y1="${y-1}" y2="${y+15}" stroke="#9a6412" stroke-width="1.5"/>`;
     }
   });
   el.innerHTML=s;
@@ -490,36 +508,126 @@ async function refreshCharts(){
     drawModelChart(d.by_model,d.n_seeds);
     drawHumanChart(d.human_ref);
     drawPipelineChart(d.pipeline);
-  }catch(e){/* charts are best-effort */}
+  }catch(e){}
 }
 async function refreshProposalNarrative(){
   const el=$('proposalNarrative'); if(!el) return;
   try{
     const d=await get('/api/dv026/proposal-narrative',8000);
-    el.textContent=d.text||(d.error?'Error: '+d.error:'(empty)');
-  }catch(e){ el.textContent='Narrative unavailable: '+String(e); }
+    window._proposalPlainText=d.text||'';
+    window._proposalPayload=d;
+    if(d.error){ el.innerHTML=`<div class="proposal-note">${esc(d.error)}</div>`; return; }
+    renderProposalChecklist(d);
+    const modal=$('proposalDetailsModal');
+    if(modal&&modal.classList.contains('show')) renderProposalDetails(d);
+  }catch(e){
+    window._proposalPlainText='';
+    window._proposalPayload=null;
+    el.innerHTML=`<div class="proposal-note">Narrative unavailable: ${esc(String(e))}</div>`;
+  }
 }
-function markCls(pass, pending){return pending?'pend':(pass?'pass':'fail')}
-function markSym(pass, pending){return pending?'·':(pass?'✓':'✗')}
+function fmtEtaSec(sec){
+  if(sec==null||!Number.isFinite(Number(sec))) return '—';
+  const s=Number(sec);
+  if(s<60) return Math.ceil(s)+'s';
+  return Math.floor(s/60)+'m '+Math.ceil(s%60)+'s';
+}
+function fmtPctRate(r){
+  if(r==null||!Number.isFinite(Number(r))) return '—';
+  return (100*Number(r)).toFixed(0)+'%';
+}
+function renderProposalDetails(d){
+  const body=$('proposalDetailsBody'); if(!body) return;
+  d=d||window._proposalPayload;
+  if(!d||d.error){ body.innerHTML=`<div class="detail-empty">${esc(d&&d.error?d.error:'No summary data yet — press Refresh.')}</div>`; return; }
+  const meta=d.meta||{}, rates=meta.rates||{}, items=d.items||[];
+  const inc=meta.incomplete_models||[];
+  const band=meta.literature_band;
+  const rows=[
+    ['Campaign', meta.campaign_label||(meta.running?'IN PROGRESS':'—')],
+    ['Running', meta.running?'true':'false'],
+    ['Current model', meta.current_model||'—'],
+    ['Current seed', meta.current_seed!=null?String(meta.current_seed):'—'],
+    ['Progress', meta.total?((meta.done!=null?meta.done:0)+'/'+meta.total):'—'],
+    ['ETA', fmtEtaSec(meta.eta_sec)],
+    ['Cells in cells.jsonl', meta.attempted!=null?String(meta.attempted):'—'],
+    ['Models with ≥1 cell_ok', meta.distinct_ok!=null?String(meta.distinct_ok):'—'],
+    ['Full-coverage models', (meta.coverage!=null?meta.coverage:'—')+'/10 · N='+(meta.n_seeds!=null?meta.n_seeds:'—')],
+    ['Layer A pass', meta.layer_a_pass?'true':'false'],
+    ['η̄ CDA / sealed', (meta.mean_efficiency_cda!=null?Number(meta.mean_efficiency_cda).toFixed(1)+'%':'—')+' / '+(meta.mean_efficiency_sealed!=null?Number(meta.mean_efficiency_sealed).toFixed(1)+'%':'—')],
+    ['LLM cell mean η', meta.live_mean_efficiency!=null?(Number(meta.live_mean_efficiency).toFixed(1)+'% (n='+(meta.live_mean_n!=null?meta.live_mean_n:'?')+')'):'—'],
+    ['Literature band', band?(Number(band.min).toFixed(1)+'–'+Number(band.max).toFixed(1)+'% (mean '+Number(band.mean).toFixed(1)+'%)'):'—'],
+    ['scope', meta.scope||'—'],
+    ['darpa_claim_ready', meta.darpa_claim_ready?'true':'false']
+  ];
+  let html='<div class="detail-section"><h3>Live progress</h3><table class="detail-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>';
+  rows.forEach(r=>{ html+=`<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td></tr>`; });
+  html+='</tbody></table></div>';
+  const rateRows=[
+    ['Interface (parse+validate)', fmtPctRate(rates.interface), '≥ 90%'],
+    ['Non-HOLD market action', fmtPctRate(rates.market_action), '≥ 80%'],
+    ['Acceptance among non-HOLD', fmtPctRate(rates.market_acceptance), '≥ 80%'],
+    ['Provenance / replay', fmtPctRate(rates.provenance), '≥ 95%']
+  ];
+  html+='<div class="detail-section"><h3>Rates</h3><table class="detail-table"><thead><tr><th>Metric</th><th>Value</th><th>Require</th></tr></thead><tbody>';
+  rateRows.forEach(r=>{ html+=`<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td><td class="req">${esc(r[2])}</td></tr>`; });
+  html+='</tbody></table></div>';
+  html+='<div class="detail-section"><h3>Incomplete models</h3>';
+  if(!inc.length) html+='<div class="detail-empty">All tracked models complete so far (or no cells yet).</div>';
+  else {
+    html+='<table class="detail-table"><thead><tr><th>Model</th><th>cell_ok</th><th>N</th></tr></thead><tbody>';
+    inc.forEach(m=>{ html+=`<tr><td class="mono">${esc(m.model||'')}</td><td class="mono">${esc(String(m.cell_ok!=null?m.cell_ok:0))}</td><td class="mono">${esc(String(m.n_seeds!=null?m.n_seeds:(meta.n_seeds||20)))}</td></tr>`; });
+    html+='</tbody></table>';
+  }
+  html+='</div>';
+  html+='<div class="detail-section"><h3>Gate status</h3><table class="detail-table"><thead><tr><th>Status</th><th>Title</th><th>Milestone</th><th>What’s happening</th><th>Next</th></tr></thead><tbody>';
+  items.forEach(it=>{
+    const st=it.status||'NOT_YET';
+    const ms=it.milestone&&it.milestone!=='cross-cutting'?it.milestone:'—';
+    html+=`<tr><td><span class="proposal-status ${esc(st)}">${esc(st)}</span></td><td>${esc(it.title||it.id||'')}</td><td class="mono">${esc(ms)}</td><td>${esc(it.happening||it.evidence||'')}</td><td>${esc(it.next||it.still_needed||'—')}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  body.innerHTML=html;
+}
+function showProposalDetails(){const m=$('proposalDetailsModal'); if(!m) return; renderProposalDetails(window._proposalPayload); m.classList.add('show')}
+function hideProposalDetails(){const m=$('proposalDetailsModal'); if(m) m.classList.remove('show')}
+function renderProposalChecklist(d){
+  const el=$('proposalNarrative'); if(!el) return;
+  const meta=d.meta||{}, counts=meta.counts||{}, items=d.items||[];
+  const camp=meta.campaign_label||(meta.running?'IN PROGRESS':'—');
+  let html=`<div class="proposal-snap"><span class="ps-label">Campaign</span><span class="proposal-pill camp">${esc(camp)}</span>`;
+  if(meta.running && meta.current_model){
+    let now=String(meta.current_model);
+    if(meta.current_seed!=null) now+=' · seed '+meta.current_seed;
+    if(meta.total) now+=' · '+(meta.done!=null?meta.done:0)+'/'+meta.total;
+    if(meta.eta_sec!=null) now+=' · ETA '+fmtEtaSec(meta.eta_sec);
+    html+=`<span class="proposal-pill now">Now ${esc(now)}</span>`;
+  }
+  html+=`<span class="proposal-pill met">${Number(counts.MET||0)} MET</span>`;
+  html+=`<span class="proposal-pill provisional">${Number(counts.PROVISIONAL||0)} PROVISIONAL</span>`;
+  html+=`<span class="proposal-pill partial">${Number(counts.PARTIAL||0)} PARTIAL</span>`;
+  html+=`<span class="proposal-pill notyet">${Number(counts.NOT_YET||0)} NOT YET</span></div>`;
+  html+=`<div class="proposal-summary">${esc(d.summary||'No summary yet.')}</div>`;
+  items.forEach(it=>{
+    const st=it.status||'NOT_YET';
+    const ms=it.milestone&&it.milestone!=='cross-cutting'?` <span class="proposal-ms">(${esc(it.milestone)})</span>`:'';
+    html+=`<div class="proposal-item"><div class="proposal-item-head"><span class="proposal-status ${esc(st)}">${esc(st)}</span><span class="proposal-title">${esc(it.title||it.id||'')}${ms}</span></div>`;
+    html+=`<p class="proposal-happening">${esc(it.happening||it.evidence||'')}</p>`;
+    if(it.next||it.still_needed) html+=`<p class="proposal-next">Next: ${esc(it.next||it.still_needed)}</p>`;
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+}
 function fmtRate(v){return (v==null||!Number.isFinite(Number(v)))?'—':Number(v).toFixed(3)}
 function checkPass(checks, id){const c=(checks||[]).find(x=>x.id===id); return c?!!c.pass:null}
-function parseRateDetail(checks, id){
-  const c=(checks||[]).find(x=>x.id===id); if(!c) return null;
-  const m=String(c.detail||'').match(/rate=([0-9.]+)/); return m?Number(m[1]):null;
-}
-function parseDistinct(checks){
-  const c=(checks||[]).find(x=>x.id==='live_count'); if(!c) return null;
-  const m=String(c.detail||'').match(/distinct_ok=(\d+)/); return m?Number(m[1]):null;
-}
-function parseCoverage(checks){
-  const c=(checks||[]).find(x=>x.id==='coverage'); if(!c) return null;
-  const m=String(c.detail||'').match(/seeds=(\d+)/); return m?Number(m[1]):null;
-}
+function parseRateDetail(checks, id){const c=(checks||[]).find(x=>x.id===id); if(!c) return null; const m=String(c.detail||'').match(/rate=([0-9.]+)/); return m?Number(m[1]):null}
+function parseDistinct(checks){const c=(checks||[]).find(x=>x.id==='live_count'); if(!c) return null; const m=String(c.detail||'').match(/distinct_ok=(\d+)/); return m?Number(m[1]):null}
+function parseCoverage(checks){const c=(checks||[]).find(x=>x.id==='coverage'); if(!c) return null; const m=String(c.detail||'').match(/seeds=(\d+)/); return m?Number(m[1]):null}
 function setTg(id, truthy, labelTrue, labelFalse){
   labelTrue=labelTrue||'true'; labelFalse=labelFalse||'false';
   const el=$(id); if(!el) return;
-  if(truthy===null||truthy===undefined){ el.textContent='—'; el.className='tg-v warn'; return; }
-  el.textContent=truthy?labelTrue:labelFalse; el.className='tg-v '+(truthy?'ok':'warn');
+  if(truthy===null||truthy===undefined){ el.textContent='—'; return; }
+  el.textContent=truthy?labelTrue:labelFalse;
 }
 function setRowStatus(id, pass, pending){
   const el=$(id); if(!el) return;
@@ -528,10 +636,7 @@ function setRowStatus(id, pass, pending){
 }
 function renderClaimSurface(opts){
   opts=opts||{};
-  const running=!!opts.running;
-  const complete=!!opts.complete;
-  const checks=opts.checks||[];
-  const partial=opts.partial||null;
+  const running=!!opts.running, complete=!!opts.complete, checks=opts.checks||[], partial=opts.partial||null;
   const cda=Number(opts.etaCda!=null?opts.etaCda:(layerA&&layerA.mean_efficiency_cda!=null?layerA.mean_efficiency_cda:NaN));
   const sea=Number(opts.etaSealed!=null?opts.etaSealed:(layerA&&layerA.mean_efficiency_sealed!=null?layerA.mean_efficiency_sealed:NaN));
   const layerPass=(opts.layerPass!==undefined&&opts.layerPass!==null)?opts.layerPass:(layerA?!!(layerA.pass||layerA.layer_a_pass):null);
@@ -543,19 +648,14 @@ function renderClaimSurface(opts){
   let cover=opts.cover;
   if(cover==null&&partial&&partial.models_with_full_coverage!=null) cover=partial.models_with_full_coverage;
   if(cover==null&&complete) cover=parseCoverage(checks);
-  let prov=opts.prov;
-  if(prov==null) prov=partial?partial.provenance_rate:(complete?parseRateDetail(checks,'provenance'):null);
-  let iface=opts.iface;
-  if(iface==null) iface=partial?partial.interface_rate:(complete?parseRateDetail(checks,'interface_health'):null);
-  let mkt=opts.mkt;
-  if(mkt==null) mkt=partial?partial.market_action_rate:(complete?parseRateDetail(checks,'market_action'):null);
-  let acc=opts.acc;
-  if(acc==null) acc=partial?partial.market_acceptance_rate:(complete?parseRateDetail(checks,'market_acceptance'):null);
+  let prov=opts.prov; if(prov==null) prov=partial?partial.provenance_rate:(complete?parseRateDetail(checks,'provenance'):null);
+  let iface=opts.iface; if(iface==null) iface=partial?partial.interface_rate:(complete?parseRateDetail(checks,'interface_health'):null);
+  let mkt=opts.mkt; if(mkt==null) mkt=partial?partial.market_action_rate:(complete?parseRateDetail(checks,'market_action'):null);
+  let acc=opts.acc; if(acc==null) acc=partial?partial.market_acceptance_rate:(complete?parseRateDetail(checks,'market_acceptance'):null);
   const hrefPass=(opts.hrefPass!==undefined&&opts.hrefPass!==null)?opts.hrefPass:checkPass(checks,'human_ref');
   const ready=running?false:!!opts.darpa_claim_ready;
   const scope=running?'running':(opts.scope||'not_ready');
   const pendingRates=running||(!complete && !checks.length && !partial);
-
   if(!$('gEtaCda')) return;
   $('gEtaCda').textContent=Number.isFinite(cda)?cda.toFixed(2):'—';
   $('gEtaSealed').textContent=Number.isFinite(sea)?sea.toFixed(2):'—';
@@ -571,84 +671,62 @@ function renderClaimSurface(opts){
   $('gAcc').textContent=fmtRate(acc); setRowStatus('gAccMark', acc!=null?acc>=0.80:null, pendingRates&&acc===null);
   $('gHref').textContent=hrefPass===null?'—':(hrefPass?'DESCRIPTIVE':'fail');
   setRowStatus('gHrefMark', hrefPass, running||hrefPass===null);
-
   $('gClaimReady').textContent='darpa_claim_ready='+(ready?'true':'false');
-  $('gClaimReady').style.color=ready?'var(--green)':'var(--amber)';
+  $('gClaimReady').style.color=ready?'var(--ok)':'var(--warn)';
   $('gClaimScope').textContent=scope;
-  $('gClaimScope').style.color=scope==='local_ollama_poc'?'var(--green)':'var(--amber)';
+  $('gClaimScope').style.color=scope==='local_ollama_poc'?'var(--ok)':'var(--warn)';
   $('gPartialNote').textContent=running?'Partial numerators — gate scored at end':(complete?'':'Awaiting Layer A + campaign evidence');
-
-  const soft=opts.software_green; setTg('tgSoftware', soft===undefined||soft===null?null:!!soft);
+  setTg('tgSoftware', opts.software_green===undefined||opts.software_green===null?null:!!opts.software_green);
   setTg('tgLive', opts.live_llm==null?((preflight&&preflight.ollama_reachable)||null):!!opts.live_llm);
   setTg('tgDarpa', running?false:ready);
 }
-function renderChecks(target,checks){
-  if(!checks?.length){target.innerHTML='<div class="readiness-row"><span>No readiness result yet.</span><span class="badge-pending">PENDING</span></div>';return}
-  target.innerHTML=checks.map(c=>{
-    const tip=CHECK_TIPS[c.id]||'Readiness gate component. Detail string is the measured value vs required threshold.';
-    return `<div class="readiness-row"><span><b>${esc(c.id)}</b>${tipMark(tip)}<br><span class="muted">${esc(c.detail)}</span></span><span class="${c.pass?'badge-ready':'badge-no'}" title="${c.pass?'This check passed its required threshold':'This check failed its required threshold'}">${c.pass?'PASS':'FAIL'}</span></div>`;
-  }).join('');
-}
-function renderLayerA(data){const a=data?.layer_a||data?.layer_a_result||data;if(!a)return;
-  // API uses layer_a_pass (and cda/sealed_qualified); older UI expected `.pass`.
+function renderLayerA(data){
+  const a=data?.layer_a||data?.layer_a_result||data; if(!a) return;
   const pass=!!(a.pass||a.layer_a_pass||(a.cda_qualified&&a.sealed_qualified));
   layerA={...a,pass};
   const cda=Number(a.mean_efficiency_cda??a.mean_efficiency??NaN), sea=Number(a.mean_efficiency_sealed??NaN);
-  $('cdaEff').textContent=Number.isFinite(cda)?cda.toFixed(2)+'%':'—';
-  $('sealedEff').textContent=Number.isFinite(sea)?sea.toFixed(2)+'%':'—';
+  if($('cdaEff')) $('cdaEff').textContent=Number.isFinite(cda)?cda.toFixed(2)+'%':'—';
+  if($('sealedEff')) $('sealedEff').textContent=Number.isFinite(sea)?sea.toFixed(2)+'%':'—';
   $('marketQual').textContent=pass?'QUALIFIED':'NOT QUALIFIED';
   $('marketQual').className='metric-value '+(pass?'ok':'bad');
   if($('calibCda')) $('calibCda').textContent=Number.isFinite(cda)?cda.toFixed(2)+'%':'—';
   if($('calibSealed')) $('calibSealed').textContent=Number.isFinite(sea)?sea.toFixed(2)+'%':'—';
-  if($('calibStatus')){ $('calibStatus').textContent=pass?'QUALIFIED':'NOT QUALIFIED'; $('calibStatus').style.color=pass?'var(--green)':'var(--amber)'; }
-  const trials=a.trials;
-  if(Array.isArray(trials)) $('trialCount').textContent=String(trials.length);
-  else if(typeof trials==='number' && Number.isFinite(trials)) $('trialCount').textContent=String(trials);
-  else if(a.layer_a_trials!=null) $('trialCount').textContent=String(a.layer_a_trials);
-  else $('trialCount').textContent='—';
+  if($('calibStatus')){ $('calibStatus').textContent=pass?'QUALIFIED':'NOT QUALIFIED'; $('calibStatus').style.color=pass?'var(--ok)':'var(--warn)'; }
   drawEfficiency(a);
   if(pass) hideCalibModal();
   renderClaimSurface({layerPass:pass, etaCda:cda, etaSealed:sea, live_llm:!!preflight?.ollama_reachable, software_green:null, darpa_claim_ready:!!campaign?.darpa_claim_ready, scope:campaign?.scope, checks:campaign?.readiness_checks, complete:!!campaign?.complete, running:!!campaign?.running, nSeeds:campaign?.n_seeds, mok:campaign?.distinct_live_models_ok, partial:campaign?.gate_partial});
   updateControls();
 }
 function drawEfficiency(a){
-  // Plot real per-trial series only. If missing, show measured means as two labeled bars — never invent a trial path.
   const raw=a.trials||a.results||[];
   const trials=Array.isArray(raw)?raw:[];
   const vals=trials.map(x=>Number(x.efficiency!=null?x.efficiency:x.allocative_efficiency)).filter(Number.isFinite);
-  const W=760,H=230,L=45,R=18,T=18,B=36;let s='';
+  const W=760,H=230,L=45,R=18,T=18,B=36; let s='';
   const cda=Number(a.mean_efficiency_cda!=null?a.mean_efficiency_cda:NaN), sea=Number(a.mean_efficiency_sealed!=null?a.mean_efficiency_sealed:NaN);
   const gyBase=()=>{
     const pool=vals.length?vals:[cda,sea].filter(Number.isFinite);
     const hi=Math.max(100,...(pool.length?pool:[95]),95),lo=Math.min(60,...(pool.length?pool:[80]),80);
     const Y=v=>H-B-((v-lo)/Math.max(1,hi-lo))*(H-T-B);
-    for(let i=0;i<5;i++){const v=lo+i*(hi-lo)/4,y=Y(v);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#183149"/><text x="${L-8}" y="${y+4}" fill="#7891a4" font-size="10" text-anchor="end">${v.toFixed(0)}%</text>`}
-    const gy=Y(90);s+=`<line x1="${L}" x2="${W-R}" y1="${gy}" y2="${gy}" stroke="#f3b85f" stroke-dasharray="5 4"/><text x="${W-R}" y="${gy-5}" fill="#f3b85f" font-size="10" text-anchor="end">90% gate</text>`;
-    return {Y,hi,lo};
+    for(let i=0;i<5;i++){const v=lo+i*(hi-lo)/4,y=Y(v);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#d5e0ea"/><text x="${L-8}" y="${y+4}" fill="#5a7388" font-size="10" text-anchor="end">${v.toFixed(0)}%</text>`}
+    const gy=Y(90);s+=`<line x1="${L}" x2="${W-R}" y1="${gy}" y2="${gy}" stroke="#9a6412" stroke-dasharray="5 4"/><text x="${W-R}" y="${gy-5}" fill="#9a6412" font-size="10" text-anchor="end">90% gate</text>`;
+    return {Y};
   };
   if(vals.length){
     const {Y}=gyBase();
     const X=i=>L+(vals.length<=1?0:i/(vals.length-1))*(W-L-R);
-    vals.forEach((v,i)=>{const good=v>90;s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="5" fill="${good?'#42d392':'#ff6f7d'}"/><text x="${X(i)}" y="${H-12}" fill="#7891a4" font-size="9" text-anchor="middle">${i+1}</text>`});
-    if(vals.length>1){
-      let path=''; vals.forEach((v,i)=>{path+=(i?'L':'M')+X(i)+' '+Y(v)+' ';});
-      s+=`<path d="${path}" fill="none" stroke="#42d392" stroke-width="1.5" opacity="0.5"/>`;
-    }
+    vals.forEach((v,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="5" fill="${v>90?'#1a7a45':'#b33a3a'}"/><text x="${X(i)}" y="${H-12}" fill="#5a7388" font-size="9" text-anchor="middle">${i+1}</text>`});
+    if(vals.length>1){ let path=''; vals.forEach((v,i)=>{path+=(i?'L':'M')+X(i)+' '+Y(v)+' ';}); s+=`<path d="${path}" fill="none" stroke="#1a7a45" stroke-width="1.5" opacity="0.5"/>`; }
   } else if(Number.isFinite(cda)||Number.isFinite(sea)){
     const {Y}=gyBase();
     const means=[{label:'CDA mean',v:cda},{label:'Sealed mean',v:sea}].filter(x=>Number.isFinite(x.v));
-    const barW=90;
     means.forEach((m,i)=>{
-      const cx=L+120+i*180;
-      const y=Y(m.v);
-      const y0=Y(Math.min(60,m.v));
-      s+=`<rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${Math.max(2,y0-y)}" fill="${m.v>90?'#42d392':'#ff6f7d'}" opacity="0.75"/>`;
-      s+=`<text x="${cx}" y="${y-6}" fill="#c9dcec" font-size="11" text-anchor="middle">${m.v.toFixed(1)}%</text>`;
-      s+=`<text x="${cx}" y="${H-12}" fill="#7891a4" font-size="10" text-anchor="middle">${m.label}</text>`;
+      const cx=L+120+i*180, y=Y(m.v), y0=Y(Math.min(60,m.v)), barW=90;
+      s+=`<rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${Math.max(2,y0-y)}" fill="${m.v>90?'#1a7a45':'#b33a3a'}" opacity="0.75"/>`;
+      s+=`<text x="${cx}" y="${y-6}" fill="#0e2438" font-size="11" text-anchor="middle">${m.v.toFixed(1)}%</text>`;
+      s+=`<text x="${cx}" y="${H-12}" fill="#5a7388" font-size="10" text-anchor="middle">${m.label}</text>`;
     });
-    s+=`<text x="${L}" y="14" fill="#7891a4" font-size="9">No per-trial series in evidence — showing measured means only</text>`;
   } else {
-    s+=`<text x="${W/2}" y="${H/2}" fill="#7891a4" font-size="12" text-anchor="middle">No trial series in evidence</text>`;
+    s+=`<text x="${W/2}" y="${H/2}" fill="#5a7388" font-size="12" text-anchor="middle">No trial series in evidence</text>`;
   }
   if($('effChart')) $('effChart').innerHTML=s;
   if($('calibChart')) $('calibChart').innerHTML=s;
@@ -659,27 +737,147 @@ function updateControls(){
   $('startCampaign').disabled=running || !runtimeReady || !marketReady;
   $('runLayerA').disabled=running;
   $('cancelCampaign').disabled=!running;
-  $('startCampaign').title=!runtimeReady?'Live runtime must be ready first':(!marketReady?'Run the 5-trial market qualification first':'Start the live LLM campaign');
 }
+function formatEta(sec){sec=Number(sec);if(!Number.isFinite(sec))return '—';if(sec<60)return `${Math.ceil(sec)}s`;const m=Math.floor(sec/60),s=Math.ceil(sec%60);return `${m}m ${s}s`}
+function renderModelListFromCampaign(ms){const el=$('models'); if(!el||!ms) return; el.innerHTML=ms.map(m=>`<div>${esc(m.model)}</div>`).join('')}
+
+/* ---- Bid inspector ---- */
+function pretty(v){
+  if(v==null) return '—';
+  if(typeof v==='string'){
+    try{return JSON.stringify(JSON.parse(v),null,2)}catch(e){return v}
+  }
+  try{return JSON.stringify(v,null,2)}catch(e){return String(v)}
+}
+function fillBidSelects(preferModel, preferSeed){
+  const models=[...new Set(bidIndex.map(c=>c.model).filter(Boolean))].sort();
+  const modelEl=$('bidModel'), seedEl=$('bidSeed');
+  if(!modelEl||!seedEl) return;
+  const prevM=preferModel||modelEl.value;
+  modelEl.innerHTML=models.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  if(prevM && models.includes(prevM)) modelEl.value=prevM;
+  else if(models.length) modelEl.selectedIndex=0;
+  const m=modelEl.value;
+  const seeds=bidIndex.filter(c=>c.model===m).map(c=>c.seed).sort((a,b)=>a-b);
+  const prevS=preferSeed!=null?String(preferSeed):seedEl.value;
+  seedEl.innerHTML=seeds.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(prevS && seeds.map(String).includes(prevS)) seedEl.value=prevS;
+  else if(seeds.length) seedEl.selectedIndex=0;
+}
+function showBidTurn(i){
+  bidSelectedTurn=i;
+  const t=bidTurnsData[i];
+  const rows=$('bidTurns')?$('bidTurns').querySelectorAll('tr'):[];
+  rows.forEach((tr,idx)=>tr.classList.toggle('active',idx===i));
+  if(!t){
+    $('bidInput').textContent='—'; $('bidOutput').textContent='—'; $('bidParsed').textContent='—';
+    return;
+  }
+  $('bidInput').textContent=pretty(t.canonical_request);
+  $('bidOutput').textContent=pretty(t.raw_provider_response);
+  $('bidParsed').textContent=pretty({
+    parsed_action:t.parsed_action,
+    parse:t.parse,
+    action_validation:t.action_validation,
+    submission:t.submission
+  });
+}
+function renderBidTurns(turns, cellMeta){
+  bidTurnsData=turns||[];
+  const empty=$('bidEmpty'), content=$('bidContent');
+  if(!bidTurnsData.length){
+    if(empty){ empty.classList.remove('hidden'); empty.textContent='Cell file has no turns yet.'; }
+    if(content) content.classList.add('hidden');
+    return;
+  }
+  if(empty) empty.classList.add('hidden');
+  if(content) content.classList.remove('hidden');
+  const tb=$('bidTurns');
+  tb.innerHTML=bidTurnsData.map((t,i)=>{
+    const tok=(t.prompt_tokens!=null||t.completion_tokens!=null)?`${t.prompt_tokens??'—'}→${t.completion_tokens??'—'}`:'—';
+    const acc=t.accepted==null?'—':(t.accepted?'yes':'no');
+    return `<tr data-i="${i}"><td class="mono">${esc(t.agent_id||'—')}</td><td class="mono">${esc(t.action||'—')}</td><td class="mono">${esc(t.price!=null?t.price:'—')}</td><td class="mono">${esc(t.quantity!=null?t.quantity:'—')}</td><td class="mono">${esc(t.latency_ms!=null?t.latency_ms+'ms':'—')}</td><td class="mono">${esc(tok)}</td><td class="mono">${esc(acc)}</td></tr>`;
+  }).join('');
+  tb.querySelectorAll('tr').forEach(tr=>{
+    tr.onclick=()=>showBidTurn(Number(tr.getAttribute('data-i')));
+  });
+  const meta=$('bidMeta');
+  if(meta){
+    let m=`${bidTurnsData.length} turns`;
+    if(cellMeta&&cellMeta.cell_ok!=null) m+=` · cell_ok=${cellMeta.cell_ok}`;
+    if(cellMeta&&cellMeta.treatment_efficiency!=null) m+=` · η=${Number(cellMeta.treatment_efficiency).toFixed(1)}%`;
+    meta.textContent=m;
+  }
+  showBidTurn(Math.min(bidSelectedTurn, bidTurnsData.length-1));
+}
+async function loadBidCell(){
+  const model=$('bidModel')?.value, seed=$('bidSeed')?.value;
+  if(!model||!seed) return;
+  bidLoading=true;
+  try{
+    const d=await get(`/api/dv026/campaign/cell?model=${encodeURIComponent(model)}&seed=${encodeURIComponent(seed)}`,12000);
+    renderBidTurns(d.turns||[], d.cell||null);
+  }catch(e){
+    const empty=$('bidEmpty'), content=$('bidContent');
+    if(content) content.classList.add('hidden');
+    if(empty){ empty.classList.remove('hidden'); empty.textContent='Could not load cell: '+String(e); }
+  }finally{bidLoading=false}
+}
+async function refreshBidIndex(forceSelect){
+  try{
+    const d=await get('/api/dv026/campaign/cells',8000);
+    bidIndex=d.cells||[];
+    const empty=$('bidEmpty'), content=$('bidContent');
+    if(!bidIndex.length){
+      if(empty){ empty.classList.remove('hidden'); empty.textContent='No cell files yet — start a campaign or wait for the first cell.'; }
+      if(content) content.classList.add('hidden');
+      if($('bidModel')) $('bidModel').innerHTML='';
+      if($('bidSeed')) $('bidSeed').innerHTML='';
+      if($('bidMeta')) $('bidMeta').textContent='';
+      return;
+    }
+    let preferModel=null, preferSeed=null;
+    if(forceSelect||!$('bidModel').value){
+      if(campaign?.running && campaign.current_model && campaign.current_model!=='(starting)'){
+        preferModel=campaign.current_model;
+        preferSeed=campaign.current_seed;
+      } else if(d.current_model && d.current_model!=='(starting)'){
+        preferModel=d.current_model; preferSeed=d.current_seed;
+      } else {
+        preferModel=bidIndex[0].model; preferSeed=bidIndex[0].seed;
+      }
+    }
+    fillBidSelects(preferModel, preferSeed);
+    await loadBidCell();
+  }catch(e){
+    const empty=$('bidEmpty');
+    if(empty){ empty.classList.remove('hidden'); empty.textContent='Bid index unavailable: '+String(e); }
+  }
+}
+
 function renderCampaign(s){
   campaign=s; const running=!!s.running; const done=Number(s.done||0); const total=Number(s.total||0); const pct=total?Math.min(100,done/total*100):(s.complete?100:0);
   const complete=!!s.complete || (!running && done>0 && s.finished_at);
   $('cancelCampaign').disabled=!running; $('startCampaign').disabled=running || !preflight?.ollama_reachable || !(layerA?.pass||layerA?.layer_a_pass);
-  $('populationState').textContent=running?'RUNNING':(complete?'COMPLETE':(s.cancelled?'CANCELLED':'idle')); $('populationState').className=running?'badge-ready':complete?'badge-ready':'badge-pending';
+  $('populationState').textContent=running?'RUNNING':(complete?'COMPLETE':(s.cancelled?'CANCELLED':'idle'));
+  $('populationState').className=running?'badge-ready':complete?'badge-ready':'badge-pending';
   const distinct=Number(s.distinct_live_models_ok!=null?s.distinct_live_models_ok:0) || (!running ? (()=>{
     const c=(s.readiness_checks||[]).find(x=>x.id==='live_count');
     const m=String(c&&c.detail||'').match(/distinct_ok=(\d+)/); return m?Number(m[1]):0;
   })() : 0);
   $('cells').textContent=done; $('cellsOk').textContent=s.cells_ok||0; $('distinct').textContent=String(distinct);
   $('scope').textContent=running?'running (gate at end)':(s.scope||'not_ready');
-  $('progressBar').style.width=pct.toFixed(1)+'%'; $('progressPct').textContent=pct.toFixed(1)+'%'; $('progressDone').textContent=`${done} / ${total||'—'}`; $('progressModel').textContent=s.current_model||'—'; $('progressSeed').textContent=s.current_seed??'—'; $('progressEta').textContent=s.eta_sec!=null?formatEta(s.eta_sec):'—';
-  $('progressTitle').textContent=running?(s.current_model&&s.current_model!=='(starting)'?`Running live LLM cell · ${s.current_model}`:'Preparing live campaign…'):(complete?(s.darpa_claim_ready?'Campaign complete · READY':'Campaign complete · NOT READY'):s.cancelled?'Campaign cancelled':'Campaign idle');
-  if(s.last_error && s.last_error!=='cancelled' && !String(s.last_error).toLowerCase().includes('job running')){setError(s.last_error)}
-  else if(running){setError('')}
+  $('progressBar').style.width=pct.toFixed(1)+'%'; $('progressPct').textContent=pct.toFixed(1)+'%';
+  $('progressDone').textContent=`${done} / ${total||'—'}`; $('progressModel').textContent=s.current_model||'—';
+  $('progressSeed').textContent=s.current_seed??'—'; $('progressEta').textContent=s.eta_sec!=null?formatEta(s.eta_sec):'—';
+  $('progressTitle').textContent=running?(s.current_model&&s.current_model!=='(starting)'?`Running · ${s.current_model}`:'Preparing…'):(complete?(s.darpa_claim_ready?'Complete · READY':'Complete · NOT READY'):s.cancelled?'Cancelled':'Campaign idle');
+  if(s.last_error && s.last_error!=='cancelled' && !String(s.last_error).toLowerCase().includes('job running')) setError(s.last_error);
+  else if(running) setError('');
   const checks=s.readiness_checks||(s.result&&(s.result.campaign||s.result).checks)||[];
   if(running){
-    const msg='<div class="readiness-row"><span>Campaign in progress — readiness PASS/FAIL is decided only when all cells finish.</span><span class="badge-pending">RUNNING</span></div>';
-    $('readinessList').innerHTML=msg; $('checksFull').innerHTML=msg;
+    const msg='<div class="readiness-row"><span>Campaign in progress — readiness scored at end</span><span class="badge-pending">RUNNING</span></div>';
+    if($('readinessList')) $('readinessList').innerHTML=msg;
+    if($('checksFull')) $('checksFull').innerHTML=msg;
     $('readiness').textContent='RUNNING'; $('readiness').className='metric-value warn';
   }else if(checks.length){ renderChecks($('readinessList'),checks); renderChecks($('checksFull'),checks); }
   if(complete){
@@ -689,35 +887,24 @@ function renderCampaign(s){
   if(s.result){const c=s.result.campaign||s.result; setLiveStatus(!!c.ollama_reachable,Number(c.available_models||0)); $('marketQual').textContent=c.layer_a_pass?'QUALIFIED':'NOT QUALIFIED'; $('marketQual').className='metric-value '+(c.layer_a_pass?'ok':'bad'); if(c.models)renderModelListFromCampaign(c.models)}
   const camp=s.result&&(s.result.campaign||s.result);
   renderClaimSurface({
-    running:running, complete:complete,
-    checks:checks,
-    partial:s.gate_partial||null,
-    darpa_claim_ready:!!s.darpa_claim_ready,
-    scope:s.scope,
-    live_llm:s.live_llm!==false,
+    running, complete, checks, partial:s.gate_partial||null,
+    darpa_claim_ready:!!s.darpa_claim_ready, scope:s.scope, live_llm:s.live_llm!==false,
     software_green:camp?camp.software_green:undefined,
     layerPass:camp&&camp.layer_a_pass!=null?camp.layer_a_pass:(layerA?(layerA.pass||layerA.layer_a_pass||null):null),
     etaCda:camp&&camp.mean_efficiency_cda!=null?camp.mean_efficiency_cda:(layerA?layerA.mean_efficiency_cda:undefined),
     etaSealed:camp&&camp.mean_efficiency_sealed!=null?camp.mean_efficiency_sealed:(layerA?layerA.mean_efficiency_sealed:undefined),
-    nSeeds:s.n_seeds,
-    mok:distinct,
+    nSeeds:s.n_seeds, mok:distinct,
     cover:complete?parseCoverage(checks):(s.gate_partial&&s.gate_partial.models_with_full_coverage!=null?s.gate_partial.models_with_full_coverage:null),
     hrefPass:checkPass(checks,'human_ref')
   });
   updateControls();
   refreshCharts();
   refreshProposalNarrative();
+  refreshBidIndex(false);
 }
-function formatEta(sec){sec=Number(sec);if(!Number.isFinite(sec))return '—';if(sec<60)return `${Math.ceil(sec)}s`;const m=Math.floor(sec/60),s=Math.ceil(sec%60);return `${m}m ${s}s`}
-function renderModelListFromCampaign(ms){$('models').innerHTML=ms.map(m=>`<div class="model ${m.available?'':'missing'}"><span class="live-pill">${m.available?'LIVE':'NOT INSTALLED'}</span><div class="model-name">${esc(m.model)}</div><div class="model-meta">${esc(m.provider)} · ${esc(m.version)}</div></div>`).join('')}
 async function refreshPreflight(){
   if(preflightBusy)return;
-  // While a campaign holds the runner, don't thrash availability into ERROR.
-  if(campaign?.running){
-    if(preflight?.ollama_reachable) setRuntimeState('ready');
-    setError('');
-    return;
-  }
+  if(campaign?.running){ if(preflight?.ollama_reachable) setRuntimeState('ready'); setError(''); return; }
   preflightBusy=true; setError(''); setRuntimeState('checking');
   try{
     const raw=await get('/api/dv026/preflight',12000); const p=raw.preflight||raw; preflight=p;
@@ -726,52 +913,75 @@ async function refreshPreflight(){
       const n=(preflight.available_models||[]).length || Number(raw.preflight?.available_count||campaign?.available_models||10);
       $('modelCount').textContent=n+'/'+(preflight.catalog_size||10);
       if((preflight.available_models||[]).length) renderModels();
-      setRuntimeState('ready');
-      setError('');
-      return;
-    }
-    if(raw.error && String(raw.error).toLowerCase().includes('job running')){
       setRuntimeState('ready'); setError(''); return;
     }
+    if(raw.error && String(raw.error).toLowerCase().includes('job running')){ setRuntimeState('ready'); setError(''); return; }
     if(raw.error){ setRuntimeState('error',raw.error); $('modelCount').textContent='0/'+(p.catalog_size||10); renderModels(); return; }
     $('modelCount').textContent=(p.available_models||[]).length+'/'+(p.catalog_size||10); renderModels();
     if(p.ollama_reachable) setLiveStatus(true,(p.available_models||[]).length); else setLiveStatus(false,0);
   }catch(e){ preflight={ollama_reachable:false,available_models:[],catalog_size:10}; setRuntimeState('error',String(e)); $('modelCount').textContent='0/10'; renderModels(); }
   finally{preflightBusy=false;updateControls()}
 }
-async function runLayerA(){setError('');$('runLayerA').disabled=true;if($('calibRun'))$('calibRun').disabled=true;try{const r=await post('/api/dv026/run',{command:'layer-a',seed:Number($('seed').value)},60000);
-renderLayerA(r.layer_a||r)}catch(e){setError(e)
-}finally{$('runLayerA').disabled=false;if($('calibRun'))$('calibRun').disabled=false;updateControls()}}
+async function runLayerA(){
+  setError(''); $('runLayerA').disabled=true; if($('calibRun')) $('calibRun').disabled=true;
+  try{const r=await post('/api/dv026/run',{command:'layer-a',seed:Number($('seed').value)},60000); renderLayerA(r.layer_a||r)}
+  catch(e){setError(e)}
+  finally{$('runLayerA').disabled=false; if($('calibRun')) $('calibRun').disabled=false; updateControls()}
+}
 function marketQualified(){return !!(layerA&&(layerA.pass||layerA.layer_a_pass))}
 function showCalibModal(){const m=$('calibModal'); if(m) m.classList.add('show')}
 function hideCalibModal(){const m=$('calibModal'); if(m) m.classList.remove('show')}
-function maybeShowCalibModal(){
-  if(campaign&&campaign.running) return;
-  if(!marketQualified()) showCalibModal();
-  else hideCalibModal();
-}
+function maybeShowCalibModal(){ if(campaign&&campaign.running) return; if(!marketQualified()) showCalibModal(); else hideCalibModal(); }
 async function startCampaign(){
   setError('');
   if(!marketQualified()){ showCalibModal(); updateControls(); return; }
   $('startCampaign').disabled=true;
-  try{
-    const r=await post('/api/dv026/campaign/start',{base_seed:Number($('seed').value),n_seeds:Number($('nSeeds').value),smoke:$('campaignMode').value==='smoke'},15000);
-    renderCampaign(r);
-  }catch(e){setError(e)}finally{updateControls()}
+  try{ renderCampaign(await post('/api/dv026/campaign/start',{base_seed:Number($('seed').value),n_seeds:Number($('nSeeds').value),smoke:$('campaignMode').value==='smoke'},15000)); }
+  catch(e){setError(e)} finally{updateControls()}
 }
 async function cancelCampaign(){try{renderCampaign(await post('/api/dv026/campaign/cancel',{},10000))}catch(e){setError(e)}}
-$('preflight').onclick=refreshPreflight; $('runLayerA').onclick=runLayerA; $('startCampaign').onclick=startCampaign; $('cancelCampaign').onclick=cancelCampaign;
+
+$('preflight').onclick=refreshPreflight;
+$('runLayerA').onclick=runLayerA;
+$('startCampaign').onclick=startCampaign;
+$('cancelCampaign').onclick=cancelCampaign;
 if($('calibRun')) $('calibRun').onclick=runLayerA;
 if($('calibDismiss')) $('calibDismiss').onclick=hideCalibModal;
 if($('calibScroll')) $('calibScroll').onclick=function(){ hideCalibModal(); const el=$('market'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); };
 if($('proposalRefresh')) $('proposalRefresh').onclick=refreshProposalNarrative;
+if($('proposalDetails')) $('proposalDetails').onclick=showProposalDetails;
+if($('proposalDetailsClose')) $('proposalDetailsClose').onclick=hideProposalDetails;
+if($('proposalDetailsRefresh')) $('proposalDetailsRefresh').onclick=refreshProposalNarrative;
 if($('proposalCopy')) $('proposalCopy').onclick=async function(){
-  const t=($('proposalNarrative')&&$('proposalNarrative').textContent)||'';
-  try{ await navigator.clipboard.writeText(t); }catch(e){ setError('Copy failed: '+e); }
+  try{ await navigator.clipboard.writeText(window._proposalPlainText||''); }catch(e){ setError('Copy failed: '+e); }
 };
-setInterval(refreshCampaign,1000); setInterval(refreshPreflight,30000);
+if($('bidRefresh')) $('bidRefresh').onclick=()=>refreshBidIndex(true);
+if($('bidModel')) $('bidModel').onchange=()=>{ fillBidSelects($('bidModel').value, null); loadBidCell(); };
+if($('bidSeed')) $('bidSeed').onchange=loadBidCell;
+
+setInterval(refreshCampaign,1000);
+setInterval(refreshPreflight,30000);
 async function refreshCampaign(){try{const s=await get('/api/dv026/campaign/status',5000);renderCampaign(s)}catch(e){setError(e)}}
-(async()=>{await refreshPreflight();await refreshCampaign();await refreshCharts();await refreshProposalNarrative();try{const last=await get('/api/dv026/last',5000);if(last&&!last.empty){const c=last.campaign||last;if(c.layer_a_pass!==undefined){layerA={pass:!!c.layer_a_pass,mean_efficiency_cda:c.mean_efficiency_cda,mean_efficiency_sealed:c.mean_efficiency_sealed,trials:c.trials||[]};renderLayerA(c);renderChecks($('checksFull'),c.checks)}}}catch(e){/* no prior evidence is normal */}updateControls();maybeShowCalibModal()})();
+(async()=>{
+  await refreshPreflight();
+  await refreshCampaign();
+  await refreshCharts();
+  await refreshProposalNarrative();
+  await refreshBidIndex(true);
+  try{
+    const last=await get('/api/dv026/last',5000);
+    if(last&&!last.empty){
+      const c=last.campaign||last;
+      if(c.layer_a_pass!==undefined){
+        layerA={pass:!!c.layer_a_pass,mean_efficiency_cda:c.mean_efficiency_cda,mean_efficiency_sealed:c.mean_efficiency_sealed,trials:c.trials||[]};
+        renderLayerA(c);
+        renderChecks($('checksFull'),c.checks);
+      }
+    }
+  }catch(e){}
+  updateControls();
+  maybeShowCalibModal();
+})();
 </script>
 </body>
 </html>
