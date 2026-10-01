@@ -1,0 +1,10 @@
+{
+  "distinct_models": 10,
+  "seeds": 3,
+  "mechanisms": 2,
+  "cells": 120,
+  "mean_efficiency": 100.000000,
+  "min_efficiency": 100.000000,
+  "max_efficiency": 100.000000,
+  "human_reference": [{"metric":"allocative_efficiency","observed":100.000000,"z_score":2.000000,"outside_95":true}]
+}

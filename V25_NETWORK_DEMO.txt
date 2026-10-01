@@ -1,0 +1,1 @@
+v25 network/full-market paired experiment passed; node 2 shift 3.87565; cut 0

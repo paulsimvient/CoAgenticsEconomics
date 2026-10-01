@@ -1,0 +1,1 @@
+V8 adds provider-neutral black-box LLM orchestration, strict action validation, provenance logging, abstention/failure accounting, deterministic replay, and a registry qualification path for 10 distinct model identities.

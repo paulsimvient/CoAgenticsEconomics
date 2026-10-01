@@ -1,0 +1,18 @@
+{
+  "calibrated_noise_sd": 3,
+  "training_brier": 0.0823397,
+  "heldout_brier": 0.0782399,
+  "heldout_recovery_rate": 0.66,
+  "null_false_discovery_rate": 0,
+  "heldout_trials": 100,
+  "calibration_pass": true,
+  "null_control_pass": true,
+  "recovery_pass": false,
+  "mechanisms": [
+    {"mechanism": "information-blind", "truth": "blind", "recovery_rate": 1, "mean_true_probability": 0.912032, "brier": 0.00259776},
+    {"mechanism": "signal-responsive", "truth": "news", "recovery_rate": 0.1, "mean_true_probability": 0.344495, "brier": 0.142298},
+    {"mechanism": "risk-sensitive", "truth": "risk", "recovery_rate": 0.95, "mean_true_probability": 0.561088, "brier": 0.0601397},
+    {"mechanism": "peer-responsive", "truth": "peer", "recovery_rate": 0.85, "mean_true_probability": 0.71749, "brier": 0.0396185},
+    {"mechanism": "adaptive", "truth": "adaptive", "recovery_rate": 0.4, "mean_true_probability": 0.324237, "brier": 0.146545}
+  ]
+}

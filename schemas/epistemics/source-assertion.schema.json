@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "coagentics.epistemics.v1/source-assertion",
+  "title": "CoAgentics Source Assertion v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "kind", "channel", "source_id", "statement", "source_locator", "extracted_at_utc", "qualifiers", "provenance"],
+  "properties": {
+    "schema_version": {"const": "coagentics.epistemics.v1"},
+    "id": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["source_reported_claim", "extracted_constraint", "human_judgment", "model_output_summary"]},
+    "channel": {"enum": ["literature", "historical_observation", "historical_decision", "current_sensor", "simulation", "human"]},
+    "source_id": {"type": "string", "minLength": 1},
+    "statement": {"type": "string", "minLength": 1},
+    "source_locator": {"type": "string", "minLength": 1},
+    "extracted_at_utc": {"type": "string", "format": "date-time"},
+    "qualifiers": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "provenance": {"type": "object"}
+  }
+}

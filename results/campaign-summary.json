@@ -1,0 +1,7 @@
+{
+  "campaign_id": "dv026-private-news",
+  "trials": 100,
+  "market": {"control_mean_efficiency": 97.285714, "treatment_mean_efficiency": 97.285714, "mean_delta": 0.000000, "ci95": [0.000000, 0.000000]},
+  "behavior": {"targeted_mean_abs_shift": 0.000000, "non_target_mean_abs_shift": 0.000000, "mean_propagation_ratio": 0.000000},
+  "evidence": {"supports": 0, "challenges": 100, "inconclusive": 0}
+}

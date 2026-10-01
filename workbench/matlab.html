@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CoAgentics — DV026 Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0e2438; --muted:#5a7388; --line:#b7c6d4; --panel:#f4f7faee;
+  --accent:#0b6e99; --accent-deep:#084e6d; --warn:#9a6412; --ok:#1a7a45; --bad:#b33a3a;
+  --bg1:#d9e4ec; --bg2:#eef3f7; --rail:#123047;
+  font-family:"IBM Plex Sans",sans-serif; color:var(--ink);
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:
+  radial-gradient(1200px 600px at 10% -10%,#c5d8e6 0%,transparent 55%),
+  radial-gradient(900px 500px at 100% 0%,#b9cfe0 0%,transparent 50%),
+  linear-gradient(165deg,var(--bg1),var(--bg2));
+  background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(rgba(14,36,56,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(14,36,56,.04) 1px,transparent 1px);background-size:28px 28px}
+button,input,select{font:inherit}button{cursor:pointer}
+button{background:linear-gradient(#fff,#e8eef4);border:1px solid var(--line);border-radius:2px;padding:8px 12px;color:var(--ink)}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent-deep);font-weight:600}
+button.mode{background:transparent;border:1px solid transparent;color:#d5e4ef;padding:6px 14px;border-radius:2px}
+button.mode.active{background:#fff;color:var(--ink);border-color:#fff;font-weight:600}
+input,select{padding:6px 8px;border:1px solid var(--line);background:#fff;border-radius:2px}
+input[type=number]{width:88px}
+.brandbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:22px 22px 14px;position:relative;z-index:1}
+.brand{font-family:"Source Serif 4",Georgia,serif;font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1;color:var(--rail)}
+.brand span{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.modes{display:flex;gap:4px;background:var(--rail);padding:4px;border-radius:3px}
+.ribbon{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 22px;border-top:1px solid #c5d2de;border-bottom:1px solid #c5d2de;background:#f7fafce8;position:relative;z-index:1}
+.ribbon label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.divider{width:1px;height:28px;background:#cad6e0;margin:0 4px}
+.ribbon-group{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:4px 8px;border:1px solid #d5e0ea;background:#ffffffaa;border-radius:2px}
+.ribbon-group .rg-label{font:10px/1 "IBM Plex Sans",sans-serif;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-deep);margin-right:2px;white-space:nowrap}
+.howto{margin:12px 22px 0;border:1px solid var(--line);background:#fff;position:relative;z-index:1}
+.howto summary{cursor:pointer;list-style:none;padding:10px 14px;font-size:13px;font-weight:600;color:var(--accent-deep);user-select:none}
+.howto summary::-webkit-details-marker{display:none}
+.howto summary::before{content:"▸ ";font-size:11px;color:var(--muted)}
+.howto[open] summary::before{content:"▾ "}
+.howto .howto-body{padding:0 14px 12px;font-size:13px;line-height:1.5;color:var(--ink);border-top:1px solid #e4ebf1}
+.howto .howto-body p{margin:8px 0}
+.howto .howto-body ul{margin:6px 0;padding-left:18px}
+.howto .howto-body li{margin:4px 0}
+.howto .glossary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+@media(max-width:900px){.howto .glossary{grid-template-columns:1fr}}
+.howto .g-card{padding:8px 10px;border:1px solid #d5e0ea;background:#f7fafc;font-size:12px}
+.howto .g-card b{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent-deep);margin-bottom:4px}
+.claim{margin:12px 22px 0;padding:12px 16px;border-left:3px solid var(--accent);background:#fff9;position:relative;z-index:1;
+  animation:fadein .4s ease}
+.claim strong{font-family:"Source Serif 4",Georgia,serif;font-size:18px}
+.claim .meta{margin-top:4px;font-size:12px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.claim .greens{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:var(--ink)}
+.claim .greens span{display:inline-flex;align-items:center;gap:4px}
+.claim .greens .k{font-family:"IBM Plex Mono",monospace;color:var(--muted)}
+.claim .greens .v-yes{color:var(--ok);font-weight:600}
+.claim .greens .v-no{color:var(--warn);font-weight:600}
+.shell{padding:12px 22px 28px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:12px;position:relative;z-index:1}
+@media(max-width:900px){.shell{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:2px;overflow:hidden;backdrop-filter:blur(6px)}
+.panel h3{margin:0;padding:9px 12px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid #d5e0ea;background:#ffffffaa}
+.body{padding:12px}.sidepanel{margin-bottom:10px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font-size:13px}
+.notice{padding:8px;background:#fff6e8;color:#7a5618;border:1px solid #e5d0a4;font-size:12px;line-height:1.45}
+.run{font-weight:600;color:var(--ok)}.idle{color:var(--warn)}.error{color:var(--bad)}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+@media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}}
+.metric{padding:12px;background:#fff;border:1px solid var(--line)}
+.metric strong{display:block;font-family:"Source Serif 4",Georgia,serif;font-size:26px;color:var(--accent-deep);margin:4px 0}
+.metric small{color:var(--muted);font-size:11px}
+.top,.mid,.bottom,.console{display:grid;gap:10px;margin-top:10px}
+.top{grid-template-columns:1.6fr .8fr 1fr}
+.mid,.bottom{grid-template-columns:1fr 1fr 1fr}
+.console{grid-template-columns:1fr 1fr}
+@media(max-width:1100px){.top,.mid,.bottom,.console{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.top,.mid,.bottom,.console,.metrics{grid-template-columns:1fr}}
+.svg{width:100%;height:245px}.svg.small{height:205px}.svg text{font:11px "IBM Plex Sans";fill:#506275}
+.legend{display:flex;gap:12px;flex-wrap:wrap;padding:4px 10px;color:var(--muted);font-size:11px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.tablewrap{max-height:250px;overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:11px}
+th,td{padding:5px 6px;border:1px solid #dce3ea;text-align:left;white-space:nowrap}
+th{background:#edf2f6;position:sticky;top:0}
+.subtle{font-size:11px;color:var(--muted);line-height:1.5}
+.log{height:110px;overflow:auto;background:#0e2438;color:#d7e6f2;border:1px solid #0a1a28;padding:10px;font:11px/1.45 "IBM Plex Mono",monospace;white-space:pre-wrap}
+.foot{padding:10px 22px 24px;font-size:11px;color:var(--muted);position:relative;z-index:1}
+.scroll{max-height:205px;overflow:auto}.scroll div{padding:6px;border-bottom:1px solid #e4ebf1}
+.good{color:var(--ok)}.bad{color:var(--bad)}.hint{font-size:11px;color:var(--muted);padding:6px}
+.hidden{display:none!important}
+.rail{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin:12px 22px 0;border:1px solid var(--line);background:#fff;position:relative;z-index:1;overflow:hidden}
+.rail .step{padding:14px 12px;border-right:1px solid var(--line);min-height:72px;animation:rise .45s ease both}
+.rail .step:last-child{border-right:0}
+.rail .step:nth-child(2){animation-delay:.05s}.rail .step:nth-child(3){animation-delay:.1s}
+.rail .step:nth-child(4){animation-delay:.15s}.rail .step:nth-child(5){animation-delay:.2s}
+.rail .n{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--accent);letter-spacing:.06em}
+.rail .t{font-family:"Source Serif 4",Georgia,serif;font-size:15px;margin-top:4px}
+.rail .s{font-size:11px;color:var(--muted);margin-top:2px}
+@media(max-width:900px){.rail{grid-template-columns:1fr 1fr}}
+.dv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+@media(max-width:900px){.dv-grid{grid-template-columns:1fr}}
+.stat{font-family:"Source Serif 4",Georgia,serif;font-size:28px;color:var(--accent-deep)}
+.badge{display:inline-block;font:11px "IBM Plex Mono",monospace;padding:2px 6px;border:1px solid var(--line);background:#fff}
+.badge.pass{border-color:#9dceb0;color:var(--ok);background:#eef8f1}
+.badge.fail{border-color:#e2b0b0;color:var(--bad);background:#fdf2f2}
+.badge.nc{border-color:#d6c89a;color:var(--warn);background:#fff8e8}
+.checks{width:100%;font-size:12px} .checks td:first-child{font-family:"IBM Plex Mono",monospace;font-size:11px}
+.batch-panel{margin:12px 22px 0;padding:14px 16px;border:1px solid var(--line);background:#fff;position:relative;z-index:1;animation:fadein .4s ease}
+.batch-panel h3{margin:0 0 10px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.bar-track{height:10px;background:#e3ebf2;border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-deep));transition:width .25s ease}
+.batch-meta{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:10px;font:12px/1.4 "IBM Plex Mono",monospace;color:var(--muted)}
+.batch-done{margin-top:10px;padding:8px 10px;border-left:3px solid var(--accent);background:#f3f8fb;font-size:13px;animation:fadein .45s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.loading .stat::after{content:"…";opacity:.5}
+</style>
+</head>
+<body>
+<header class="brandbar">
+  <div class="brand">CoAgentics<span>DV026 scientific experiment workbench</span></div>
+  <div class="modes">
+    <button type="button" class="mode active" id="modeMarket" data-mode="market">Market Live</button>
+    <button type="button" class="mode" id="modeDv026" data-mode="dv026">DV026 Evidence</button>
+  </div>
+</header>
+
+<div class="ribbon" id="ribbonMarket">
+  <button id="start" class="primary">Run</button>
+  <button id="pause">Pause</button>
+  <button id="resume">Resume</button>
+  <button id="reset">Reset</button>
+  <button id="replay">Replay</button>
+  <span class="divider"></span>
+  <button id="news">Apply News</button>
+  <button id="withdraw">Withdraw News</button>
+  <button id="remove">Remove Link</button>
+  <button id="restore">Restore Link</button>
+  <span class="divider"></span>
+  <label>Seed <input id="seed" type="number" value="42"></label>
+  <label>Activations <input id="events" type="number" value="600" min="1" max="10000"></label>
+  <label>Speed <input id="speed" type="number" value="30" min="1" max="250"></label>
+  <span class="divider"></span>
+  <button id="export">Save Run JSON</button>
+  <button id="csv">Export CSV</button>
+  <button id="figure">Export Figure</button>
+  <button id="report">Print Report</button>
+</div>
+
+<div class="ribbon hidden" id="ribbonDv026">
+  <div class="ribbon-group" title="One scripted or live command via /api/dv026/run">
+    <span class="rg-label">Single run</span>
+    <button id="dvRun" class="primary">Run Evidence</button>
+    <button id="dvReset">Clear</button>
+    <label>Seed <input id="dvSeed" type="number" value="424242"></label>
+    <label>Command
+      <select id="dvCmd">
+        <option value="bundle">bundle</option>
+        <option value="phase-i">phase-i</option>
+        <option value="phase-ii">phase-ii</option>
+        <option value="layer-a">layer-a</option>
+        <option value="ten-llm">ten-llm</option>
+        <option value="llm-slice">llm-slice</option>
+        <option value="population">population</option>
+        <option value="adaptive">adaptive</option>
+        <option value="ollama-slice">ollama-slice (live)</option>
+        <option value="ollama-paired">ollama-paired Layer B</option>
+        <option value="ollama-campaign">ollama-campaign (readiness)</option>
+      </select>
+    </label>
+    <label>Ollama model <input id="dvOllamaModel" type="text" value="llama3.2" style="width:120px"></label>
+    <button id="dvOllama">Run Ollama slice</button>
+    <button id="dvOllamaPaired">Run Ollama paired</button>
+    <button id="dvExport">Export JSON</button>
+  </div>
+  <div class="ribbon-group" title="Repeat phase-i across N seeds (scripted; not live LLM)">
+    <span class="rg-label">Phase I sweep</span>
+    <label>Trials <input id="dvBatchN" type="number" value="1000" min="1" max="10000"></label>
+    <label>Base seed <input id="dvBatchSeed" type="number" value="424242"></label>
+    <button id="dvBatchStart" class="primary">Run 1000-seed validation</button>
+    <button id="dvBatchCancel" disabled>Cancel</button>
+    <button id="dvBatchExport">Export batch</button>
+  </div>
+  <div class="ribbon-group" title="Multi-model Ollama Layer B readiness (may set darpa_claim_ready)">
+    <span class="rg-label">Ollama campaign</span>
+    <label>Campaign seeds <input id="dvCampSeeds" type="number" value="2" min="1" max="100" style="width:64px"></label>
+    <label><input id="dvCampSmoke" type="checkbox" checked> smoke</label>
+    <button id="dvCampStart">Run campaign</button>
+    <button id="dvCampCancel" disabled>Cancel</button>
+    <button id="dvCampExport">Export campaign</button>
+  </div>
+</div>
+
+<div id="viewMarket">
+<details class="howto" id="howtoMarket">
+  <summary>How to use Market Live</summary>
+  <div class="howto-body">
+    <p><b>Job:</b> paced 12-trader continuous double auction demo (local C++). Not a DARPA evidence run.</p>
+    <ul>
+      <li><b>Run</b> starts the paced market; Pause / Resume / Reset / Replay control the session.</li>
+      <li><b>Apply News / Withdraw / Remove Link / Restore Link</b> are operator interventions on the communication graph.</li>
+      <li>Watch the chart, decision trace, and matched control/treatment outcomes — success here means demo metrics (trades, efficiency), not <code>darpa_claim_ready</code>.</li>
+      <li>Switch to <b>DV026 Evidence</b> (title bar) for Phase I gates and Ollama campaign readiness.</li>
+    </ul>
+  </div>
+</details>
+<div class="claim"><strong>Market Live</strong> — paced 12-trader CDA (local C++). Controlled synthetic traders; no live LLMs.</div>
+<div class="shell">
+<aside class="sidebar">
+  <section class="panel sidepanel"><h3>Experiment Setup</h3><div class="body">
+    <div class="field">Scenario <b>12-Trader Auction</b></div>
+    <div class="field">Market type <b>CDA</b></div>
+    <div class="field">Source <b>Local C++</b></div>
+    <div class="field">Message impulse <input id="impulse" type="number" value="10" min="-30" max="30"></div>
+    <div class="field">Link 1 → 2 <input id="edgeon" type="checkbox" checked></div>
+    <div class="notice">Controlled synthetic traders. No live LLMs or human-subject data.</div>
+  </div></section>
+  <section class="panel sidepanel"><h3>Execution Status</h3><div class="body">
+    <div id="status" class="idle">● IDLE</div>
+    <div class="field">Event <b id="progress">0 / 600</b></div>
+    <div class="field">Elapsed <b id="elapsed">—</b></div>
+    <div class="field">Last trade <b id="latest">—</b></div>
+    <div class="field">Seed <b id="seedview">—</b></div>
+    <div id="err" class="bad"></div>
+  </div></section>
+  <section class="panel sidepanel"><h3>Intervention Log</h3><div class="body scroll" id="timeline">No interventions.</div></section>
+  <section class="panel sidepanel"><h3>Selected Agent</h3><div class="body">
+    <div class="field">Trader <select id="agent"></select></div>
+    <div class="field">Role <b id="role">—</b></div>
+    <div class="field">Decisions <b id="decisions">0</b></div>
+    <div class="field">Accepted / executed <b id="accepted">0 / 0</b></div>
+    <div class="field">Last peer signal <b id="peer">—</b></div>
+  </div></section>
+</aside>
+<main class="workspace">
+  <div class="metrics">
+    <div class="metric">Executed trades<strong id="trades">0</strong><small>Actual transactions</small></div>
+    <div class="metric">Last transaction<strong id="price">—</strong><small>Executed prices only</small></div>
+    <div class="metric">Activations<strong id="count">0</strong><small>Actual decisions</small></div>
+    <div class="metric">Efficiency<strong id="eff">—</strong><small>Final C++ market outcome</small></div>
+    <div class="metric">Interventions<strong id="ninterventions">0</strong><small>Recorded operator actions</small></div>
+  </div>
+  <div class="top">
+    <section class="panel"><h3>Market Price and Transactions</h3><svg id="market" class="svg" viewBox="0 0 660 245"></svg>
+      <div class="legend"><span><i class="dot" style="background:#0b6e99"></i>Executed prices</span><span><i class="dot" style="background:#df8b20"></i>Interventions</span><span>Gray: submitted quotes</span></div></section>
+    <section class="panel"><h3>Matched Market Outcomes</h3><svg id="outcomes" class="svg" viewBox="0 0 340 245"></svg>
+      <div class="hint">Control and treatment reported by C++ after completion.</div></section>
+    <section class="panel"><h3>Agent Communication Network</h3><svg id="network" class="svg" viewBox="0 0 390 245"></svg>
+      <div class="hint">Modeled route: 0 → 1 → 2.</div></section>
+  </div>
+  <div class="mid">
+    <section class="panel"><h3>Bid and Ask Distributions</h3><svg id="hist" class="svg small" viewBox="0 0 390 205"></svg></section>
+    <section class="panel"><h3>Agent Behavior · <span id="agenttitle">Trader 2</span></h3><svg id="behavior" class="svg small" viewBox="0 0 390 205"></svg></section>
+    <section class="panel"><h3>Hypothesis Analysis</h3><div class="body">
+      <div id="hypothesis" class="notice">Awaiting matched experiment. No confidence score without calibrated inference.</div>
+      <div style="margin-top:10px" class="subtle" id="evidence">Run an experiment and apply a communication intervention.</div>
+    </div></section>
+  </div>
+  <div class="bottom">
+    <section class="panel"><h3>Decision Trace · Last 100</h3>
+      <div class="toolbar" style="padding:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <label>Outcome <select id="filter"><option value="all">All</option><option value="executed">Executed</option><option value="accepted">Accepted</option><option value="rejected_standing">Rejected</option><option value="no_legal_quote">No legal quote</option></select></label>
+        <label><input id="selectedonly" type="checkbox"> Selected trader only</label>
+      </div>
+      <div class="tablewrap"><table><thead><tr><th>Event</th><th>Agent</th><th>Side</th><th>News</th><th>Peer</th><th>Desired</th><th>Submitted</th><th>Disposition</th><th>Trade</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+    <section class="panel"><h3>Experimental Comparison</h3><svg id="comparison" class="svg small" viewBox="0 0 390 205"></svg>
+      <table><thead><tr><th>Arm</th><th>Trades</th><th>Efficiency</th><th>Surplus</th></tr></thead><tbody id="compare"></tbody></table></section>
+    <section class="panel"><h3>Reports</h3><div class="body">
+      <button id="downloadrun">Save complete run</button>
+      <p class="subtle" style="margin-top:10px">Exports contain only recorded measurements.</p>
+    </div></section>
+  </div>
+  <div class="console">
+    <section class="panel"><h3>Command Window</h3><div class="log" id="commands">&gt;&gt; Ready. Select Run to start a paced C++ market experiment.</div></section>
+    <section class="panel"><h3>Console · Provenance</h3><div class="log" id="console">Engine: local C++ CDA\nLive LLMs: not connected</div></section>
+  </div>
+</main>
+</div>
+</div>
+
+<div id="viewDv026" class="hidden">
+  <details class="howto" id="howtoDv026" open>
+    <summary>How to use DV026 Evidence · three different “greens”</summary>
+    <div class="howto-body">
+      <p><b>Job:</b> software gates + optional local Ollama Layer B. Ribbon has three groups — use one family at a time.</p>
+      <ul>
+        <li><b>Single run</b> — pick a command (<code>phase-i</code>, <code>bundle</code>, …) or Ollama slice/paired shortcuts.</li>
+        <li><b>Phase I sweep</b> — repeats scripted <code>phase-i</code> across N seeds (reproducibility; not live LLM).</li>
+        <li><b>Ollama campaign</b> — multi-model Layer B readiness; uncheck smoke and use 20 seeds for the full gate.</li>
+      </ul>
+      <div class="glossary">
+        <div class="g-card"><b>1 · software_green</b>Scripted Phase I A/B/C/D checks pass. CI-safe; no live models required.</div>
+        <div class="g-card"><b>2 · live_llm</b>This run talked to local Ollama (<code>ollama-slice</code> / paired / campaign).</div>
+        <div class="g-card"><b>3 · darpa_claim_ready</b>Full Ollama 10×20 campaign gate under <code>scope=local_ollama_poc</code>. Phase II still not validated.</div>
+      </div>
+      <p class="subtle" style="margin-top:8px">CLI-only for now: <code>hetero-pop</code>, <code>info-contrast</code> via <code>dv026-workbench-runner</code>. See <code>docs/DV026_WORKBENCH.md</code>.</p>
+    </div>
+  </details>
+  <div class="claim" id="dvClaim">
+    <strong>CoAgentics · DV026 software evidence</strong>
+    <div class="meta" id="dvClaimMeta">seed —</div>
+    <div class="greens" id="dvClaimGreens">
+      <span><span class="k">software_green</span> <span class="v-no" id="gSoft">—</span></span>
+      <span><span class="k">live_llm</span> <span class="v-no" id="gLive">false</span></span>
+      <span><span class="k">darpa_claim_ready</span> <span class="v-no" id="gDarpa">false</span></span>
+      <span><span class="k">scope</span> <span id="gScope">—</span></span>
+      <span><span class="k">constructs_validated</span> <span class="v-no">false</span></span>
+    </div>
+  </div>
+  <div class="rail" id="dvRail">
+    <div class="step"><div class="n">01</div><div class="t">Qualified market</div><div class="s">Layer A ≥90%</div></div>
+    <div class="step"><div class="n">02</div><div class="t">LLM interface</div><div class="s">Parse · provenance</div></div>
+    <div class="step"><div class="n">03</div><div class="t">Observable behavior</div><div class="s">Population · deltas</div></div>
+    <div class="step"><div class="n">04</div><div class="t">Phase I suite</div><div class="s">A/B/C/D checks</div></div>
+    <div class="step"><div class="n">05</div><div class="t">Phase II scaffold</div><div class="s">Not validated</div></div>
+  </div>
+  <div class="batch-panel" id="dvBatchPanel">
+    <h3>Phase I seed sweep · software-path validation</h3>
+    <div class="bar-track"><div class="bar-fill" id="dvBatchBar"></div></div>
+    <div class="batch-meta" id="dvBatchMeta">Idle · command fixed to phase-i · default 1000 seeds is enough for scripted reproducibility (not live LLM economics)</div>
+    <div class="batch-done hidden" id="dvBatchDone"></div>
+  </div>
+  <div class="batch-panel" id="dvCampPanel">
+    <h3>Ollama Layer B campaign · DARPA Phase I readiness</h3>
+    <div class="bar-track"><div class="bar-fill" id="dvCampBar" style="background:#0b6e99"></div></div>
+    <div class="batch-meta" id="dvCampMeta">Idle · pull ≥10 catalog models · full gate is 10×20 (uncheck smoke)</div>
+    <div id="dvReadyLights" class="batch-meta" style="gap:8px"></div>
+    <div class="batch-done hidden" id="dvCampDone"></div>
+  </div>
+  <div class="shell" style="grid-template-columns:1fr">
+    <main>
+      <div class="dv-grid" id="dvCards">
+        <section class="panel"><h3>Layer A · Market gate</h3><div class="body">
+          <div class="stat" id="dvLayerA">—</div>
+          <div class="subtle" id="dvLayerASub">CDA / sealed efficiency</div>
+        </div></section>
+        <section class="panel"><h3>Ten-LLM interface</h3><div class="body">
+          <div class="stat" id="dvTen">—</div>
+          <div class="subtle" id="dvTenSub">Distinct identities · scripted</div>
+        </div></section>
+        <section class="panel"><h3>LLM slice · Provenance</h3><div class="body">
+          <div class="stat" id="dvSlice">—</div>
+          <div class="subtle" id="dvSliceSub">Parse / boundary / replay</div>
+        </div></section>
+        <section class="panel"><h3>Population</h3><div class="body">
+          <div class="stat" id="dvPop">—</div>
+          <div class="subtle" id="dvPopSub">Trades · classifier · human ref</div>
+        </div></section>
+        <section class="panel"><h3>Adaptive discovery</h3><div class="body">
+          <div class="stat" id="dvAdapt" style="font-size:18px;line-height:1.3">—</div>
+          <div class="subtle" id="dvAdaptSub">Held-out confirmation</div>
+        </div></section>
+        <section class="panel"><h3>Phase II observables</h3><div class="body">
+          <div class="stat" id="dvP2" style="font-size:18px;line-height:1.3">—</div>
+          <div class="subtle">Intent unidentifiable · constructs not validated</div>
+        </div></section>
+      </div>
+      <div class="bottom" style="grid-template-columns:1.4fr 1fr">
+        <section class="panel"><h3>Phase I checklist</h3>
+          <div class="tablewrap" style="max-height:360px"><table class="checks"><thead><tr><th>Check</th><th>Status</th><th>Evidence</th></tr></thead><tbody id="dvChecks"></tbody></table></div>
+        </section>
+        <section class="panel"><h3>Provenance console</h3>
+          <div class="log" id="dvConsole">Awaiting evidence bundle. Scripted/mock transports only.</div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="foot">CoAgentics · two modes: Market Live (demo CDA) · DV026 Evidence (gates + optional Ollama) · software_green ≠ live_llm ≠ darpa_claim_ready</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let mode='market', trace=[], offset=0, state={status:'idle',interventions:[],outcomes:{}}, busy=false, started=0, dvData=null;
+for(let i=0;i<12;i++) $('agent').add(new Option('Trader '+i,i));
+$('agent').value='2';
+
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=x=>Number.isFinite(+x)?(+x).toFixed(2):'—';
+const svgtext=(x,y,t,attrs='')=>`<text x="${x}" y="${y}" ${attrs}>${esc(t)}</text>`;
+
+function setMode(m){
+  mode=m;
+  $('modeMarket').classList.toggle('active', m==='market');
+  $('modeDv026').classList.toggle('active', m==='dv026');
+  $('ribbonMarket').classList.toggle('hidden', m!=='market');
+  $('ribbonDv026').classList.toggle('hidden', m!=='dv026');
+  $('viewMarket').classList.toggle('hidden', m!=='market');
+  $('viewDv026').classList.toggle('hidden', m!=='dv026');
+}
+$('modeMarket').onclick=()=>setMode('market');
+$('modeDv026').onclick=()=>setMode('dv026');
+
+function plot(id,series,opts={}){
+  let el=$(id),W=opts.W||390,H=opts.H||205,L=45,R=12,T=13,B=27;
+  let points=series.flatMap(s=>s.data).filter(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]));
+  let xmin=opts.xmin??Math.min(0,...points.map(p=>p[0])),xmax=opts.xmax??Math.max(1,...points.map(p=>p[0]));
+  let ymin=opts.ymin??Math.min(0,...points.map(p=>p[1])),ymax=opts.ymax??Math.max(1,...points.map(p=>p[1]));
+  if(xmax===xmin)xmax++; if(ymax===ymin)ymax++;
+  let X=x=>L+(x-xmin)/(xmax-xmin)*(W-L-R), Y=y=>H-B-(y-ymin)/(ymax-ymin)*(H-T-B);
+  let s='';
+  for(let i=0;i<5;i++){let yy=T+i*(H-T-B)/4;s+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e2e8ef"/>`+svgtext(L-5,yy+3,num(ymax-(ymax-ymin)*i/4),'text-anchor="end"');}
+  for(let i=0;i<5;i++){let xx=L+i*(W-L-R)/4;s+=svgtext(xx,H-8,Math.round(xmin+(xmax-xmin)*i/4),'text-anchor="middle"')}
+  for(let a of (opts.marks||[])){let xx=X(a.x);s+=`<line x1="${xx}" y1="${T}" x2="${xx}" y2="${H-B}" stroke="#e59624" stroke-dasharray="4 3"/>`;}
+  for(let item of series){
+    let pts=item.data.filter(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]));
+    if(item.line&&pts.length>1)s+=`<polyline points="${pts.map(p=>X(p[0])+','+Y(p[1])).join(' ')}" fill="none" stroke="${item.color}" stroke-width="1.7"/>`;
+    if(item.dots!==false)s+=pts.map(p=>`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="${item.r||2}" fill="${item.color}"/>`).join('');
+  }
+  el.innerHTML=s;
+}
+function bars(id,values){
+  let el=$(id),W=390,H=205,L=45,R=15,T=16,B=37,max=Math.max(1,...values.map(v=>v.value||0)); let s='';
+  for(let i=0;i<5;i++){let y=T+i*(H-T-B)/4;s+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#e3e9ef"/>`+svgtext(L-4,y+4,num(max*(4-i)/4),'text-anchor="end"')}
+  let width=(W-L-R)/Math.max(1,values.length);
+  values.forEach((v,i)=>{let x=L+i*width+width*.18,w=width*.64,h=(v.value||0)/max*(H-T-B);s+=`<rect x="${x}" y="${H-B-h}" width="${w}" height="${h}" fill="${v.color||'#0b6e99'}"/>`+svgtext(x+w/2,H-14,v.label,'text-anchor="middle"')});
+  el.innerHTML=s;
+}
+function network(){
+  let pts=[[50,105],[153,105],[260,105],[52,28],[150,28],[260,28],[340,28],[340,105],[50,184],[150,184],[260,184],[340,184]];
+  let selected=+$('agent').value, edge=state.edge!==false;
+  let s='<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#66829c"/></marker></defs>';
+  for(let [a,b] of [[0,1],[1,2]]){let p=pts[a],q=pts[b],active=a===0||edge;s+=`<line x1="${p[0]+16}" y1="${p[1]}" x2="${q[0]-16}" y2="${q[1]}" stroke="${active?'#66829c':'#d13c3c'}" stroke-width="2" ${active?'marker-end="url(#arr)"':'stroke-dasharray="5 4"'}/>`;}
+  pts.forEach((p,i)=>{let influenced=i===1||i===2,selectedNode=i===selected;s+=`<g class="network-node" data-agent="${i}" style="cursor:pointer"><circle cx="${p[0]}" cy="${p[1]}" r="15" fill="${selectedNode?'#0b6e99':influenced?'#1a7a45':'#e4edf5'}" stroke="${selectedNode?'#084e6d':'#91a8bb'}"/><text x="${p[0]}" y="${p[1]+4}" fill="${selectedNode||influenced?'white':'#263545'}" text-anchor="middle">${i}</text></g>`});
+  $('network').innerHTML=s;
+  document.querySelectorAll('.network-node').forEach(g=>g.onclick=()=>{$('agent').value=g.dataset.agent;render()});
+}
+function histogram(){
+  let bids=trace.filter(t=>t.attempted&&t.buyer&&t.submitted_price>0),asks=trace.filter(t=>t.attempted&&!t.buyer&&t.submitted_price>0);
+  let all=[...bids,...asks].map(t=>t.submitted_price);
+  if(!all.length){$('hist').innerHTML=svgtext(50,95,'Awaiting submitted quotes');return}
+  let lo=Math.floor(Math.min(...all)/10)*10,hi=Math.ceil(Math.max(...all)/10)*10; if(hi===lo)hi=lo+10;
+  let bins=12,counts=[bids,asks].map(group=>Array.from({length:bins},(_,i)=>group.filter(t=>Math.min(bins-1,Math.floor((t.submitted_price-lo)/(hi-lo)*bins))===i).length));
+  let max=Math.max(1,...counts.flat()),s='',W=390,H=205,L=42,R=12,T=12,B=27;
+  for(let i=0;i<5;i++){let y=T+i*(H-T-B)/4;s+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#e1e7ef"/>`+svgtext(L-4,y+4,Math.round(max*(4-i)/4),'text-anchor="end"')}
+  for(let i=0;i<bins;i++)for(let j=0;j<2;j++){let w=(W-L-R)/bins/2,x=L+i*2*w+j*w,h=counts[j][i]/max*(H-T-B);s+=`<rect x="${x}" y="${H-B-h}" width="${w-1}" height="${h}" fill="${j?'#d66557':'#0b6e99'}" opacity=".85"/>`}
+  s+=svgtext(L,H-8,lo)+svgtext(W-R,H-8,hi,'text-anchor="end"'); $('hist').innerHTML=s;
+}
+function render(){
+  let events=trace.filter(t=>t.kind==='decision'),tx=events.filter(t=>t.disposition==='executed'&&t.transaction_price>0);
+  let a=+$('agent').value,at=events.filter(t=>t.actor===a),last=tx.at(-1);
+  $('status').textContent='● '+state.status.toUpperCase();
+  $('status').className=['running','complete'].includes(state.status)?'run':state.status==='error'?'error':'idle';
+  $('progress').textContent=events.length+' / '+(state.events||$('events').value);
+  $('elapsed').textContent=started?Math.round((Date.now()-started)/1000)+' s':'—';
+  $('latest').textContent=last?num(last.transaction_price):'—';
+  $('seedview').textContent=state.seed??'—';
+  $('trades').textContent=tx.length; $('price').textContent=last?num(last.transaction_price):'—';
+  $('count').textContent=events.length;
+  $('eff').textContent=state.outcomes?.treatment?num(state.outcomes.treatment.efficiency)+'%':'—';
+  $('ninterventions').textContent=state.interventions.length; $('err').textContent=state.error||'';
+  $('role').textContent=at.length?(at[0].buyer?'Buyer':'Seller'):'—';
+  $('decisions').textContent=at.length;
+  $('accepted').textContent=at.filter(t=>t.disposition==='accepted').length+' / '+at.filter(t=>t.disposition==='executed').length;
+  $('peer').textContent=at.length?num(at.at(-1).peer):'—'; $('agenttitle').textContent='Trader '+a;
+  let marks=state.interventions.map(x=>({x:x.after_event+1}));
+  plot('market',[{data:tx.map(t=>[t.event,t.transaction_price]),color:'#0b6e99',line:true,r:2},{data:events.filter(t=>t.attempted).map(t=>[t.event,t.submitted_price]),color:'#bbc4ce',r:1,dots:true}],{W:660,H:245,xmax:state.events||600,marks});
+  plot('behavior',[{data:at.filter(t=>t.attempted).map(t=>[t.event,t.submitted_price]),color:'#0b6e99',line:true,r:2},{data:at.filter(t=>t.transaction_price>0).map(t=>[t.event,t.transaction_price]),color:'#1a7a45',r:4},{data:at.map(t=>[t.event,t.private_limit]),color:'#b27429',line:true,dots:false}],{xmax:state.events||600});
+  histogram(); network();
+  let o=state.outcomes||{},c=o.control,t=o.treatment;
+  bars('outcomes',[{label:'Control',value:c?.efficiency||0,color:'#a0afbd'},{label:'Treatment',value:t?.efficiency||0,color:'#0b6e99'}]);
+  bars('comparison',[{label:'Control',value:c?.trades||0,color:'#a0afbd'},{label:'Treatment',value:t?.trades||0,color:'#0b6e99'}]);
+  $('compare').innerHTML=['control','treatment'].map(name=>{let v=o[name];return `<tr><td>${name}</td><td>${v?v.trades:'—'}</td><td>${v?num(v.efficiency)+'%':'—'}</td><td>${v?num(v.surplus):'—'}</td></tr>`}).join('');
+  $('hypothesis').textContent=t&&c?'Observed treatment-control efficiency difference: '+num(t.efficiency-c.efficiency)+' pp. Market outcome only; not a mental-mechanism claim.':'Awaiting matched experiment.';
+  $('evidence').textContent='Recorded: '+events.length+' decisions, '+tx.length+' trades, '+state.interventions.length+' interventions.';
+  let f=$('filter').value,filtered=events.filter(x=>(f==='all'||x.disposition===f)&&(!$('selectedonly').checked||x.actor===a));
+  $('rows').innerHTML=filtered.slice(-100).reverse().map(x=>`<tr><td>${x.event}</td><td>${x.actor}</td><td>${x.buyer?'Buy':'Sell'}</td><td>${num(x.news)}</td><td>${num(x.peer)}</td><td>${x.attempted?num(x.desired_price):'—'}</td><td>${x.attempted?num(x.submitted_price):'—'}</td><td class="${x.disposition==='executed'?'good':String(x.disposition).startsWith('rejected')?'bad':''}">${esc(x.disposition)}</td><td>${x.transaction_price?num(x.transaction_price):'—'}</td></tr>`).join('');
+  $('timeline').innerHTML=state.interventions.length?state.interventions.map(x=>`<div>After event ${x.after_event}: news ${num(x.impulse)}; link 1→2 ${x.edge?'on':'off'}</div>`).reverse().join(''):'No interventions.';
+  for(let id of ['start','pause','resume','news','withdraw','remove','restore'])
+    $(id).disabled=id==='start'?['running','paused'].includes(state.status):id==='pause'?state.status!=='running':id==='resume'?state.status!=='paused':!['running','paused'].includes(state.status);
+  $('edgeon').checked=state.edge!==false;
+  $('console').textContent='Engine: local C++ controlled CDA\nStatus: '+state.status+'\nSeed: '+(state.seed??'—')+'\nEvents: '+events.length+'\nMatched control: '+(c?'complete':'pending')+'\nLive LLMs: not connected';
+}
+
+async function post(route,data={}){
+  let r=await fetch('/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  let j=await r.json(); if(!r.ok) throw Error(j.error||'Request failed'); return j;
+}
+function log(s){$('commands').textContent+='\n>> '+s;$('commands').scrollTop=$('commands').scrollHeight}
+async function action(name,data){try{await post(name,data);log(name+' '+JSON.stringify(data||{}));await poll()}catch(e){$('err').textContent=e.message;log('ERROR '+e.message)}}
+async function poll(){
+  if(busy||mode!=='market')return; busy=true;
+  try{
+    let r=await fetch('/api/state?from='+offset,{cache:'no-store'}),j=await r.json();
+    if(j.count<offset){trace=[];offset=0;started=Date.now()}
+    trace.push(...j.trace); offset=j.count; state=j; render();
+  }catch(e){$('err').textContent=e.message}
+  finally{busy=false}
+}
+$('start').onclick=()=>{trace=[];offset=0;started=Date.now();action('start',{seed:+$('seed').value,events:+$('events').value,speed:+$('speed').value})};
+$('pause').onclick=()=>action('pause'); $('resume').onclick=()=>action('resume');
+$('reset').onclick=()=>{trace=[];offset=0;started=0;action('reset')};
+$('replay').onclick=()=>{trace=[];offset=0;started=Date.now();action('replay')};
+function intervene(impulse,edge){$('impulse').value=impulse;$('edgeon').checked=edge;action('intervention',{impulse,edge})}
+$('news').onclick=()=>intervene(+$('impulse').value,$('edgeon').checked);
+$('withdraw').onclick=()=>intervene(0,$('edgeon').checked);
+$('remove').onclick=()=>intervene(state.impulse||0,false);
+$('restore').onclick=()=>intervene(state.impulse||0,true);
+$('agent').onchange=render; $('filter').onchange=render; $('selectedonly').onchange=render;
+function download(name,data,type){let url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+function csv(){let keys=['event','actor','buyer','private_limit','standing_bid','standing_ask','news','peer','attempted','desired_price','submitted_price','disposition','transaction_price','counterparty'];download('coagentics-decision-traces.csv',[keys.join(','),...trace.map(t=>keys.map(k=>JSON.stringify(t[k]??'')).join(','))].join('\n'),'text/csv')}
+function figure(){let s=$('market').cloneNode(true);s.setAttribute('xmlns','http://www.w3.org/2000/svg');download('coagentics-market-figure.svg',new XMLSerializer().serializeToString(s),'image/svg+xml')}
+function report(){let w=window.open('','_blank');if(!w){alert('Allow popups');return}w.document.write('<!doctype html><title>CoAgentics report</title><style>body{font:14px IBM Plex Sans,Arial;margin:35px}</style><h1>CoAgentics report</h1><pre>'+esc(JSON.stringify({status:state.status,seed:state.seed,outcomes:state.outcomes},null,2))+'</pre>');w.document.close();w.print()}
+$('export').onclick=$('downloadrun').onclick=()=>location.href='/api/export';
+$('csv').onclick=csv; $('figure').onclick=figure; $('report').onclick=report;
+
+function ynClass(el, yes){
+  el.className=yes?'v-yes':'v-no';
+}
+function setClaimLights(opts){
+  const soft=opts.software_green, live=!!opts.live_llm, ready=!!opts.darpa_claim_ready;
+  const softEl=$('gSoft'), liveEl=$('gLive'), darpaEl=$('gDarpa'), scopeEl=$('gScope');
+  if(soft===true){ softEl.textContent='YES'; ynClass(softEl,true); }
+  else if(soft===false){ softEl.textContent='NO'; ynClass(softEl,false); }
+  else { softEl.textContent='—'; ynClass(softEl,false); }
+  liveEl.textContent=live?'true':'false'; ynClass(liveEl, live);
+  darpaEl.textContent=ready?'true':'false'; ynClass(darpaEl, ready);
+  scopeEl.textContent=opts.scope||(ready?'local_ollama_poc':'—');
+  $('dvClaimMeta').textContent=
+    `seed ${opts.seed??'—'} · command ${opts.command||'—'} · constructs_validated: false`+
+    (opts.note?(' · '+opts.note):'');
+}
+function badge(st){
+  const s=String(st||'');
+  if(s==='PASS') return '<span class="badge pass">PASS</span>';
+  if(s==='FAIL') return '<span class="badge fail">FAIL</span>';
+  return '<span class="badge nc">'+esc(s||'—')+'</span>';
+}
+function renderDv026(d){
+  dvData=d;
+  const pi=d.phase_i||d, green=pi.software_green??d.software_green;
+  const live=!!(d.live_llm);
+  const ready=!!(d.darpa_claim_ready || (d.campaign&&d.campaign.darpa_claim_ready));
+  const scope=d.scope||(d.campaign&&d.campaign.scope)||'';
+  setClaimLights({software_green:green, live_llm:live, darpa_claim_ready:ready, scope, seed:d.seed, command:d.command});
+  const la=d.layer_a||{};
+  $('dvLayerA').textContent=la.layer_a_pass?'PASS':(la.mean_efficiency_cda!=null?num(la.mean_efficiency_cda)+'%':'—');
+  $('dvLayerASub').textContent=`CDA ${num(la.mean_efficiency_cda)}% · sealed ${num(la.mean_efficiency_sealed)}% · gate ${la.efficiency_gate??90}`;
+  const ten=d.ten_llm||{};
+  $('dvTen').textContent=ten.qualifies?'QUALIFIES':(ten.distinct_models!=null?ten.distinct_models:'—');
+  $('dvTenSub').textContent=`${ten.distinct_models??'—'} distinct · ${ten.cells??'—'} cells · scripted transports`;
+  const sl=d.llm_slice||{};
+  $('dvSlice').textContent=sl.cross_event_valid?'REPLAY OK':(sl.parse_validate_submit?'TURN OK':'—');
+  $('dvSliceSub').textContent=`parse/submit ${sl.parse_validate_submit?'yes':'no'} · boundary ${sl.private_state_boundary?'ok':'?'} · filled ${sl.units_filled??'—'}`;
+  const pop=d.population||{};
+  $('dvPop').textContent=pop.trades!=null?String(pop.trades):'—';
+  $('dvPopSub').textContent=`agents ${pop.agents??'—'} · classifier ${pop.classifier||'—'} · human-ref ${pop.human_reference??'—'}`;
+  const ad=d.adaptive||{};
+  $('dvAdapt').textContent=ad.confirmed?'CONFIRMED':(ad.status||'—');
+  $('dvAdaptSub').textContent=`leading ${ad.leading_hypothesis||'—'} · agree ${ad.confirmation_agree??'—'}/${ad.confirmation_runs??'—'}`;
+  const p2=d.phase_ii||(d.bias||d.deception?d:{});
+  const bias=p2.bias||{}, dec=p2.deception||{}, col=p2.collaboration||{};
+  $('dvP2').textContent=`asym ${bias.asymmetry_index!=null?Number(bias.asymmetry_index).toFixed(2):'—'} · misrep ${dec.misrepresentations??'—'} · Δco ${col.co_movement_delta!=null?Number(col.co_movement_delta).toFixed(2):'—'}`;
+  const checks=(pi.checks)||d.checks||[];
+  $('dvChecks').innerHTML=checks.length?checks.map(c=>`<tr><td>${esc(c.id)}</td><td>${badge(c.status)}</td><td>${esc((c.evidence||'').slice(0,80))}</td></tr>`).join(''):'<tr><td colspan="3">Run bundle to load Phase I checks</td></tr>';
+  $('dvConsole').textContent=JSON.stringify({
+    command:d.command, seed:d.seed, live_llm:live, darpa_claim_ready:ready, scope:scope||null,
+    constructs_validated:false, claim_boundary:d.claim_boundary
+  },null,2);
+}
+async function runDv026(cmdOverride){
+  if(batchRunning){alert('Batch running — cancel or wait first');return}
+  const cmd=cmdOverride||$('dvCmd').value;
+  $('dvRun').disabled=true; $('dvOllama').disabled=true; $('dvOllamaPaired').disabled=true;
+  $('dvCards').classList.add('loading');
+  $('dvConsole').textContent='Running '+cmd+'…';
+  try{
+    const body={command:cmd,seed:+$('dvSeed').value};
+    if(String(cmd).startsWith('ollama')) body.model=$('dvOllamaModel').value||'llama3.2';
+    let r=await fetch('/api/dv026/run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
+    let j=await r.json(); if(!r.ok) throw Error(j.error||'DV026 run failed');
+    renderDv026(j);
+    if(j.ollama_slice){
+      const s=j.ollama_slice;
+      $('dvSlice').textContent=s.turn_ok?'OLLAMA OK':'OLLAMA FAIL';
+      $('dvSliceSub').textContent=`${s.model} · filled ${s.units_filled} · ${s.latency_ms}ms · live_llm=${j.live_llm}`;
+      setClaimLights({software_green:j.software_green, live_llm:!!j.live_llm, darpa_claim_ready:!!j.darpa_claim_ready,
+        scope:j.scope, seed:j.seed, command:j.command});
+    }
+    if(j.paired){
+      $('dvPop').textContent=(j.paired.delta_trades!=null)?('Δtrades '+j.paired.delta_trades):'PAIRED';
+      $('dvPopSub').textContent=`Δeff ${num(j.paired.delta_efficiency)} · Layer B Ollama`;
+      setClaimLights({software_green:j.software_green, live_llm:!!j.live_llm, darpa_claim_ready:!!j.darpa_claim_ready,
+        scope:j.scope, seed:j.seed, command:j.command});
+    }
+  }catch(e){$('dvConsole').textContent='ERROR: '+e.message; setClaimLights({note:'run failed — see console'});}
+  finally{
+    $('dvRun').disabled=false; $('dvOllama').disabled=false; $('dvOllamaPaired').disabled=false;
+    $('dvCards').classList.remove('loading');
+  }
+}
+$('dvRun').onclick=()=>runDv026();
+$('dvOllama').onclick=()=>runDv026('ollama-slice');
+$('dvOllamaPaired').onclick=()=>runDv026('ollama-paired');
+$('dvReset').onclick=()=>{
+  dvData=null;
+  ['dvLayerA','dvTen','dvSlice','dvPop','dvAdapt','dvP2'].forEach(id=>$(id).textContent='—');
+  $('dvChecks').innerHTML='';
+  setClaimLights({software_green:null, live_llm:false, darpa_claim_ready:false, scope:'—', seed:'—', command:'—'});
+  $('dvConsole').textContent='Cleared. Scripted/mock transports only.';
+};
+$('dvExport').onclick=()=>{ if(!dvData){alert('Run evidence bundle first');return} location.href='/api/dv026/export' };
+
+let batchRunning=false;
+function updateBatchButtonLabel(){
+  const n=+$('dvBatchN').value||1000;
+  $('dvBatchStart').textContent='Run '+n+'-seed validation';
+}
+$('dvBatchN').oninput=updateBatchButtonLabel; updateBatchButtonLabel();
+
+function renderBatch(s){
+  batchRunning=!!s.running;
+  $('dvBatchStart').disabled=batchRunning||campRunning;
+  $('dvBatchCancel').disabled=!batchRunning;
+  $('dvRun').disabled=batchRunning||campRunning;
+  $('dvCampStart').disabled=campRunning||batchRunning;
+  const pct=s.pct||0;
+  $('dvBatchBar').style.width=pct+'%';
+  const eta=s.eta_sec!=null?(' · ETA '+s.eta_sec+'s'):'';
+  const cur=s.current_seed!=null?(' · seed '+s.current_seed):'';
+  let line=(s.running?'RUNNING':'')+(s.cancelled?' CANCELLED':'')+(!s.running&&s.done>0&&!s.cancelled?' COMPLETE':'');
+  if(!line) line='Idle';
+  $('dvBatchMeta').textContent=
+    line+' · '+ (s.done||0)+' / '+(s.n||0)+' · pass '+(s.pass_count||0)+' · fail '+(s.fail_count||0)+cur+eta+
+    ' · phase-i only · live_llm=false';
+  const doneEl=$('dvBatchDone');
+  if(!s.running && s.done>0){
+    doneEl.classList.remove('hidden');
+    const rate=s.pass_rate!=null?(100*s.pass_rate).toFixed(1)+'%':'—';
+    doneEl.innerHTML='<strong>Pass rate '+rate+'</strong> ('+(s.pass_count||0)+'/'+(s.done||0)+'). '+
+      'Scripted software-path only — not live LLM economics or DARPA claim readiness.'+
+      (s.last_error?' <span class="bad">Last error: '+esc(s.last_error)+'</span>':'');
+  }else if(s.running){
+    doneEl.classList.add('hidden');
+  }
+}
+async function pollBatch(){
+  try{
+    const r=await fetch('/api/dv026/batch/status',{cache:'no-store'});
+    const s=await r.json();
+    renderBatch(s);
+  }catch(_){}
+}
+$('dvBatchStart').onclick=async()=>{
+  try{
+    const r=await fetch('/api/dv026/batch/start',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({n:+$('dvBatchN').value||1000, base_seed:+$('dvBatchSeed').value||424242})});
+    const j=await r.json(); if(!r.ok) throw Error(j.error||'batch start failed');
+    renderBatch(j);
+  }catch(e){alert(e.message)}
+};
+$('dvBatchCancel').onclick=async()=>{
+  try{
+    const r=await fetch('/api/dv026/batch/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const j=await r.json(); if(!r.ok) throw Error(j.error||'cancel failed');
+    renderBatch(j);
+  }catch(e){alert(e.message)}
+};
+$('dvBatchExport').onclick=()=>{ location.href='/api/dv026/batch/export' };
+
+let campRunning=false;
+function renderCampaign(s){
+  campRunning=!!s.running;
+  $('dvCampStart').disabled=campRunning||batchRunning;
+  $('dvCampCancel').disabled=!campRunning;
+  $('dvBatchStart').disabled=batchRunning||campRunning;
+  $('dvRun').disabled=batchRunning||campRunning;
+  $('dvOllama').disabled=batchRunning||campRunning;
+  $('dvOllamaPaired').disabled=batchRunning||campRunning;
+  const pct=s.pct||0;
+  $('dvCampBar').style.width=pct+'%';
+  let line=(s.running?'RUNNING':'')+(s.cancelled?' CANCELLED':'')+(!s.running&&(s.cells_ok!=null)&&s.finished_at?' COMPLETE':'');
+  if(!line) line='Idle';
+  $('dvCampMeta').textContent=
+    line+' · cells '+(s.done||0)+(s.total?(' / '+s.total):'')+
+    ' · ok '+(s.cells_ok||0)+' · models '+(s.available_models||0)+
+    ' · seeds/model '+(s.n_seeds||0)+(s.smoke?' (smoke)':'')+
+    ' · ready='+(s.darpa_claim_ready?'true':'false')+' · scope='+(s.scope||'not_ready');
+  const lights=$('dvReadyLights');
+  const checks=s.readiness_checks||[];
+  if(checks.length){
+    lights.innerHTML=checks.map(c=>{
+      const ok=!!c.pass;
+      return '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border:1px solid '+(ok?'#1b7a3d':'#a33')+';color:'+(ok?'#1b7a3d':'#a33')+'">'+(ok?'●':'○')+' '+esc(c.id)+'</span>';
+    }).join('');
+  }else{
+    lights.innerHTML='<span class="subtle">Readiness lights appear after a campaign finishes</span>';
+  }
+  const doneEl=$('dvCampDone');
+  if(!s.running && s.finished_at){
+    doneEl.classList.remove('hidden');
+    doneEl.innerHTML='<strong>darpa_claim_ready='+(s.darpa_claim_ready?'true':'false')+'</strong> · scope='+esc(s.scope||'not_ready')+
+      '. Local Ollama PoC only — no Phase II / commercial 10-provider claim.'+
+      (s.last_error?' <span class="bad">'+esc(s.last_error)+'</span>':'');
+    setClaimLights({software_green:true, live_llm:true, darpa_claim_ready:!!s.darpa_claim_ready,
+      scope:s.scope, seed:s.base_seed, command:'ollama-campaign'});
+    if(s.result) renderDv026(s.result);
+  }else if(s.running){
+    doneEl.classList.add('hidden');
+  }
+}
+async function pollCampaign(){
+  try{
+    const r=await fetch('/api/dv026/campaign/status',{cache:'no-store'});
+    const s=await r.json();
+    renderCampaign(s);
+  }catch(_){}
+}
+$('dvCampStart').onclick=async()=>{
+  try{
+    const r=await fetch('/api/dv026/campaign/start',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        base_seed:+$('dvBatchSeed').value||424242,
+        n_seeds:+$('dvCampSeeds').value||2,
+        smoke:!!$('dvCampSmoke').checked
+      })});
+    const j=await r.json(); if(!r.ok) throw Error(j.error||'campaign start failed');
+    renderCampaign(j);
+  }catch(e){alert(e.message)}
+};
+$('dvCampCancel').onclick=async()=>{
+  try{
+    const r=await fetch('/api/dv026/campaign/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const j=await r.json(); if(!r.ok) throw Error(j.error||'cancel failed');
+    renderCampaign(j);
+  }catch(e){alert(e.message)}
+};
+$('dvCampExport').onclick=()=>{ location.href='/api/dv026/campaign/export' };
+
+setInterval(poll,250); poll();
+setInterval(pollBatch,250); pollBatch();
+setInterval(pollCampaign,1000); pollCampaign();
+fetch('/api/dv026/last').then(r=>r.json()).then(j=>{ if(j&&!j.empty) renderDv026(j) }).catch(()=>{});
+</script>
+</body>
+</html>
