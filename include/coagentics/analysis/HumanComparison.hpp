@@ -14,8 +14,14 @@ struct HumanComparison {
  std::size_t human_units{}, model_runs{};
  double human_mean{}, model_mean{}, difference{}, empirical_percentile{-1};
 };
+struct HumanBehavioralBenchmarkComparison {
+ std::string metric, status, explanation, source_id;
+ double observed{};
+ bool measurable{false};
+};
 struct HumanComparisonReport {
  std::vector<HumanComparison> comparisons;
+ std::vector<HumanBehavioralBenchmarkComparison> behavioral_benchmarks;
  bool live_model_evidence{}, human_behavioral_coverage{}, darpa_claim_ready{};
 };
 // Compare only matching conditions and units. Scripted controls are NEVER described as LLM observations.

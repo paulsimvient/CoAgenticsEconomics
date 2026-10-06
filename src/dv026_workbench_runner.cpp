@@ -1,5 +1,6 @@
 #include "coagentics/experiment/Dv026MarketLayers.hpp"
 #include "coagentics/experiment/Dv026LiveCampaign.hpp"
+#include "coagentics/experiment/HeterogeneousCampaign.hpp"
 #include "coagentics/experiment/Dv026PhaseI.hpp"
 #include "coagentics/experiment/Dv026PhaseII.hpp"
 #include "coagentics/experiment/Dv026Wave3.hpp"
@@ -45,7 +46,7 @@ std::string wrap(const std::string& command, std::uint64_t seed, const std::stri
 
 std::string layer_a_json(std::uint64_t seed){
  MarketSpec spec; spec.buyers=4; spec.sellers=4; spec.periods=5; spec.efficiency_gate=90;
- auto r=run_market_qualification(spec, seed, 1);
+ auto r=run_market_qualification(spec, seed, 5);
  return market_qualification_json(r);
 }
 
@@ -102,14 +103,7 @@ std::string population_rich(std::uint64_t seed){
  seller.private_value_or_cost=80; seller.inventory=1; seller.cash=0;
  pop.agents={buyer_llm, seller};
  auto run=run_population_market(pop);
- std::ostringstream o;
- o<<std::fixed
-  <<"{\"agents\":"<<run.agents.size()
-  <<",\"trades\":"<<run.trades.size()
-  <<",\"efficiency\":"<<run.metrics.allocative_efficiency
-  <<",\"classifier\":\""<<esc(run.classification.label)<<"\""
-  <<",\"human_reference\":"<<run.human_reference.size()<<"}";
- return o.str();
+ return population_run_json(run);
 }
 
 std::string adaptive_json(std::uint64_t seed){
@@ -208,7 +202,7 @@ std::string ollama_paired_json(std::uint64_t seed){
  RunSpec run; run.seed=seed; run.model=model;
  run.transport=make_live_openai_compatible_transport(model);
  run.run_id="ollama-paired:"+std::to_string(seed);
- auto paired=run_paired_zi_vs_llm(exp, run, /*control_buyer_limit_price=*/95.0);
+ auto paired=run_paired_programmed_buyer_vs_llm(exp, run, /*control_buyer_limit_price=*/95.0);
  return paired_llm_json(paired);
 }
 
@@ -268,21 +262,31 @@ std::string run_command(const std::string& cmd, std::uint64_t seed, std::size_t 
   }
   return wrap(cmd, seed, "{\"campaign\":"+body+"}", true, ready, scope);
  }
+ if(cmd=="hetero-campaign"){
+  HeterogeneousCampaignSpec hs; hs.base_seed=seed; hs.n_seeds=n_seeds; hs.smoke=smoke; hs.use_live_ollama=!smoke; hs.inference_repeats=2; if(const char* rr=std::getenv("COAGENTICS_INFERENCE_REPEATS")){try{auto v=std::stoull(rr); if(v>=1 && v<=20) hs.inference_repeats=v;}catch(...){}} if(const char* ad=std::getenv("COAGENTICS_ACTIVATION_DESIGN")){std::string a=ad; if(a=="frozen_snapshot"){hs.run_frozen_snapshot=true;hs.run_sequential_interaction=false;} else if(a=="sequential_interaction"){hs.run_frozen_snapshot=false;hs.run_sequential_interaction=true;} else if(a=="both"){hs.run_frozen_snapshot=true;hs.run_sequential_interaction=true;}} if(smoke){hs.use_live_ollama=false; hs.n_seeds=std::min<std::size_t>(hs.n_seeds,2); hs.rounds=1; hs.max_llm_seats=2;}
+  auto r=run_heterogeneous_campaign(hs);
+  return wrap(cmd, seed, "{\"heterogeneous_campaign\":"+heterogeneous_campaign_json(r)+"}", hs.use_live_ollama);
+ }
  if(cmd=="hetero-pop"){
-  HeterogeneousPopulationSpec hs; hs.seed=seed; hs.smoke=smoke; hs.use_live_ollama=!smoke;
+  HeterogeneousPopulationSpec hs; hs.seed=seed; hs.smoke=smoke; hs.use_live_ollama=!smoke; const char* ad=std::getenv("COAGENTICS_ACTIVATION_DESIGN"); if(ad&&std::string(ad)=="frozen_snapshot") hs.activation_design=ActivationDesign::FrozenSnapshot;
   if(smoke) hs.use_live_ollama=false;
   auto r=run_heterogeneous_ollama_population(hs);
   return wrap(cmd, seed, "{\"hetero\":"+heterogeneous_population_json(r)+"}", hs.use_live_ollama);
  }
- if(cmd=="info-contrast"){
-  auto r=run_information_contrast_experiment(seed);
-  std::ostringstream body;
-  body<<"{\"info_contrast\":{"
-   <<"\"control_condition\":\""<<esc(r.control_condition)<<"\""
-   <<",\"treatment_condition\":\""<<esc(r.treatment_condition)<<"\""
-   <<",\"classifier\":\""<<esc(r.contrast.classifier.classification.label)<<"\""
-   <<",\"classifier_synthetic_treatment\":"<<(r.contrast.treatment.classifier_synthetic?"true":"false")
-   <<",\"claim_boundary\":\""<<esc(r.claim_boundary)<<"\"}}";
+ if(cmd=="info-contrast" || cmd=="info-contrast-live"){
+  auto rs=(cmd=="info-contrast-live")?run_information_treatment_suite_live(seed):run_information_treatment_suite(seed);
+  std::ostringstream body; body<<"{\"information_treatments\":[";
+  for(size_t i=0;i<rs.size();++i){ auto& r=rs[i]; if(i)body<<",";
+   body<<"{\"matched_seed\":"<<r.matched_seed
+    <<",\"manipulated_variable\":\""<<esc(r.manipulated_variable)<<"\""
+    <<",\"control_condition\":\""<<esc(r.control_condition)<<"\""
+    <<",\"treatment_condition\":\""<<esc(r.treatment_condition)<<"\""
+    <<",\"classifier\":\""<<esc(r.contrast.classifier.classification.label)<<"\""
+    <<",\"classifier_mode\":\""<<esc(r.contrast.treatment.classifier_mode)<<"\""
+    <<",\"classifier_available\":"<<(r.contrast.treatment.classifier_available?"true":"false")
+    <<",\"classifier_synthetic_treatment\":"<<(r.contrast.treatment.classifier_synthetic?"true":"false")<<"}";
+  }
+  body<<"],\"claim_boundary\":\"matched-seed, one-variable-at-a-time information treatments; scripted fixture qualifies plumbing, live transports provide empirical behavior\"}";
   return wrap(cmd, seed, body.str());
  }
  if(cmd=="bundle"){
@@ -303,7 +307,7 @@ std::string run_command(const std::string& cmd, std::uint64_t seed, std::size_t 
  }
  throw std::invalid_argument(
   "unknown command (use: bundle|phase-i|phase-ii|layer-a|ten-llm|llm-slice|population|adaptive|"
-  "ollama-preflight|ollama-slice|ollama-paired|ollama-campaign|hetero-pop|info-contrast)");
+  "ollama-preflight|ollama-slice|ollama-paired|ollama-campaign|hetero-pop|hetero-campaign|info-contrast|info-contrast-live)");
 }
 }
 

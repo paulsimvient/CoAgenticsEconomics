@@ -34,7 +34,44 @@ HumanComparisonReport compare_human_behavior(const HumanReferenceSet& refs,const
   }
   report.comparisons.push_back(c);
  }
+ // Directional human-market benchmarks are intentionally separate from the
+ // numeric distribution comparisons above. They report whether an observed
+ // live-model market exhibits the published qualitative pattern; they never
+ // manufacture a human mean/SD.
+ for(const auto& b:empirical_human_behavioral_benchmarks()){
+  HumanBehavioralBenchmarkComparison c; c.metric=b.metric;c.source_id=b.source_id;
+  std::vector<double> vals; bool has_live=false, has_nonlive=false;
+  for(const auto& o:observations){
+   if(o.metric==b.metric && std::isfinite(o.value)){
+    vals.push_back(o.value);
+    has_live|=o.origin==EvidenceOrigin::LiveProvider;
+    has_nonlive|=o.origin!=EvidenceOrigin::LiveProvider;
+   }
+  }
+  if(vals.empty()){
+   c.status="NO_MATCHED_BEHAVIORAL_OBSERVATION";
+   c.explanation=b.description;
+  }else if(!has_live){
+   c.status="SCRIPTED_CONTROL_ONLY";
+   c.explanation="Matched scripted observation; not evidence about live LLM behavior.";
+  }else if(has_nonlive){
+   c.status="MIXED_ORIGIN_REJECTED";
+   c.explanation="Live and scripted observations are not pooled.";
+  }else{
+   c.observed=std::accumulate(vals.begin(),vals.end(),0.0)/vals.size();
+   c.measurable=true;
+   bool consistent=false;
+   if(b.metric=="initial_buyer_seller_aggressiveness") consistent=c.observed>0.0;
+   else if(b.metric=="initial_price_relative_to_equilibrium") consistent=c.observed<0.0;
+   else if(b.metric=="price_convergence_over_periods") consistent=c.observed>0.0;
+   c.status=consistent?"CONSISTENT_WITH_REPORTED_PATTERN":"NOT_CONSISTENT_WITH_REPORTED_PATTERN";
+   c.explanation=b.description;
+  }
+  report.behavioral_benchmarks.push_back(c);
+ }
  report.human_behavioral_coverage=std::all_of(report.comparisons.begin(),report.comparisons.end(),[](const auto& c){return c.status=="DESCRIPTIVE_COMPARISON";});
+ // The broader DARPA claim gate remains conservative: qualitative human
+ // benchmarks do not substitute for condition-matched empirical distributions.
  report.darpa_claim_ready=report.live_model_evidence&&report.human_behavioral_coverage;
  return report;
 }
@@ -46,11 +83,17 @@ std::string human_comparison_markdown(const HumanComparisonReport& r){
  for(const auto& c:r.comparisons)o<<"| "<<c.metric<<" | "<<c.status<<" | "<<c.human_units<<" | "<<c.model_runs<<" | "<<c.human_mean<<" | "<<c.model_mean<<" | "<<c.difference<<" | "<<c.source_id<<" |\n";
  o<<"\nLive model evidence: "<<(r.live_model_evidence?"YES":"NO")<<"  \nAll behavioral human references available and matched: "<<(r.human_behavioral_coverage?"YES":"NO")<<"  \nClaim gate: "<<(r.darpa_claim_ready?"READY FOR FURTHER REVIEW":"NOT READY")<<"\n\n";
  for(const auto& c:r.comparisons)o<<"- "<<c.metric<<": "<<c.explanation<<"\n";
+ o<<"\n## Directional human-market behavioral benchmarks\n\n";
+ o<<"These benchmarks are literature-derived patterns, not human equivalence scores.\n\n";
+ o<<"| Benchmark | Status | Observed | Source |\n|---|---|---:|---|\n";
+ for(const auto& c:r.behavioral_benchmarks)o<<"| "<<c.metric<<" | "<<c.status<<" | "<<std::fixed<<std::setprecision(3)<<c.observed<<" | "<<c.source_id<<" |\n";
  return o.str();
 }
 std::string human_comparison_json(const HumanComparisonReport& r){
  std::ostringstream o;o<<std::fixed<<std::setprecision(6)<<"{\"live_model_evidence\":"<<(r.live_model_evidence?"true":"false")<<",\"human_behavioral_coverage\":"<<(r.human_behavioral_coverage?"true":"false")<<",\"darpa_claim_ready\":"<<(r.darpa_claim_ready?"true":"false")<<",\"comparisons\":[";
  for(std::size_t i=0;i<r.comparisons.size();++i){const auto& c=r.comparisons[i];if(i)o<<",";o<<"{\"metric\":\""<<escaped(c.metric)<<"\",\"status\":\""<<escaped(c.status)<<"\",\"human_units\":"<<c.human_units<<",\"model_runs\":"<<c.model_runs<<",\"human_mean\":"<<c.human_mean<<",\"model_mean\":"<<c.model_mean<<",\"difference\":"<<c.difference<<",\"source_id\":\""<<escaped(c.source_id)<<"\"}";}
+ o<<"],\"behavioral_benchmarks\":[";
+ for(std::size_t i=0;i<r.behavioral_benchmarks.size();++i){const auto& c=r.behavioral_benchmarks[i];if(i)o<<",";o<<"{\"metric\":\""<<escaped(c.metric)<<"\",\"status\":\""<<escaped(c.status)<<"\",\"observed\":"<<c.observed<<",\"measurable\":"<<(c.measurable?"true":"false")<<",\"source_id\":\""<<escaped(c.source_id)<<"\"}";}
  o<<"]}\n";return o.str();
 }
 }

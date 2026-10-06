@@ -1,10 +1,217 @@
 #!/usr/bin/env python3
 """Localhost workbench controller: v27 paced CDA + DV026 evidence runner + batch validation."""
-import json, os, re, subprocess, threading, time, urllib.parse
+import hashlib, json, os, re, subprocess, threading, time, urllib.parse
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent
 CAMPAIGN_DIR=ROOT/'results'/'dv026_ollama_campaign'
+IMPLEMENTATION_REVISION='2026-10-04-pass3-step17-ux-refinement'
+
+EXPECTATIONS_DIR=ROOT/'results'/'dv026_research_expectations'
+EXPECTATIONS_PATH=EXPECTATIONS_DIR/'research_expectations.json'
+DESIGN_DIR=ROOT/'results'/'dv026_research_design'
+DESIGN_PATH=DESIGN_DIR/'experiment_design.json'
+
+# Read-only formula provenance for Research Console Method drawers (no editable math).
+CHART_METHODS={
+ 'models_x_seeds':{
+  'title':'Models × seeds',
+  'formula':'Per model: cell_ok count and attempted count from cells.jsonl; bar scale = count / n_seeds.',
+  'math':'ok_m / N , attempted_m / N',
+  'source':'results/dv026_ollama_campaign/cells.jsonl',
+  'fields':['model','attempted','cell_ok','n_seeds'],
+ },
+ 'literature_vs_llm':{
+  'title':'η · literature vs LLM',
+  'formula':'Literature band = archival Table 2 means. LLM point = mean treatment_efficiency over rows with cell_ok (never Layer A CDA).',
+  'math':'live_mean = mean(treatment_efficiency | cell_ok)',
+  'source':'docs/GODE_SUNDER_1993_TABLE2.json + cells.jsonl',
+  'fields':['treatment_efficiency','cell_ok','literature_means'],
+ },
+ 'pipeline':{
+  'title':'Pipeline',
+  'formula':'Each stage counts matching boolean flags among non-skipped cells; % = count / attempted.',
+  'math':'stage_count / attempted',
+  'source':'results/dv026_ollama_campaign/cells.jsonl',
+  'fields':['attempted','parse_ok','action_valid','market_action_ok','market_accepted','replay_ok|cross_event_valid','cell_ok'],
+ },
+}
+ANALYSIS_METHODS={
+ 'campaign_analysis':{
+  'title':'Campaign analysis · model × version',
+  'formula':'Per model, mean and sample sd of treatment_efficiency across seed cells; 95% CI = mean ± 1.96·sd/√n (descriptive).',
+  'math':'CI = mean ± 1.96·sd/√n',
+  'source':'results/dv026_ollama_campaign/cells.jsonl',
+  'fields':['treatment_efficiency','parse_ok','action_valid','market_accepted','execution_observed'],
+ },
+ 'matched_effects':{
+  'title':'Matched treatment effects',
+  'formula':'Mean/CI of persisted paired deltas already written on each cell row (not recomputed in the UI).',
+  'math':'mean(delta_*), CI as above',
+  'source':'results/dv026_ollama_campaign/cells.jsonl',
+  'fields':['delta_efficiency','delta_surplus','delta_mean_price'],
+ },
+ 'fingerprints':{
+  'title':'Behavioral fingerprints',
+  'formula':'Aggregated only from persisted cell_*.jsonl decision turns (aggressiveness, reservation violations, fills, payoff).',
+  'math':'rates over observed turns / quotes',
+  'source':'results/dv026_ollama_campaign/cell_*.jsonl',
+  'fields':['parsed_action','submission.filled_quantity','agent_state_before.private_value'],
+ },
+}
+
+def _unfreeze_expectations_to_draft():
+ """Keep hypothesis content; unlock for a new experiment (workflow beginning)."""
+ doc=_load_expectations()
+ doc['status']='draft'
+ doc.pop('manifest_sha256',None)
+ doc.pop('frozen_at',None)
+ doc.pop('frozen_before_observation',None)
+ EXPECTATIONS_DIR.mkdir(parents=True,exist_ok=True)
+ EXPECTATIONS_PATH.write_text(json.dumps(doc,indent=2,ensure_ascii=False)+'\n')
+ return doc
+
+def _canonical_json(obj):
+ return json.dumps(obj,sort_keys=True,separators=(',',':'),ensure_ascii=False)
+
+def _expectations_hash(doc):
+ payload=dict(doc)
+ payload.pop('manifest_sha256',None)
+ return hashlib.sha256(_canonical_json(payload).encode('utf-8')).hexdigest()
+
+def _normalize_expectations(doc):
+ # Backward-compatible migration for the earlier metric schema.
+ # The scientific schema requires the explicit operational_definition field.
+ if not isinstance(doc,dict): return doc
+ for e in doc.get('expectations',[]) if isinstance(doc.get('expectations'),list) else []:
+  m=e.get('metric')
+  if isinstance(m,dict) and not str(m.get('operational_definition') or '').strip():
+   legacy=m.get('definition')
+   if legacy not in (None,''):
+    m['operational_definition']=legacy
+  # Keep the canonical field only; do not silently preserve a conflicting legacy alias.
+  if isinstance(m,dict): m.pop('definition',None)
+ return doc
+
+def _empty_expectations(integrity_error=None):
+ out={'schema_version':'dv026-research-expectations-v1','status':'draft','expectations':[],
+      'sample_size':{'planned_seeds':20,'minimum_complete':18,'stopping_rule':'fixed_number_of_seeds'},
+      'integrity_ok':integrity_error is None}
+ if integrity_error:
+  out['integrity_ok']=False
+  out['integrity_error']=str(integrity_error)
+ return out
+
+def _load_expectations():
+ if not EXPECTATIONS_PATH.is_file():
+  return _empty_expectations()
+ try:
+  d=_normalize_expectations(json.loads(EXPECTATIONS_PATH.read_text()))
+  if not isinstance(d,dict):
+   return _empty_expectations('research_expectations.json is not a JSON object')
+  if d.get('status')=='frozen':
+   stored=str(d.get('manifest_sha256') or '')
+   actual=_expectations_hash(d)
+   if not stored or stored!=actual:
+    err=(
+     'Frozen research expectations failed SHA-256 integrity verification '
+     f'(stored={stored or "(missing)"}; actual={actual}). '
+     'Re-save draft fields and Freeze again before a full campaign.'
+    )
+    blocked=_empty_expectations(err)
+    # Keep hypothesis content visible for repair, but do not treat as frozen.
+    blocked['expectations']=d.get('expectations') if isinstance(d.get('expectations'),list) else []
+    if isinstance(d.get('sample_size'),dict): blocked['sample_size']=d['sample_size']
+    blocked['integrity_blocked']=True
+    blocked['integrity_stored_sha256']=stored or None
+    blocked['integrity_actual_sha256']=actual
+    return blocked
+  d['integrity_ok']=True
+  d.pop('integrity_error',None)
+  d.pop('integrity_blocked',None)
+  return d
+ except Exception as e:
+  return _empty_expectations(f'Failed to load research expectations: {e}')
+
+def _validate_expectations(doc):
+ if not isinstance(doc,dict): raise ValueError('expectations document must be an object')
+ if doc.get('schema_version')!='dv026-research-expectations-v1': raise ValueError('unsupported expectations schema')
+ exps=doc.get('expectations')
+ if not isinstance(exps,list) or not exps: raise ValueError('at least one hypothesis is required before freezing')
+ seen=set()
+ for i,e in enumerate(exps,1):
+  if not isinstance(e,dict): raise ValueError(f'hypothesis {i} must be an object')
+  hid=str(e.get('id') or '').strip()
+  if not re.fullmatch(r'H\d{2}',hid): raise ValueError(f'hypothesis {i} requires an ID such as H01')
+  if hid in seen: raise ValueError(f'duplicate hypothesis ID {hid}')
+  seen.add(hid)
+  for key in ('research_question','hypothesis','comparison','metric','unit_of_analysis','estimand','expected','analysis','rationale'):
+   if not e.get(key): raise ValueError(f'{hid}: missing required field {key}')
+  exp=e['expected']
+  if not isinstance(exp,dict) or not exp.get('type'): raise ValueError(f'{hid}: expected result type is required')
+  if exp.get('type') in ('directional','numeric','absolute','distribution','equivalence') and not exp.get('direction') and exp.get('type')=='directional':
+   raise ValueError(f'{hid}: expected direction is required')
+  analysis=e['analysis']
+  if not isinstance(analysis,dict) or not analysis.get('method') or not analysis.get('uncertainty'):
+   raise ValueError(f'{hid}: analysis method and uncertainty are required')
+  metric=e.get('metric')
+  if isinstance(metric,dict):
+   for mk in ('name','operational_definition','unit','population','aggregation'):
+    if not str(metric.get(mk) or '').strip(): raise ValueError(f'{hid}: metric.{mk} is required')
+  elif not str(metric or '').strip(): raise ValueError(f'{hid}: metric is required')
+  if exp.get('type') in ('numeric','absolute','distribution','equivalence'):
+   vals=[exp.get(k) for k in ('value','effect','mean','margin') if exp.get(k) not in (None,'')]
+   if not vals: raise ValueError(f'{hid}: numeric expectation requires a numeric value/effect/mean/margin')
+   for v in vals:
+    try: float(v)
+    except (TypeError,ValueError): raise ValueError(f'{hid}: expected numeric values must be numbers')
+  lo,hi=exp.get('range_low'),exp.get('range_high')
+  if lo not in (None,'') and hi not in (None,''):
+   try:
+    if float(lo)>float(hi): raise ValueError(f'{hid}: expected range lower bound exceeds upper bound')
+   except (TypeError,ValueError): raise ValueError(f'{hid}: expected range bounds must be numeric')
+ ss=doc.get('sample_size') or {}
+ try: planned=int(ss.get('planned_seeds')); minimum=int(ss.get('minimum_complete'))
+ except Exception: raise ValueError('sample_size planned_seeds and minimum_complete are required integers')
+ if planned<1 or minimum<1 or minimum>planned: raise ValueError('sample_size requires 1 <= minimum_complete <= planned_seeds')
+ if ss.get('stopping_rule')!='fixed_number_of_seeds': raise ValueError('current implementation requires fixed_number_of_seeds stopping rule')
+ return True
+
+def _freeze_expectations(doc):
+ _validate_expectations(doc)
+ out=json.loads(json.dumps(doc))
+ out['status']='frozen'
+ out['frozen_at']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+ out['frozen_before_observation']=True
+ out['manifest_sha256']=_expectations_hash(out)
+ EXPECTATIONS_DIR.mkdir(parents=True,exist_ok=True)
+ EXPECTATIONS_PATH.write_text(json.dumps(out,indent=2,ensure_ascii=False)+'\n')
+ return out
+
+
+def _current_campaign_summary(doc):
+ return isinstance(doc,dict) and doc.get('implementation_revision')==IMPLEMENTATION_REVISION
+
+def _layer_a_payload_from_doc(doc):
+ """Extract Layer A qualification fields from a runner/summary document."""
+ if not isinstance(doc,dict): return None
+ la=doc.get('layer_a') if isinstance(doc.get('layer_a'),dict) else None
+ src=la if isinstance(la,dict) else doc
+ pass_flag=bool(src.get('layer_a_pass') or src.get('pass'))
+ cda=src.get('mean_efficiency_cda')
+ sealed=src.get('mean_efficiency_sealed')
+ if not pass_flag and cda is None and sealed is None and not la:
+  return None
+ if not pass_flag and cda is None:
+  return None
+ return {
+  'layer_a_pass':pass_flag,
+  'pass':pass_flag,
+  'mean_efficiency_cda':cda,
+  'mean_efficiency_sealed':sealed,
+  'trials':src.get('trials') or src.get('layer_a_trials') or [],
+  'source':('layer_a' if la else 'summary'),
+ }
 
 def _model_cell_slug(model:str)->str:
  """Match runner filenames: cell_{model_with_colon_as_underscore}_{seed}.jsonl"""
@@ -18,6 +225,30 @@ def _parse_cell_filename(name:str):
  m=re.match(r'^(.*)_(\d+)$', stem)
  if not m: return None
  return m.group(1), int(m.group(2))
+
+def _iter_jsonl_records(text:str):
+ """Yield JSON objects from JSONL, rejoining lines broken by unescaped newlines in strings.
+
+ Older cell writers escaped quotes/backslashes but not \\n inside raw_provider_response,
+ so one logical turn became multiple physical lines. Reassemble until json.loads succeeds.
+ """
+ buf=''
+ for line in (text or '').splitlines():
+  piece=line.rstrip('\n')
+  if not piece.strip() and not buf:
+   continue
+  # Insert escaped newline — a literal \\n inside the JSON string — not a raw break.
+  buf=(buf+'\\n'+piece) if buf else piece
+  try:
+   obj=json.loads(buf)
+  except Exception:
+   # Cap runaway buffers (corrupt files) so we don't hold megabytes.
+   if len(buf)>2_000_000:
+    buf=''
+   continue
+  if isinstance(obj,dict):
+   yield obj
+  buf=''
 
 def _safe_campaign_cell_path(model:str, seed:int)->Path:
  """Resolve cell file under CAMPAIGN_DIR only (no path traversal)."""
@@ -101,7 +332,7 @@ class CampaignJob:
   self.reset_idle()
  def reset_idle(self):
   self.running=False; self.cancel=False
-  self.base_seed=424242; self.n_seeds=20; self.smoke=False
+  self.base_seed=424242; self.n_seeds=20; self.smoke=False; self.population_design='reference_counterparty'; self.activation_design='sequential_interaction'; self.inference_repeats=3
   self.done=0; self.total=0
   self.pass_count=0; self.fail_count=0
   self.current_model=None; self.current_seed=None
@@ -111,12 +342,13 @@ class CampaignJob:
   self.darpa_claim_ready=False; self.available_models=0; self.cells_ok=0
   self.distinct_live_models_ok=0
   self.gate_partial=None
+  self.stale_summary=None  # {path, on_disk_revision, required_revision} when hydrate skipped
  def snapshot(self):
   pct=(100.0*self.done/self.total) if self.total else (100.0 if self.result else 0.0)
   complete=(not self.running) and (self.result is not None or self.cancelled or (self.finished_at is not None and self.done>0))
   out=dict(
    running=self.running, cancelled=self.cancelled, command='ollama-campaign',
-   base_seed=self.base_seed, n_seeds=self.n_seeds, smoke=self.smoke,
+   base_seed=self.base_seed, n_seeds=self.n_seeds, smoke=self.smoke, population_design=self.population_design, activation_design=self.activation_design, inference_repeats=self.inference_repeats,
    done=self.done, total=self.total, pass_count=self.pass_count, fail_count=self.fail_count,
    current_model=self.current_model, current_seed=self.current_seed,
    started_at=self.started_at, finished_at=self.finished_at, last_error=self.last_error,
@@ -129,7 +361,11 @@ class CampaignJob:
    readiness_checks=list(self.readiness_checks),
    gate_partial=self.gate_partial,
    claim_boundary=CLAIM_CAMPAIGN,
+   expectations_frozen=(_load_expectations().get('status')=='frozen'),
+   expectations_manifest_sha256=_load_expectations().get('manifest_sha256'),
    complete=complete,
+   implementation_revision=IMPLEMENTATION_REVISION,
+   stale_summary=self.stale_summary,
   )
   if self.result is not None:
    out['result']=self.result
@@ -142,8 +378,17 @@ class Session:
  def __init__(self):
   self.lock=threading.RLock();self.cond=threading.Condition(self.lock);self.proc=None
   self.generation=0;self.replay_plan=[];self.last_run=None;self.dv026_last=None
+  self.layer_a_cache=None  # persists across preflight overwrites of dv026_last
   self.batch=BatchJob(); self.campaign=CampaignJob(); self.preflight=None
+  self.campaign_display_reset=False  # True after console Reset until new campaign/Layer A
   self.reset()
+  # Recover Layer A from on-disk summary so Console doesn't show a false NOT QUALIFIED.
+  try:
+   path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
+   if path.is_file():
+    self.layer_a_cache=_layer_a_payload_from_doc(json.loads(path.read_text()))
+  except Exception:
+   pass
  def reset(self):
   with self.lock:
    self.generation+=1
@@ -151,6 +396,70 @@ class Session:
    self.proc=None;self.status='idle';self.seed=None;self.events=0;self.speed=30
    self.impulse=0.;self.edge=True;self.trace=[];self.outcomes={};self.interventions=[];self.error=None
    self.replay_plan=[];self.cond.notify_all()
+ def console_reset(self):
+  """Return Research Console to workflow start without deleting on-disk evidence files."""
+  with self.lock:
+   if self.campaign.running:
+    self.campaign.cancel=True
+    p=self.campaign.proc
+    if p and p.poll() is None:
+     try: p.kill()
+     except Exception: pass
+    # Wait briefly for worker to notice cancel
+   running_was=bool(self.campaign.running)
+  # Allow cancel path to settle outside lock if needed
+  if running_was:
+   deadline=time.time()+2.0
+   while time.time()<deadline:
+    with self.lock:
+     if not self.campaign.running: break
+    time.sleep(0.05)
+  with self.lock:
+   c=self.campaign
+   c.reset_idle()
+   c.result=None
+   c.darpa_claim_ready=False
+   c.scope='not_ready'
+   c.readiness_checks=[]
+   c.gate_partial=None
+   c.stale_summary=None
+   c.available_models=0; c.cells_ok=0; c.distinct_live_models_ok=0
+   c.pass_count=0; c.fail_count=0; c.done=0; c.total=0
+   c.started_at=None; c.finished_at=None; c.last_error=None
+   c.cancelled=False; c.proc=None
+   self.campaign_display_reset=True
+   # Strip Layer A / last DV026 payload so qualify must be re-run
+   self.layer_a_cache=None
+   if isinstance(self.dv026_last,dict):
+    self.dv026_last={k:v for k,v in self.dv026_last.items() if k not in ('layer_a','layer_a_pass','mean_efficiency_cda','mean_efficiency_sealed')}
+   else:
+    self.dv026_last=None
+  expectations=_unfreeze_expectations_to_draft()
+  # One preflight so Ready can return without a second toolbar button
+  preflight=None; preflight_error=None
+  try:
+   pfraw=self.run_dv026('ollama-preflight',424242)
+   preflight=pfraw.get('preflight',pfraw) if isinstance(pfraw,dict) else pfraw
+   with self.lock:
+    self.preflight=preflight if isinstance(preflight,dict) else None
+  except Exception as e:
+   preflight_error=str(e)
+  with self.lock:
+   snap=self.campaign.snapshot()
+  return {
+   'ok':True,
+   'campaign_display_reset':True,
+   'prior_evidence_on_disk':(
+    CAMPAIGN_DIR.is_dir() and (
+     (CAMPAIGN_DIR/'cells.jsonl').is_file() or any(CAMPAIGN_DIR.glob('cell_*.jsonl'))
+    )
+   ),
+   'expectations':expectations,
+   'campaign':snap,
+   'preflight':preflight,
+   'preflight_error':preflight_error,
+   'message':'Console reset to workflow start. Prior campaign files remain on disk but are hidden from charts until a new run.',
+  }
  def start(self,seed,events,speed):
   with self.lock:
    if self.batch.running or self.campaign.running: raise ValueError('DV026 job running; cancel or wait first')
@@ -203,7 +512,7 @@ class Session:
   with self.lock:
    if self.batch.running or self.campaign.running: raise ValueError('DV026 job running; cancel or wait first')
   allowed={'bundle','phase-i','phase-ii','layer-a','ten-llm','llm-slice','population','adaptive',
-           'ollama-preflight','ollama-slice','ollama-paired','ollama-campaign'}
+           'ollama-preflight','ollama-slice','ollama-paired','ollama-campaign','hetero-pop','hetero-campaign','info-contrast','info-contrast-live'}
   if command not in allowed: raise ValueError('Invalid DV026 command')
   if not isinstance(seed,int) or seed<0: raise ValueError('Invalid seed')
   exe=find_exe('dv026-workbench-runner')
@@ -216,6 +525,10 @@ class Session:
    if model: env['COAGENTICS_LLM_MODEL']=str(model)
    elif 'COAGENTICS_LLM_MODEL' not in env: env['COAGENTICS_LLM_MODEL']='llama3.2'
    timeout=300
+   ex=_load_expectations()
+   if ex.get('status')=='frozen' and ex.get('manifest_sha256'):
+    env['COAGENTICS_EXPECTATIONS_SHA256']=str(ex['manifest_sha256'])
+    env['COAGENTICS_EXPECTATIONS_PATH']=str(EXPECTATIONS_PATH)
   if command=='ollama-campaign':
    timeout=None  # long-running; prefer campaign_start API
    args=[str(exe),command,str(seed),'2','--smoke']
@@ -227,7 +540,20 @@ class Session:
    raise ValueError(proc.stderr.strip() or f'DV026 runner exit {proc.returncode}')
   data=json.loads(proc.stdout)
   with self.lock:
-   self.dv026_last=data
+   # Preflight must not erase a prior Layer A qualification from dv026_last.
+   if command=='ollama-preflight' and isinstance(self.dv026_last,dict):
+    keep=_layer_a_payload_from_doc(self.dv026_last) or self.layer_a_cache
+    self.dv026_last=data if isinstance(data,dict) else {'result':data}
+    if keep:
+     self.dv026_last={**self.dv026_last, 'layer_a':keep, 'layer_a_pass':keep.get('layer_a_pass'),
+                      'mean_efficiency_cda':keep.get('mean_efficiency_cda'),
+                      'mean_efficiency_sealed':keep.get('mean_efficiency_sealed')}
+     self.layer_a_cache=keep
+   else:
+    self.dv026_last=data
+   if command in ('layer-a','bundle'):
+    la=_layer_a_payload_from_doc(data if isinstance(data,dict) else {})
+    if la: self.layer_a_cache=la
    if command=='ollama-preflight':
     self.preflight=data.get('preflight', data) if isinstance(data,dict) else data
   return data
@@ -301,12 +627,79 @@ class Session:
      b.finished_at=time.time(); b.current_seed=None
      return
 
- def campaign_start(self, base_seed=424242, n_seeds=20, smoke=False):
+ def _layer_a_is_qualified(self):
+  """True when Layer A (η gate) has passed in-session, cache, or on-disk summary.
+
+  Layer A is engine calibration (no LLMs). Accept on-disk layer_a_pass even when
+  campaign implementation_revision differs — revision gates claim READY, not η.
+  """
+  with self.lock:
+   if isinstance(self.layer_a_cache,dict) and (self.layer_a_cache.get('layer_a_pass') or self.layer_a_cache.get('pass')):
+    return True
+   last=self.dv026_last if isinstance(self.dv026_last,dict) else {}
+   la=_layer_a_payload_from_doc(last)
+   if la and la.get('layer_a_pass'):
+    self.layer_a_cache=la
+    return True
+   if self.campaign.result and isinstance(self.campaign.result,dict):
+    camp=self.campaign.result.get('campaign') or self.campaign.result
+    la=_layer_a_payload_from_doc(camp if isinstance(camp,dict) else {})
+    if la and la.get('layer_a_pass'):
+     self.layer_a_cache=la
+     return True
+  path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
+  if path.is_file():
+   try:
+    summ=json.loads(path.read_text())
+    la=_layer_a_payload_from_doc(summ)
+    if la and la.get('layer_a_pass'):
+     with self.lock:
+      self.layer_a_cache=la
+     return True
+   except Exception:
+    pass
+  return False
+ def layer_a_status(self):
+  """Layer A payload for Console hydration (survives preflight /last overwrites)."""
+  with self.lock:
+   if isinstance(self.layer_a_cache,dict):
+    return dict(self.layer_a_cache)
+  la=_layer_a_payload_from_doc(self.dv026_last if isinstance(self.dv026_last,dict) else {})
+  if la: return la
+  path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
+  if path.is_file():
+   try:
+    la=_layer_a_payload_from_doc(json.loads(path.read_text()))
+    if la:
+     self.layer_a_cache=la
+     return la
+   except Exception:
+    pass
+  return {'layer_a_pass':False,'pass':False,'mean_efficiency_cda':None,'mean_efficiency_sealed':None,'trials':[]}
+ def campaign_start(self, base_seed=424242, n_seeds=20, smoke=False, population_design='reference_counterparty', activation_design='sequential_interaction'):
   with self.lock:
    if self.batch.running or self.campaign.running: raise ValueError('Job already running')
    if self.status in ('running','paused'): raise ValueError('Market Live experiment active; reset first')
    if not isinstance(n_seeds,int) or not 1<=n_seeds<=100: raise ValueError('n_seeds must be 1..100')
    if not isinstance(base_seed,int) or base_seed<0: raise ValueError('Invalid base_seed')
+  expectations=_load_expectations()
+  if expectations.get('integrity_ok') is False or expectations.get('integrity_blocked'):
+   raise ValueError(expectations.get('integrity_error') or 'Research expectations failed integrity verification; re-freeze before starting a full campaign.')
+  if not smoke and expectations.get('status')!='frozen':
+   raise ValueError('Research expectations must be frozen before starting a full live campaign.')
+  if not smoke:
+   _validate_expectations(expectations)
+   planned=int((expectations.get('sample_size') or {}).get('planned_seeds',0))
+   if n_seeds!=planned:
+    raise ValueError(f'Campaign seed count ({n_seeds}) does not match frozen preregistration ({planned}). Create/amend and refreeze expectations to change sample size.')
+   if not self._layer_a_is_qualified():
+    raise ValueError('Layer A market qualification is required before starting a full live campaign (run layer-a; Smoke mode exempt).')
+  if population_design not in ('reference_counterparty','heterogeneous_multi_llm'):
+   raise ValueError('Invalid population_design')
+  if activation_design not in ('sequential_interaction','frozen_snapshot','both'):
+   raise ValueError('Invalid activation_design')
+  if population_design=='reference_counterparty' and activation_design!='sequential_interaction':
+   raise ValueError('Frozen Snapshot applies to the heterogeneous multi-LLM population design, not the reference-counterparty campaign.')
   # Refresh the runtime before starting so the UI has a real denominator and never
   # starts a "live" campaign against an unavailable provider.
   try:
@@ -321,12 +714,16 @@ class Session:
    raise ValueError('Ollama is reachable but no configured DV026 models are installed.')
   model_count=min(available,2) if smoke else available
   seed_count=min(n_seeds,2) if smoke else n_seeds
+  inference_repeats=1 if smoke else 3
+  design_count=1 if activation_design!='both' else 2
   with self.lock:
    find_exe('dv026-workbench-runner')
    c=self.campaign
    c.reset_idle()
+   self.campaign_display_reset=False
    c.running=True; c.base_seed=base_seed; c.n_seeds=seed_count; c.smoke=bool(smoke)
-   c.available_models=model_count; c.total=model_count*seed_count
+   c.population_design=population_design; c.activation_design=activation_design; c.inference_repeats=inference_repeats
+   c.available_models=model_count; c.total=(seed_count*inference_repeats*design_count if population_design=='heterogeneous_multi_llm' else model_count*seed_count)
    c.started_at=time.time()
    c.current_model='(starting)'; c.current_seed=base_seed
    threading.Thread(target=self._campaign_worker,daemon=True).start()
@@ -343,18 +740,54 @@ class Session:
  def campaign_status(self):
   with self.lock:
    self._hydrate_campaign_from_disk_locked()
-   return self.campaign.snapshot()
+   snap=self.campaign.snapshot()
+   snap['campaign_display_reset']=bool(self.campaign_display_reset)
+  la=self.layer_a_status()
+  snap['layer_a']=la
+  snap['layer_a_pass']=bool(la.get('layer_a_pass') or la.get('pass'))
+  if snap.get('mean_efficiency_cda') is None:
+   snap['mean_efficiency_cda']=la.get('mean_efficiency_cda')
+  if snap.get('mean_efficiency_sealed') is None:
+   snap['mean_efficiency_sealed']=la.get('mean_efficiency_sealed')
+  return snap
  def _hydrate_campaign_from_disk_locked(self):
   """If no in-memory campaign result, surface the last on-disk CLI/UI summary."""
   c=self.campaign
-  if c.running or c.result is not None: return
+  if c.running or c.result is not None:
+   # Keep any prior stale_summary notice only when still idle without a current result.
+   return
+  if self.campaign_display_reset:
+   # Operator Reset: do not re-claim READY from disk until a new campaign/Layer A.
+   c.stale_summary=None
+   return
   path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
-  if not path.is_file(): return
+  if not path.is_file():
+   c.stale_summary=None
+   return
   try:
    camp=json.loads(path.read_text())
   except Exception:
+   c.stale_summary=None
    return
-  if not isinstance(camp,dict): return
+  if not isinstance(camp,dict):
+   c.stale_summary=None
+   return
+  if not _current_campaign_summary(camp):
+   # Never hydrate readiness from an artifact produced by different code/config semantics.
+   on_disk=str(camp.get('implementation_revision') or '') or '(missing)'
+   c.stale_summary={
+    'path':'results/dv026_ollama_campaign/summary.json',
+    'on_disk_revision':on_disk,
+    'required_revision':IMPLEMENTATION_REVISION,
+    'ignored_darpa_claim_ready':bool(camp.get('darpa_claim_ready')),
+    'message':(
+     f'On-disk campaign summary is from a different implementation revision '
+     f'({on_disk}) and was not loaded as READY. Current revision is '
+     f'{IMPLEMENTATION_REVISION}. Re-run Layer A / a full campaign under this build.'
+    ),
+   }
+   return
+  c.stale_summary=None
   c.result={'campaign':camp,'darpa_claim_ready':bool(camp.get('darpa_claim_ready')),'scope':str(camp.get('scope') or 'not_ready')}
   c.darpa_claim_ready=bool(camp.get('darpa_claim_ready'))
   c.scope=str(camp.get('scope') or 'not_ready')
@@ -380,6 +813,27 @@ class Session:
    return c.summary()
  def campaign_charts(self):
   """Aggregate cells.jsonl for Research Console SVG panels. No invented live values."""
+  with self.lock:
+   display_reset=bool(self.campaign_display_reset)
+   running=bool(self.campaign.running)
+   n_seeds=int(self.campaign.n_seeds or 20)
+   layer_a_cda=None
+   if self.campaign.result and isinstance(self.campaign.result,dict):
+    camp=self.campaign.result.get('campaign') or self.campaign.result
+    if isinstance(camp,dict) and camp.get('mean_efficiency_cda') is not None:
+     layer_a_cda=float(camp.get('mean_efficiency_cda'))
+  if display_reset:
+   return {
+    'by_model':[],
+    'human_ref':{'literature_means':[],'live_mean_efficiency':None,'live_mean_n':0},
+    'layer_a_mean_efficiency_cda':None,
+    'pipeline':{'attempted':0,'parse_ok':0,'action_valid':0,'market_action_ok':0,'market_accepted':0,'replay_ok':0,'cell_ok':0},
+    'n_seeds':n_seeds,
+    'partial':False,
+    'campaign_display_reset':True,
+    'prior_evidence_on_disk':(CAMPAIGN_DIR/'cells.jsonl').is_file() if CAMPAIGN_DIR.is_dir() else False,
+    'methods':CHART_METHODS,
+   }
   lit=[]; lit_src=''; lit_err=None
   lit_path=ROOT/'docs'/'GODE_SUNDER_1993_TABLE2.json'
   try:
@@ -395,20 +849,12 @@ class Session:
   summary_path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
   by={}
   pipe={'attempted':0,'parse_ok':0,'action_valid':0,'market_action_ok':0,'market_accepted':0,'replay_ok':0,'cell_ok':0}
-  n_seeds=20
-  layer_a_cda=None
   live_eff_sum=0.0
   live_eff_n=0
-  with self.lock:
-   running=bool(self.campaign.running)
-   n_seeds=int(self.campaign.n_seeds or 20)
-   if self.campaign.result and isinstance(self.campaign.result,dict):
-    camp=self.campaign.result.get('campaign') or self.campaign.result
-    if isinstance(camp,dict) and camp.get('mean_efficiency_cda') is not None:
-     layer_a_cda=float(camp.get('mean_efficiency_cda'))
   if summary_path.is_file():
    try:
     summ=json.loads(summary_path.read_text())
+    if not _current_campaign_summary(summ): summ={}
     n_seeds=int(summ.get('n_seeds') or n_seeds)
     if layer_a_cda is None and summ.get('mean_efficiency_cda') is not None:
      layer_a_cda=float(summ.get('mean_efficiency_cda'))
@@ -466,9 +912,104 @@ class Session:
    'pipeline':pipe,
    'n_seeds':n_seeds,
    'partial':running,
+   'campaign_display_reset':False,
+   'methods':CHART_METHODS,
   }
+ def campaign_analysis(self):
+  """Measured campaign analysis: distributions, model comparisons, paired deltas, CIs and observed fingerprints."""
+  import math, statistics
+  with self.lock:
+   display_reset=bool(self.campaign_display_reset)
+   running=bool(self.campaign.running)
+  if display_reset:
+   return {
+    'cells':0,'models':[],'overall':{},'fingerprints':[],
+    'ci_method':'95% normal-approximation CI over observed seed cells; descriptive, not equivalence testing',
+    'source':'persisted cells.jsonl + cell_*.jsonl',
+    'partial':False,
+    'campaign_display_reset':True,
+    'prior_evidence_on_disk':(CAMPAIGN_DIR/'cells.jsonl').is_file() if CAMPAIGN_DIR.is_dir() else False,
+    'methods':ANALYSIS_METHODS,
+   }
+  cells_path=CAMPAIGN_DIR/'cells.jsonl'
+  rows=[]
+  if cells_path.is_file():
+   for line in cells_path.read_text().splitlines():
+    try: r=json.loads(line)
+    except Exception: continue
+    if isinstance(r,dict) and not r.get('skipped'): rows.append(r)
+  def nums(rs,key):
+   out=[]
+   for r in rs:
+    try:
+     v=float(r.get(key))
+     if math.isfinite(v): out.append(v)
+    except (TypeError,ValueError): pass
+   return out
+  def stats(v):
+   if not v:return {'n':0,'mean':None,'sd':None,'ci95_low':None,'ci95_high':None,'min':None,'max':None,'values':[]}
+   m=sum(v)/len(v); sd=statistics.stdev(v) if len(v)>1 else 0.0; half=1.96*sd/math.sqrt(len(v)) if len(v)>1 else 0.0
+   return {'n':len(v),'mean':m,'sd':sd,'ci95_low':m-half,'ci95_high':m+half,'min':min(v),'max':max(v),'values':v}
+  groups={}
+  for r in rows: groups.setdefault(str(r.get('model') or 'unknown'),[]).append(r)
+  models=[]
+  for model,rs in sorted(groups.items()):
+   models.append({'model':model,'cells':len(rs),'efficiency':stats(nums(rs,'treatment_efficiency')),
+    'delta_efficiency':stats(nums(rs,'delta_efficiency')),'delta_surplus':stats(nums(rs,'delta_surplus')),
+    'delta_mean_price':stats(nums(rs,'delta_mean_price')),
+    'parse_rate':sum(bool(x.get('parse_ok')) for x in rs)/len(rs),
+    'valid_rate':sum(bool(x.get('action_valid')) for x in rs)/len(rs),
+    'acceptance_rate':sum(bool(x.get('market_accepted')) for x in rs)/len(rs),
+    'execution_rate':sum(bool(x.get('execution_observed')) for x in rs)/len(rs)})
+  # Fingerprints are computed only from persisted observed turns, never invented from aggregate cells.
+  fp={}
+  for path in CAMPAIGN_DIR.glob('cell_*.jsonl') if CAMPAIGN_DIR.is_dir() else []:
+   try:
+    turns=[json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+   except Exception: continue
+   for t in turns:
+    md=t.get('model') or {}; model=str(md.get('name') if isinstance(md,dict) else md or 'unknown')
+    a=fp.setdefault(model,{'turns':0,'valid':0,'quotes':0,'violations':0,'aggressiveness_sum':0.0,'fills':0,'payoff_max':0.0,'prices':[]})
+    a['turns']+=1
+    if (t.get('parse') or {}).get('success') and (t.get('action_validation') or {}).get('valid'): a['valid']+=1
+    pa=t.get('parsed_action') or {}; action=pa.get('action'); px=pa.get('price'); before=t.get('agent_state_before') or {}; role=before.get('role'); reservation=before.get('private_value')
+    try: px=float(px); reservation=float(reservation)
+    except (TypeError,ValueError): px=reservation=None
+    if action in ('BUY','SELL') and px is not None and reservation is not None:
+     a['quotes']+=1; a['prices'].append(px); den=max(1.0,abs(reservation))
+     if action=='BUY': a['aggressiveness_sum']+=px/den; a['violations']+=int(px>reservation+1e-9)
+     else: a['aggressiveness_sum']+=(2.0-px/den); a['violations']+=int(px<reservation-1e-9)
+    sub=t.get('submission') or {}; a['fills']+=int((sub.get('filled_quantity') or 0)>0)
+    try:a['payoff_max']=max(a['payoff_max'],float((t.get('agent_state_after') or {}).get('realized_payoff') or 0))
+    except Exception:pass
+  fingerprints=[]
+  for model,a in sorted(fp.items()):
+   prices=a.pop('prices'); mean=sum(prices)/len(prices) if prices else None
+   sd=statistics.pstdev(prices) if len(prices)>1 else 0.0
+   fingerprints.append({'model':model,'turns':a['turns'],'aggressiveness':a['aggressiveness_sum']/a['quotes'] if a['quotes'] else None,
+    'reservation_violation_rate':a['violations']/a['quotes'] if a['quotes'] else None,'trade_frequency':a['fills']/a['turns'] if a['turns'] else None,
+    'action_validity':a['valid']/a['turns'] if a['turns'] else None,'response_consistency':(max(0.0,min(1.0,1.0-sd/max(1.0,abs(mean))))) if mean is not None else None,
+    'realized_payoff':a['payoff_max']})
+  return {'cells':len(rows),'models':models,'overall':{'efficiency':stats(nums(rows,'treatment_efficiency')),'delta_efficiency':stats(nums(rows,'delta_efficiency')),
+   'delta_surplus':stats(nums(rows,'delta_surplus')),'delta_mean_price':stats(nums(rows,'delta_mean_price'))},'fingerprints':fingerprints,
+   'ci_method':'95% normal-approximation CI over observed seed cells; descriptive, not equivalence testing','source':'persisted cells.jsonl + cell_*.jsonl','partial':running,
+   'campaign_display_reset':False,
+   'methods':ANALYSIS_METHODS}
  def campaign_cells_index(self):
   """List cell_*.jsonl files with model/seed/turns + cells.jsonl cell_ok join."""
+  with self.lock:
+   display_reset=bool(self.campaign_display_reset)
+   running=bool(self.campaign.running)
+   current_model=self.campaign.current_model
+   current_seed=self.campaign.current_seed
+  if display_reset:
+   return {
+    'cells':[],'count':0,'running':running,
+    'current_model':current_model,'current_seed':current_seed,
+    'campaign_display_reset':True,
+    'prior_evidence_on_disk':any(CAMPAIGN_DIR.glob('cell_*.jsonl')) if CAMPAIGN_DIR.is_dir() else False,
+    'note':'Console was reset; prior cell files remain on disk but are hidden until a new campaign run.',
+   }
   camp=CAMPAIGN_DIR
   summary={}
   cells_path=camp/'cells.jsonl'
@@ -482,7 +1023,15 @@ class Session:
     key=(str(row.get('model') or ''), int(row.get('seed') or 0))
     summary[key]={
      'cell_ok':bool(row.get('cell_ok')),
+     'control_efficiency':row.get('control_efficiency'),
      'treatment_efficiency':row.get('treatment_efficiency'),
+     'delta_efficiency':row.get('delta_efficiency'),
+     'control_surplus':row.get('control_surplus'),
+     'treatment_surplus':row.get('treatment_surplus'),
+     'delta_surplus':row.get('delta_surplus'),
+     'control_mean_price':row.get('control_mean_price'),
+     'treatment_mean_price':row.get('treatment_mean_price'),
+     'delta_mean_price':row.get('delta_mean_price'),
      'latency_ms':row.get('latency_ms'),
      'units_filled':row.get('units_filled'),
      'error':row.get('error') or '',
@@ -496,11 +1045,10 @@ class Session:
     model=None
     turns=0
     try:
-     lines=[ln for ln in path.read_text().splitlines() if ln.strip()]
-     turns=len(lines)
-     if lines:
-      first=json.loads(lines[0])
-      md=first.get('model')
+     records=list(_iter_jsonl_records(path.read_text(errors='replace')))
+     turns=len(records)
+     if records:
+      md=records[0].get('model')
       if isinstance(md,dict):
        model=md.get('name') or md.get('model')
       elif isinstance(md,str):
@@ -518,21 +1066,26 @@ class Session:
      'file':path.name,
      'turns':turns,
      'cell_ok':meta.get('cell_ok'),
+     'control_efficiency':meta.get('control_efficiency'),
      'treatment_efficiency':meta.get('treatment_efficiency'),
+     'delta_efficiency':meta.get('delta_efficiency'),
+     'control_surplus':meta.get('control_surplus'),
+     'treatment_surplus':meta.get('treatment_surplus'),
+     'delta_surplus':meta.get('delta_surplus'),
+     'control_mean_price':meta.get('control_mean_price'),
+     'treatment_mean_price':meta.get('treatment_mean_price'),
+     'delta_mean_price':meta.get('delta_mean_price'),
      'latency_ms':meta.get('latency_ms'),
      'units_filled':meta.get('units_filled'),
      'error':meta.get('error') or '',
     })
-  with self.lock:
-   running=bool(self.campaign.running)
-   current_model=self.campaign.current_model
-   current_seed=self.campaign.current_seed
   return {
    'cells':items,
    'count':len(items),
    'running':running,
    'current_model':current_model,
    'current_seed':current_seed,
+   'campaign_display_reset':False,
   }
  def campaign_cell_detail(self, model:str, seed:int):
   """Load one cell_*.jsonl with per-turn bid I/O."""
@@ -556,12 +1109,7 @@ class Session:
     return {'error':f'cell file not found for model={model} seed={seed}'}
   turns=[]
   try:
-   for i,line in enumerate(path.read_text().splitlines()):
-    line=line.strip()
-    if not line: continue
-    try: row=json.loads(line)
-    except Exception: continue
-    if not isinstance(row,dict): continue
+   for i,row in enumerate(_iter_jsonl_records(path.read_text(errors='replace'))):
     pa=row.get('parsed_action') if isinstance(row.get('parsed_action'),dict) else {}
     sub=row.get('submission') if isinstance(row.get('submission'),dict) else {}
     turns.append({
@@ -589,6 +1137,17 @@ class Session:
      'model':row.get('model'),
      'request_id':row.get('request_id'),
      'run_id':row.get('run_id'),
+     'seed':row.get('seed', seed),
+     'inference_config':row.get('inference_config'),
+     'adapter_version':row.get('adapter_version'),
+     'audit_metadata':{
+      'run_id':row.get('run_id'), 'request_id':row.get('request_id'),
+      'provider':(row.get('model') or {}).get('provider') if isinstance(row.get('model'),dict) else None,
+      'model':(row.get('model') or {}).get('name') if isinstance(row.get('model'),dict) else row.get('model'),
+      'version':(row.get('model') or {}).get('version') if isinstance(row.get('model'),dict) else None,
+      'experiment_seed':row.get('seed', seed), 'inference_config':row.get('inference_config'),
+      'adapter_version':row.get('adapter_version'),
+     },
     })
   except Exception as e:
    return {'error':f'failed to read cell file: {e}'}
@@ -622,7 +1181,9 @@ class Session:
   summary_path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
   summ={}
   if summary_path.is_file():
-   try: summ=json.loads(summary_path.read_text())
+   try:
+    summ=json.loads(summary_path.read_text())
+    if not _current_campaign_summary(summ): summ={}
    except Exception: summ={}
   with self.lock:
    self._hydrate_campaign_from_disk_locked()
@@ -899,9 +1460,17 @@ class Session:
   env=os.environ.copy()
   env.setdefault('COAGENTICS_LLM_PROVIDER','ollama')
   env.setdefault('COAGENTICS_LLM_BASE_URL','http://127.0.0.1:11434/v1')
+  ex=_load_expectations()
+  if ex.get('status')=='frozen' and ex.get('manifest_sha256'):
+   env['COAGENTICS_EXPECTATIONS_SHA256']=str(ex['manifest_sha256'])
+   env['COAGENTICS_EXPECTATIONS_PATH']=str(EXPECTATIONS_PATH)
+   env['COAGENTICS_EXPECTATIONS_JSON']=_canonical_json(ex)
+  env['COAGENTICS_POPULATION_DESIGN']=str(getattr(self.campaign,'population_design','reference_counterparty'))
+  env['COAGENTICS_ACTIVATION_DESIGN']=str(getattr(self.campaign,'activation_design','sequential_interaction'))
+  env['COAGENTICS_INFERENCE_REPEATS']=str(getattr(self.campaign,'inference_repeats',3))
   with self.lock:
    c=self.campaign
-   args=[str(exe),'ollama-campaign',str(c.base_seed),str(c.n_seeds)]
+   args=[str(exe),('hetero-campaign' if c.population_design=='heterogeneous_multi_llm' else 'ollama-campaign'),str(c.base_seed),str(c.n_seeds)]
    if c.smoke: args.append('--smoke')
   try:
    proc=subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=str(ROOT),env=env)
@@ -995,18 +1564,33 @@ class Session:
      c.current_model=None; c.current_seed=None
      return
     data=json.loads(out)
-    camp=data.get('campaign') if isinstance(data.get('campaign'),dict) else data
+    hetero=data.get('heterogeneous_campaign') if isinstance(data.get('heterogeneous_campaign'),dict) else None
+    camp=(data.get('campaign') if isinstance(data.get('campaign'),dict) else data)
     c.result=data
-    c.darpa_claim_ready=bool(camp.get('darpa_claim_ready'))
-    c.scope=str(camp.get('scope') or 'not_ready')
-    c.available_models=int(camp.get('available_models') or 0)
-    c.cells_ok=int(camp.get('cells_ok') or 0)
-    c.distinct_live_models_ok=int(camp.get('distinct_live_models_ok') or 0)
-    c.pass_count=c.cells_ok
-    c.fail_count=max(0, int(camp.get('cells_attempted') or 0)-c.cells_ok)
-    c.done=int(camp.get('cells_attempted') or 0)
-    c.total=c.done
-    c.readiness_checks=camp.get('checks') if isinstance(camp.get('checks'),list) else []
+    if hetero is not None:
+     cells=hetero.get('cells') if isinstance(hetero.get('cells'),list) else []
+     models=set()
+     for cell in cells:
+      for a in (cell.get('assignment') or []):
+       if a.get('model'): models.add(str(a.get('model')))
+     c.darpa_claim_ready=False
+     c.scope='heterogeneous_experimental_campaign'
+     c.available_models=len(models)
+     c.cells_ok=len(cells)
+     c.distinct_live_models_ok=len(models)
+     c.pass_count=len(cells); c.fail_count=0; c.done=len(cells); c.total=len(cells)
+     c.readiness_checks=[]
+    else:
+     c.darpa_claim_ready=bool(camp.get('darpa_claim_ready'))
+     c.scope=str(camp.get('scope') or 'not_ready')
+     c.available_models=int(camp.get('available_models') or 0)
+     c.cells_ok=int(camp.get('cells_ok') or 0)
+     c.distinct_live_models_ok=int(camp.get('distinct_live_models_ok') or 0)
+     c.pass_count=c.cells_ok
+     c.fail_count=max(0, int(camp.get('cells_attempted') or 0)-c.cells_ok)
+     c.done=int(camp.get('cells_attempted') or 0)
+     c.total=c.done
+     c.readiness_checks=camp.get('checks') if isinstance(camp.get('checks'),list) else []
     c.gate_partial=None
     c.running=False; c.finished_at=time.time()
     c.current_model=None; c.current_seed=None
@@ -1023,12 +1607,41 @@ class Handler(BaseHTTPRequestHandler):
  def log_message(self,*a):pass
  def reply(self,obj,code=200):
   raw=json.dumps(obj).encode();self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
+ def _load_design(self):
+  if not DESIGN_PATH.is_file():
+   return {
+    'schema_version':'coagentics-market-lab-design-v1',
+    'objectives':['compare_llms','compare_frozen_sequential'],
+    'population_design':'heterogeneous_multi_llm',
+    'market_mechanism':'continuous_double_auction',
+    'activation_design':'both',
+    'seeds':20,'repeats_per_cell':3,
+    'role_assignment':'balanced_crossover',
+    'private_values':'crossover',
+    'activation_order':'randomized_balanced'
+   }
+  try:
+   d=json.loads(DESIGN_PATH.read_text())
+   return d if isinstance(d,dict) else {}
+  except Exception:
+   return {}
+
+ def _save_design(self,doc):
+  if not isinstance(doc,dict): raise ValueError('Design must be an object')
+  DESIGN_DIR.mkdir(parents=True,exist_ok=True)
+  DESIGN_PATH.write_text(json.dumps(doc,indent=2,ensure_ascii=False)+'\n')
+  return doc
+
  def do_GET(self):
   url=urllib.parse.urlsplit(self.path)
   if url.path=='/api/state':
    q=urllib.parse.parse_qs(url.query);self.reply(S.snapshot(int(q.get('from',['0'])[0])));return
   if url.path=='/api/export':
    data=json.dumps(S.snapshot(0),indent=2).encode();self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Disposition','attachment; filename="coagentics-v27-run.json"');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/api/dv026/design':
+   self.reply(self._load_design());return
+  if url.path=='/api/dv026/expectations':
+   self.reply(_load_expectations());return
   if url.path=='/api/dv026/preflight':
    # Don't fight a running campaign for the runner lock — return last-known/busy instead of ERROR.
    with S.lock:
@@ -1046,13 +1659,14 @@ class Handler(BaseHTTPRequestHandler):
      'live_llm':True,
      'error':None,
      'detail':'Campaign in progress — LLM availability refresh is paused until it finishes.',
+     'runtime_status':'unknown',
      'preflight':{
-      'ollama_reachable':True,
+      'ollama_reachable':None,
       'available_models':avail if isinstance(avail,list) else [],
       'catalog_size':(last_pf or {}).get('catalog_size',10) if isinstance(last_pf,dict) else 10,
-      'available_count':n or camp_models or 10,
+      'available_count':n or camp_models or 0,
      },
-     'ollama_reachable':True,
+     'ollama_reachable':None,
      'available_models':avail if isinstance(avail,list) else [],
      'catalog_size':(last_pf or {}).get('catalog_size',10) if isinstance(last_pf,dict) else 10,
     });return
@@ -1067,11 +1681,18 @@ class Handler(BaseHTTPRequestHandler):
    except Exception as e:
     msg=str(e)
     if 'job running' in msg.lower() or 'already running' in msg.lower():
-     self.reply({'status':'busy','runner_ok':True,'error':None,'detail':msg,'ollama_reachable':True,'available_models':[],'catalog_size':10},200);return
+     self.reply({'status':'busy','runner_ok':True,'runtime_status':'unknown','error':None,'detail':msg,'ollama_reachable':None,'available_models':[],'catalog_size':10},200);return
     self.reply({'status':'error','runner_ok':False,'error':msg,'live_llm':True,'ollama_reachable':False,'available_models':[],'catalog_size':10},200);return
   if url.path=='/api/dv026/last':
    with S.lock:
-    self.reply(S.dv026_last or {'empty':True});return
+    payload=dict(S.dv026_last) if isinstance(S.dv026_last,dict) else ({'empty':True} if S.dv026_last is None else S.dv026_last)
+   la=S.layer_a_status()
+   if isinstance(payload,dict) and (la.get('layer_a_pass') or la.get('mean_efficiency_cda') is not None):
+    payload={**payload, 'layer_a':la, 'layer_a_pass':la.get('layer_a_pass'),
+             'mean_efficiency_cda':la.get('mean_efficiency_cda'),
+             'mean_efficiency_sealed':la.get('mean_efficiency_sealed')}
+    payload.pop('empty',None)
+   self.reply(payload if payload is not None else {'empty':True});return
   if url.path=='/api/dv026/export':
    with S.lock:
     payload=S.dv026_last
@@ -1096,6 +1717,8 @@ class Handler(BaseHTTPRequestHandler):
    self.reply(S.campaign_status());return
   if url.path=='/api/dv026/campaign/charts':
    self.reply(S.campaign_charts());return
+  if url.path=='/api/dv026/campaign/analysis':
+   self.reply(S.campaign_analysis());return
   if url.path=='/api/dv026/campaign/cells':
    self.reply(S.campaign_cells_index());return
   if url.path=='/api/dv026/campaign/cell':
@@ -1131,13 +1754,22 @@ class Handler(BaseHTTPRequestHandler):
    self.send_response(200);self.send_header('Content-Type','application/json')
    self.send_header('Content-Disposition','attachment; filename="coagentics-dv026-campaign-summary.json"')
    self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
-  if url.path in ('/','/index.html','/live.html'):
+  if url.path in ('/','/index.html','/market_lab.html'):
+   data=(ROOT/'workbench'/'market_lab.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/interface.html':
+   data=(ROOT/'workbench'/'interface.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/live.html':
    data=(ROOT/'workbench'/'live.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/market_lab.html':
+   data=(ROOT/'workbench'/'market_lab.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/favicon.ico':
+   # Tiny empty response so browsers stop 404-spamming the console.
+   self.send_response(204);self.send_header('Content-Length','0');self.end_headers();return
   self.send_error(404)
  def do_POST(self):
   try:
    size=int(self.headers.get('Content-Length','0'))
-   if size>8192:raise ValueError('Request too large')
+   if size>65536:raise ValueError('Request too large')
    d=json.loads(self.rfile.read(size) or b'{}')
    if self.path=='/api/dv026/run':
     cmd=str(d.get('command','bundle'))
@@ -1148,13 +1780,31 @@ class Handler(BaseHTTPRequestHandler):
     self.reply(S.batch_start(int(d.get('n',1000)), int(d.get('base_seed',424242))));return
    if self.path=='/api/dv026/batch/cancel':
     self.reply(S.batch_cancel());return
+   if self.path=='/api/dv026/design/save':
+    self.reply(self._save_design(d));return
+   if self.path=='/api/dv026/expectations/save':
+    doc=_normalize_expectations(d)
+    doc['status']='draft'
+    doc.pop('manifest_sha256',None);doc.pop('frozen_at',None);doc.pop('frozen_before_observation',None)
+    _validate_expectations(doc) if doc.get('expectations') else None
+    EXPECTATIONS_DIR.mkdir(parents=True,exist_ok=True)
+    EXPECTATIONS_PATH.write_text(json.dumps(doc,indent=2,ensure_ascii=False)+'\n')
+    self.reply(doc);return
+   if self.path=='/api/dv026/expectations/freeze':
+    doc=_normalize_expectations(d)
+    frozen=_freeze_expectations(doc)
+    self.reply(frozen);return
    if self.path=='/api/dv026/campaign/start':
     self.reply(S.campaign_start(
      int(d.get('base_seed',424242)),
      int(d.get('n_seeds',20)),
-     bool(d.get('smoke',False))));return
+     bool(d.get('smoke',False)),
+     str(d.get('population_design','reference_counterparty')),
+     str(d.get('activation_design','sequential_interaction'))));return
    if self.path=='/api/dv026/campaign/cancel':
     self.reply(S.campaign_cancel());return
+   if self.path=='/api/dv026/reset':
+    self.reply(S.console_reset());return
    with S.lock:
     if self.path=='/api/start':S.start(int(d.get('seed',424242)),int(d.get('events',600)),int(d.get('speed',30)))
     elif self.path=='/api/pause':

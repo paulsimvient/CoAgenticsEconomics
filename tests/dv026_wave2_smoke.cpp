@@ -52,7 +52,7 @@ static void layer_b_paired_zi_vs_llm(){
   return treat;
  };
 
- auto paired=run_paired_zi_vs_llm(econ, make_treat(), /*control_buyer_limit_price=*/95.0);
+ auto paired=run_paired_programmed_buyer_vs_llm(econ, make_treat(), /*control_buyer_limit_price=*/95.0);
  require(paired.treatment.turns.size()==1, "missing treatment turn");
  require(paired.treatment.turns[0].parse.success, "parse failed");
  require(paired.treatment.turns[0].submission.filled_quantity==1, "treatment not filled");
@@ -63,7 +63,7 @@ static void layer_b_paired_zi_vs_llm(){
  require(paired.evidence.records()[0].evidence.hypothesis_id=="H_PAIRED_OBSERVABLE_DELTA", "wrong paired hypothesis");
  require(paired.claim_boundary.find("Does not claim LLM economic rationality")!=std::string::npos, "missing paired boundary");
 
- auto paired2=run_paired_zi_vs_llm(econ, make_treat(), /*control_buyer_limit_price=*/85.0);
+ auto paired2=run_paired_programmed_buyer_vs_llm(econ, make_treat(), /*control_buyer_limit_price=*/85.0);
  require(paired2.control_trades==0, "control @85 must not cross seller @90");
  require(paired2.treatment.trades.size()==1, "treatment must still trade");
  require(paired2.deltas.delta_trades==1, "expected delta_trades==1");

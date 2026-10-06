@@ -55,7 +55,7 @@ CampaignArtifactStatus load_campaign_artifact(const std::string& path="results/d
  };
  st.distinct_live=grab_size("\"distinct_live_models_ok\"");
  st.cells_ok=grab_size("\"cells_ok\"");
- const std::string rev_key="\"implementation_revision\":\"2026-10-01-scientific-integrity-pass-1\"";
+ const std::string rev_key="\"implementation_revision\":\"2026-10-02-pass3-step13-preregistered-research-expectations\"";
  st.revision_match=body.find(rev_key)!=std::string::npos;
  return st;
 }
@@ -150,10 +150,10 @@ PhaseISuiteReport run_phase_i_qualification_suite(std::uint64_t seed){
    run.trades.size()>=1?"PASS":"FAIL",
    "agents="+std::to_string(run.agents.size())+" trades="+std::to_string(run.trades.size()),
    "Observable multi-agent mediation only.");
-  add(out, PhaseIGroup::MultiAgent, "C2_OPERATIONAL_CLASSIFIER_WIRED",
-   !run.classification.label.empty()?"PASS":"FAIL",
-   "label="+run.classification.label,
-   "FAQ 31: no Phase I classifier performance metrics.");
+  add(out, PhaseIGroup::MultiAgent, "C2_STANDALONE_NO_CLASSIFIER",
+   (!run.classifier_available && run.classifier_mode=="none" && run.classification.label.empty())?"PASS":"FAIL",
+   "classifier_mode="+run.classifier_mode,
+   "Standalone population outcomes must not be presented as behavioral classification; paired observed contrasts are tested in D3.");
   add(out, PhaseIGroup::MultiAgent, "C3_HUMAN_REFERENCE_ATTACHED",
    !run.human_reference.empty()?"PASS":"FAIL",
    "comparisons="+std::to_string(run.human_reference.size()),
@@ -236,7 +236,7 @@ PhaseISuiteReport run_phase_i_qualification_suite(std::uint64_t seed){
 
  auto camp_ready=load_campaign_artifact();
  out.darpa_claim_ready=camp_ready.present && camp_ready.darpa_claim_ready
-  && camp_ready.scope=="local_ollama_poc";
+  && camp_ready.scope=="local_ollama_poc" && camp_ready.revision_match;
  out.phase_ii_deferred=true;
  out.software_green=true;
  for(const auto& c:out.checks){

@@ -1,11 +1,23 @@
 #include "coagentics/agents/LlmHarness.hpp"
+#include "coagentics/util/Json.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 namespace coagentics::agents {
-static std::string esc(const std::string&s){std::string o;for(char c:s){if(c=='"'||c=='\\')o+='\\';o+=c;}return o;}
+static std::string esc(const std::string&s){
+ std::string o; o.reserve(s.size()+8);
+ for(unsigned char c:s){
+  switch(c){
+   case '"': o+="\\\""; break; case '\\': o+="\\\\"; break;
+   case '\n': o+="\\n"; break; case '\r': o+="\\r"; break; case '\t': o+="\\t"; break;
+   default: if(c<0x20){char b[8]; std::snprintf(b,sizeof(b),"\\u%04x",(unsigned)c); o+=b;} else o.push_back((char)c);
+  }
+ }
+ return o;
+}
 static const char* side_name(coagentics::market::Side s){return s==coagentics::market::Side::Buy?"buy":"sell";}
 void ModelRegistry::add(ModelIdentity m){if(!contains(m.provider,m.model,m.version))models_.push_back(std::move(m));}
 bool ModelRegistry::contains(const std::string&p,const std::string&m,const std::string&v)const{return std::any_of(models_.begin(),models_.end(),[&](auto&x){return x.provider==p&&x.model==m&&x.version==v;});}
@@ -24,60 +36,15 @@ ModelResponse ScriptedTransport::invoke(const ModelRequest&q){
  ModelResponse r; r.request_id=q.request_id; r.raw_output=raw.str(); r.action=a; r.latency_ms=1; return r;
 }
 
-namespace {
-bool find_string_field(const std::string& j,const std::string& key,std::string& out){
- const std::string pat="\""+key+"\""; auto p=j.find(pat); if(p==std::string::npos)return false;
- p=j.find(':',p+pat.size()); if(p==std::string::npos)return false;
- p=j.find('"',p+1); if(p==std::string::npos)return false;
- auto q=p+1; std::string v;
- while(q<j.size()){ if(j[q]=='\\'&&q+1<j.size()){v.push_back(j[q+1]);q+=2;continue;} if(j[q]=='"'){out=v;return true;} v.push_back(j[q++]); }
- return false;
-}
-bool find_number_field(const std::string& j,const std::string& key,double& out){
- const std::string pat="\""+key+"\""; auto p=j.find(pat); if(p==std::string::npos)return false;
- p=j.find(':',p+pat.size()); if(p==std::string::npos)return false; ++p;
- while(p<j.size()&&(j[p]==' '||j[p]=='\t'))++p;
- try{ size_t n=0; out=std::stod(j.substr(p),&n); return n>0; }catch(...){return false;}
-}
-bool find_bool_field(const std::string& j,const std::string& key,bool& out){
- const std::string pat="\""+key+"\""; auto p=j.find(pat); if(p==std::string::npos)return false;
- p=j.find(':',p+pat.size()); if(p==std::string::npos)return false; ++p;
- while(p<j.size()&&(j[p]==' '||j[p]=='\t'))++p;
- if(j.compare(p,4,"true")==0){out=true;return true;}
- if(j.compare(p,5,"false")==0){out=false;return true;}
- return false;
-}
-}
+
 ParseResult parse_market_action(const std::string& raw_output){
- ParseResult r;
- std::string s=raw_output;
- auto l=s.find_first_not_of(" \t\r\n"); if(l==std::string::npos){r.error="empty_payload";return r;}
- auto rr=s.find_last_not_of(" \t\r\n"); s=s.substr(l,rr-l+1);
- if(s.rfind("```",0)==0){
-  auto nl=s.find('\n'); if(nl!=std::string::npos)s=s.substr(nl+1);
-  auto end=s.rfind("```"); if(end!=std::string::npos)s=s.substr(0,end);
-  l=s.find_first_not_of(" \t\r\n"); rr=s.find_last_not_of(" \t\r\n");
-  if(l==std::string::npos){r.error="empty_payload";return r;}
-  s=s.substr(l,rr-l+1);
- }
- auto a=s.find('{'); auto b=s.rfind('}');
- if(a==std::string::npos||b==std::string::npos||b<=a){r.error="missing_json_object";return r;}
- const std::string obj=s.substr(a,b-a+1);
- LlmAction action; bool abstain=false;
- if(find_bool_field(obj,"abstain",abstain)) action.abstain=abstain;
- if(action.abstain){r.ok=true;r.action=action;return r;}
- double time=0,qty=0,price=0; std::string asset,side;
- if(!find_number_field(obj,"time",time)){r.error="missing_time";return r;}
- if(!find_string_field(obj,"asset",asset)){r.error="missing_asset";return r;}
- if(!find_number_field(obj,"quantity",qty)){r.error="missing_quantity";return r;}
- if(!find_number_field(obj,"price",price)){r.error="missing_price";return r;}
- if(!find_string_field(obj,"side",side)){r.error="missing_side";return r;}
- if(side!="buy"&&side!="sell"&&side!="Buy"&&side!="Sell"){r.error="invalid_side";return r;}
- action.time=static_cast<std::uint64_t>(time); action.asset=asset;
- action.quantity=static_cast<int>(qty);
- if(static_cast<double>(action.quantity)!=qty){r.error="quantity_not_integer";return r;}
- action.price=price;
- action.side=(side=="sell"||side=="Sell")?coagentics::market::Side::Sell:coagentics::market::Side::Buy;
- r.ok=true; r.action=action; return r;
+ ParseResult r; auto j=coagentics::util::parse_json(raw_output); if(!j){r.error="invalid_json";return r;} if(!j->is_object()){r.error="schema_root_not_object";return r;}
+ LlmAction a; auto abstain=j->get("abstain"); if(abstain){if(!abstain->is_bool()){r.error="abstain_wrong_type";return r;}a.abstain=abstain->as_bool();} if(a.abstain){r.ok=true;r.action=a;return r;}
+ auto time=j->get("time"), asset=j->get("asset"), qty=j->get("quantity"), price=j->get("price"), side=j->get("side");
+ if(!time){r.error="missing_time";return r;}if(!time->is_number()||time->as_number()<0||std::floor(time->as_number())!=time->as_number()){r.error="time_not_integer";return r;}
+ if(!asset||!asset->is_string()){r.error=asset?"asset_wrong_type":"missing_asset";return r;}if(!qty||!qty->is_number()||std::floor(qty->as_number())!=qty->as_number()){r.error=qty?"quantity_not_integer":"missing_quantity";return r;}
+ if(!price||!price->is_number()){r.error=price?"price_wrong_type":"missing_price";return r;}if(!side||!side->is_string()){r.error=side?"side_wrong_type":"missing_side";return r;}
+ if(side->as_string()!="buy"&&side->as_string()!="sell"&&side->as_string()!="Buy"&&side->as_string()!="Sell"){r.error="invalid_side";return r;}
+ a.time=(std::uint64_t)time->as_number();a.asset=asset->as_string();a.quantity=(int)qty->as_number();a.price=price->as_number();a.side=(side->as_string()=="sell"||side->as_string()=="Sell")?coagentics::market::Side::Sell:coagentics::market::Side::Buy;r.ok=true;r.action=a;return r;
 }
 }

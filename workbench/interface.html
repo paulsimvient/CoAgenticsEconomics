@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoAgentics — Interface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8edf1; --panel:#f4f7f9; --ink:#142433; --muted:#5a7388;
+  --line:#b8c8d6; --accent:#0b6e99; --go:#1a7a45; --stop:#9d2828; --warn:#9a6412;
+  --world:#0c1e2e; --seat1:#55dfae; --seat2:#ffb35d; --seat3:#a989ff; --seat4:#61b5ff;
+  --setup-w:260px; --mon-w:280px; --split:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+.app{height:100vh;display:grid;grid-template-rows:44px 1fr 32px;min-height:0}
+.top{display:flex;align-items:center;gap:14px;padding:0 14px;background:#102a40;color:#e8f1f7;font-size:13px}
+.top b{font-weight:700;letter-spacing:.02em}
+.top .links{margin-left:auto;display:flex;gap:12px;font-size:11px}
+.top .links a{color:#9ec9e8;text-decoration:none}
+.top .links a:hover{color:#fff}
+.top .links a.primary{color:#fff;font-weight:700;border-bottom:2px solid #52a8e8;padding-bottom:2px}
+.stage{
+  display:grid;
+  grid-template-columns:var(--setup-w) var(--split) minmax(0,1fr) var(--split) var(--mon-w);
+  min-height:0; height:100%;
+}
+.stage.setup-collapsed{grid-template-columns:0 0 minmax(0,1fr) var(--split) var(--mon-w)}
+.stage.mon-collapsed{grid-template-columns:var(--setup-w) var(--split) minmax(0,1fr) 0 0}
+.stage.setup-collapsed.mon-collapsed{grid-template-columns:0 0 minmax(0,1fr) 0 0}
+.col{background:var(--panel);padding:10px;overflow:auto;min-width:0;min-height:0}
+.col h2{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.col h2 .collapse-btn{border:1px solid var(--line);background:#fff;font-size:10px;padding:2px 6px;font-weight:700;color:var(--muted)}
+.splitter{
+  background:#d0dbe5; cursor:col-resize; position:relative; z-index:2;
+  transition:background .12s ease;
+}
+.splitter:hover,.splitter.dragging{background:#0b6e99}
+.splitter::after{content:""; position:absolute; inset:0 -4px}
+.box{border:1px solid var(--line);background:#fff;padding:10px;margin-bottom:10px}
+.box h3{margin:0 0 8px;font-size:12px;font-weight:700}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;font-size:12px}
+.row label{color:var(--muted)}
+.row select,.row input{width:120px;border:1px solid var(--line);padding:4px 6px;background:#fff}
+.row input[type=range]{width:120px;padding:0}
+.btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.btns button{border:1px solid var(--line);padding:9px 6px;font-weight:700;font-size:12px;background:#fff}
+.btns #go{background:var(--go);color:#fff;border-color:#146b3a;font-size:14px;letter-spacing:.02em}
+.btns #go:not(:disabled){box-shadow:0 0 0 1px #146b3a}
+.btns #stop{background:#fff;color:var(--stop);border-color:#dfaaaa}
+.btns #reset{background:#fff}
+.btns button:disabled{opacity:.45;cursor:not-allowed}
+.status-pill{display:inline-block;padding:2px 7px;border:1px solid var(--line);font-size:10px;font-weight:700}
+.status-pill.ok{color:var(--go);background:#e8f6ee;border-color:#b7ddc4}
+.status-pill.warn{color:var(--warn);background:#fff6e8;border-color:#e5d0a4}
+.status-pill.bad{color:var(--stop);background:#fceeee;border-color:#e0b4b4}
+.world-wrap{display:flex;flex-direction:column;min-height:0;background:var(--world);color:#dceaf6;min-width:0;position:relative}
+.world-tools{position:absolute;top:8px;left:8px;z-index:3;display:flex;gap:6px}
+.world-tools button{border:1px solid #3a6482;background:#102637;color:#9ec9e8;padding:4px 8px;font-size:10px;font-weight:700}
+.world-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #1e3a52;font-size:11px;color:#8fb3cb}
+.world-head .title{font-weight:700;color:#cfe4f4;letter-spacing:.04em;text-transform:uppercase;font-size:10px}
+.world-head .inspect{border:1px solid #3a6482;background:#102637;color:#9ec9e8;padding:4px 8px;font-size:10px;font-weight:700}
+.world-head .inspect:disabled{opacity:.4;cursor:not-allowed}
+.world{flex:1;min-height:0;position:relative;display:grid;place-items:center;background:radial-gradient(circle at 50% 48%,#14314a,#0c1e2e 65%)}
+.ring{position:absolute;width:min(62%,420px);aspect-ratio:1;border:1px dashed #31566f;border-radius:50%;opacity:.55}
+.agents{position:relative;width:min(70%,460px);aspect-ratio:1}
+.agent{position:absolute;width:96px;text-align:center;transform:translate(-50%,-50%);transition:left .4s ease,top .4s ease;cursor:pointer;border:0;background:transparent;padding:0;color:inherit}
+.agent:focus-visible{outline:2px solid #4ca8e6;outline-offset:4px}
+.agent .avatar{width:42px;height:52px;margin:0 auto 4px;position:relative}
+.agent .head{position:absolute;left:11px;top:0;width:20px;height:20px;border-radius:50%;background:currentColor}
+.agent .body{position:absolute;left:4px;top:18px;width:34px;height:32px;border-radius:50% 50% 40% 40%;background:currentColor}
+.agent b{display:block;font-size:11px;color:#e8f4fc}
+.agent small{display:block;font-size:9px;color:#8fb3cb;font-family:"IBM Plex Mono",monospace;line-height:1.25;max-width:96px;margin:0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agent.active{filter:drop-shadow(0 0 10px currentColor);transform:translate(-50%,-50%) scale(1.08)}
+.center-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;border:1px solid #3a6482;background:#102637;display:grid;place-content:center;text-align:center;font-size:10px;color:#9ec9e8;z-index:1;pointer-events:none}
+.center-badge strong{display:block;font-size:18px;color:#fff;font-family:"IBM Plex Mono",monospace}
+.tickbar{padding:8px 12px;border-top:1px solid #1e3a52;display:flex;align-items:center;gap:10px;font-size:11px;color:#8fb3cb}
+.tickbar .track{flex:1;height:6px;background:#244158;border-radius:99px;overflow:hidden}
+.tickbar .track i{display:block;height:100%;width:0;background:#4ca8e6;transition:width .3s ease}
+.tickbar .speed{display:flex;align-items:center;gap:6px;min-width:140px}
+.tickbar .speed input{width:80px}
+.mon{font-family:"IBM Plex Mono",monospace;font-size:12px}
+.mon .v{font-size:20px;font-weight:700;color:var(--accent)}
+.plot{height:110px;border:1px solid var(--line);background:#fff;margin-top:6px}
+.plot svg{width:100%;height:100%}
+.note{font-size:10px;color:var(--muted);line-height:1.4;margin-top:6px}
+.adv{border:1px dashed var(--line);padding:8px;background:#fff;font-size:11px}
+.adv summary{cursor:pointer;font-weight:700;color:var(--muted)}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 12px;background:#d9e2ea;font-size:11px;color:var(--muted)}
+.foot #cmdStrip{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink)}
+.foot #cmdStrip.err{color:var(--stop)}
+.foot #cmdStrip.warn{color:var(--warn)}
+.foot #cmdStrip.ok{color:var(--go)}
+.err{color:var(--stop);font-size:11px;min-height:1.2em;margin-top:6px}
+body.resizing{cursor:col-resize;user-select:none}
+body.resizing .agent{pointer-events:none}
+@media(max-width:980px){
+  .stage,.stage.setup-collapsed,.stage.mon-collapsed,.stage.setup-collapsed.mon-collapsed{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto auto;height:auto}
+  .app{height:auto;min-height:100vh}
+  .splitter{display:none}
+  .world{min-height:280px}
+  .col{border-bottom:1px solid var(--line)}
+  .world-tools{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <b>CoAgentics Interface</b>
+    <span style="opacity:.7;font-size:11px">Primary · Setup · World · Monitors</span>
+    <div class="links">
+      <a class="primary" href="/" title="Primary daily driver">Interface</a>
+      <a href="/live.html">Research Console</a>
+      <a href="/market_lab.html">Market Lab</a>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <aside class="col" id="setup">
+      <h2>Setup <button type="button" class="collapse-btn" id="collapseSetup" title="Collapse Setup">Hide</button></h2>
+      <div class="box" style="border-color:#b7ddc4;background:#f3fbf6">
+        <h3>Quick start</h3>
+        <p class="note" style="margin:0 0 8px">Defaults are filled. Press <b>Go</b> for the <b>full live LLM catalog</b> (not Smoke).</p>
+        <div class="btns" style="grid-template-columns:2fr 1fr 1fr">
+          <button id="go" title="Start full live LLM campaign">Go</button>
+          <button id="stop" title="Cancel campaign" disabled>Stop</button>
+          <button id="reset" title="Reset console session">Reset</button>
+        </div>
+        <div class="err" id="err"></div>
+        <div class="row" style="margin-top:8px"><span>Ollama</span><span id="pillRuntime" class="status-pill warn">—</span></div>
+        <div class="row"><span>Models</span><span class="mon" id="monModels">—</span></div>
+      </div>
+      <details class="adv" id="campaignOpts">
+        <summary>Options (seeds, mode, population)</summary>
+        <div class="row" style="margin-top:8px"><label for="seeds">seeds</label><input id="seeds" type="number" min="1" max="100" value="20"></div>
+        <div class="row"><label for="mode">mode</label>
+          <select id="mode"><option value="full" selected>Full live LLMs</option><option value="smoke">Smoke (2 models · non-claim)</option></select>
+        </div>
+        <div class="row"><label for="pop">population</label>
+          <select id="pop">
+            <option value="heterogeneous_multi_llm" selected>Heterogeneous multi-LLM</option>
+            <option value="reference_counterparty">LLM vs reference</option>
+          </select>
+        </div>
+        <p class="note">Full = all installed catalog models × seeds × live Ollama. Go auto-runs Layer A + freezes H01 if needed. Smoke is only for a short software check.</p>
+      </details>
+      <details class="adv">
+        <summary>Science gates (Full mode)</summary>
+        <div class="row" style="margin-top:8px"><span>Layer A</span><span id="pillLayer" class="status-pill warn">—</span></div>
+        <div class="row"><span>Expectations</span><span id="pillExp" class="status-pill warn">—</span></div>
+        <button id="btnQual" style="width:100%;margin-top:8px;padding:8px;border:1px solid var(--line);background:#fff;font-weight:600">Qualify market (Layer A)</button>
+        <p class="note" style="margin-top:8px">
+          Freeze hypotheses, Method, and proposal gates:
+          <a href="/live.html">Research Console</a>. Seat click → Inspect evidence.
+        </p>
+      </details>
+    </aside>
+
+    <div class="splitter" id="splitSetup" role="separator" aria-orientation="vertical" aria-label="Resize setup pane" title="Drag to resize · double-click to reset"></div>
+
+    <section class="world-wrap">
+      <div class="world-tools">
+        <button type="button" id="showSetup" hidden title="Show Setup pane">Show Setup</button>
+        <button type="button" id="showMon" hidden title="Show Monitors pane">Show Monitors</button>
+      </div>
+      <div class="world-head">
+        <span class="title">World · market seats</span>
+        <span id="worldMsg">Idle — press Go</span>
+        <button type="button" class="inspect" id="inspectBtn" disabled title="Open evidence for current model/seed">Inspect</button>
+      </div>
+      <div class="world" id="world">
+        <div class="ring"></div>
+        <div class="center-badge"><strong id="tickLabel">0</strong>cells done</div>
+        <div class="agents" id="agents"></div>
+      </div>
+      <div class="tickbar">
+        <span>progress</span>
+        <div class="track"><i id="prog"></i></div>
+        <span id="progTxt">0%</span>
+        <label class="speed" title="Poll / tick speed">speed
+          <input id="speed" type="range" min="300" max="3000" step="100" value="1200">
+          <span id="speedTxt" class="mon">1.2s</span>
+        </label>
+      </div>
+    </section>
+
+    <div class="splitter" id="splitMon" role="separator" aria-orientation="vertical" aria-label="Resize monitors pane" title="Drag to resize · double-click to reset"></div>
+
+    <aside class="col" id="monitors">
+      <h2>Monitors <button type="button" class="collapse-btn" id="collapseMon" title="Collapse Monitors">Hide</button></h2>
+      <div class="box">
+        <h3>Campaign</h3>
+        <div class="row"><span>status</span><span class="mon" id="monStatus">idle</span></div>
+        <div class="row"><span>cells</span><span class="mon" id="monCells">0 / 0</span></div>
+        <div class="row"><span>current</span><span class="mon" id="monCurrent">—</span></div>
+        <div class="row"><span>claim</span><span class="mon" id="monClaim">not_ready</span></div>
+      </div>
+      <div class="box">
+        <h3>Efficiency (cell_ok)</h3>
+        <div class="mon"><span class="v" id="monEff">—</span></div>
+        <div class="plot" id="effPlot"></div>
+        <p class="note">Mean treatment efficiency from charts API (empty until cells exist).</p>
+      </div>
+      <div class="box">
+        <h3>Pipeline</h3>
+        <div class="row"><span>attempted</span><span class="mon" id="pAtt">0</span></div>
+        <div class="row"><span>parse</span><span class="mon" id="pParse">0</span></div>
+        <div class="row"><span>accepted</span><span class="mon" id="pAcc">0</span></div>
+        <div class="row"><span>cell_ok</span><span class="mon" id="pOk">0</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <span id="cmdStrip">Checking gates…</span>
+    <span>Interface primary · science on Research Console</span>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const LAYOUT_KEY='coagentics.interface.layout';
+const DEFAULT_LAYOUT={setup:260, mon:280, setupCollapsed:false, monCollapsed:false, pollMs:1200};
+let layoutState={...DEFAULT_LAYOUT};
+let preflight=null, expectations=null, layerA=null, campaign=null, pollTimer=null;
+let inspectModel=null, inspectSeed=null;
+const seats=[
+  {id:'A', color:'var(--seat1)', ang:-90},
+  {id:'B', color:'var(--seat2)', ang:0},
+  {id:'C', color:'var(--seat3)', ang:90},
+  {id:'D', color:'var(--seat4)', ang:180},
+];
+
+async function api(path, opt={}){
+  const r=await fetch(path,{cache:'no-store',...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});
+  const d=await r.json().catch(()=>({error:'Invalid JSON'}));
+  if(!r.ok||d.error) throw new Error(d.error||('HTTP '+r.status));
+  return d;
+}
+const get=p=>api(p);
+const post=(p,b)=>api(p,{method:'POST',body:JSON.stringify(b||{})});
+
+function setPill(el, ok, text){
+  el.textContent=text;
+  el.className='status-pill '+(ok===true?'ok':ok===false?'bad':'warn');
+}
+function shortModel(name){
+  if(!name) return '—';
+  return String(name).replace(/:latest$/,'').slice(0,14);
+}
+function catalogNames(){
+  const arr=(preflight&&preflight.available_models)||[];
+  return arr.map(m=>typeof m==='string'?m:(m.model||m.name||'')).filter(Boolean);
+}
+function currentWidths(){
+  return {
+    setup:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--setup-w'))||layoutState.setup,
+    mon:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mon-w'))||layoutState.mon
+  };
+}
+function persistLayout(){
+  const w=currentWidths();
+  layoutState={...layoutState, setup:w.setup, mon:w.mon};
+  try{ localStorage.setItem(LAYOUT_KEY, JSON.stringify(layoutState)); }catch(e){}
+}
+function applyWidths(setup, mon){
+  const s=Math.max(180, Math.min(480, Number(setup)||DEFAULT_LAYOUT.setup));
+  const m=Math.max(200, Math.min(520, Number(mon)||DEFAULT_LAYOUT.mon));
+  document.documentElement.style.setProperty('--setup-w', s+'px');
+  document.documentElement.style.setProperty('--mon-w', m+'px');
+  layoutState.setup=s; layoutState.mon=m;
+  return {setup:s, mon:m};
+}
+function applyCollapsed(){
+  const stage=$('stage');
+  stage.classList.toggle('setup-collapsed', !!layoutState.setupCollapsed);
+  stage.classList.toggle('mon-collapsed', !!layoutState.monCollapsed);
+  $('showSetup').hidden=!layoutState.setupCollapsed;
+  $('showMon').hidden=!layoutState.monCollapsed;
+}
+function setPollMs(ms){
+  const v=Math.max(300, Math.min(3000, Number(ms)||DEFAULT_LAYOUT.pollMs));
+  layoutState.pollMs=v;
+  $('speed').value=String(v);
+  $('speedTxt').textContent=(v/1000).toFixed(1)+'s';
+  return v;
+}
+function loadLayout(){
+  try{
+    const raw=localStorage.getItem(LAYOUT_KEY);
+    if(raw){
+      const j=JSON.parse(raw);
+      layoutState={
+        setup:j.setup??DEFAULT_LAYOUT.setup,
+        mon:j.mon??DEFAULT_LAYOUT.mon,
+        setupCollapsed:!!j.setupCollapsed,
+        monCollapsed:!!j.monCollapsed,
+        pollMs:j.pollMs??DEFAULT_LAYOUT.pollMs
+      };
+    }
+  }catch(e){ layoutState={...DEFAULT_LAYOUT}; }
+  applyWidths(layoutState.setup, layoutState.mon);
+  applyCollapsed();
+  setPollMs(layoutState.pollMs);
+}
+function bindSplitter(el, side){
+  let startX=0, startSetup=0, startMon=0;
+  const onMove=ev=>{
+    const dx=ev.clientX-startX;
+    if(side==='setup') applyWidths(startSetup+dx, startMon);
+    else applyWidths(startSetup, startMon-dx);
+  };
+  const onUp=()=>{
+    el.classList.remove('dragging');
+    document.body.classList.remove('resizing');
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    persistLayout();
+  };
+  el.addEventListener('pointerdown', ev=>{
+    if(window.matchMedia('(max-width:980px)').matches) return;
+    if(side==='setup' && layoutState.setupCollapsed) return;
+    if(side==='mon' && layoutState.monCollapsed) return;
+    ev.preventDefault();
+    startX=ev.clientX;
+    const w=currentWidths();
+    startSetup=w.setup; startMon=w.mon;
+    el.classList.add('dragging');
+    document.body.classList.add('resizing');
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  });
+  el.addEventListener('dblclick', ()=>{
+    applyWidths(DEFAULT_LAYOUT.setup, DEFAULT_LAYOUT.mon);
+    layoutState.setupCollapsed=false;
+    layoutState.monCollapsed=false;
+    applyCollapsed();
+    persistLayout();
+  });
+}
+
+function updateCommandStrip(){
+  const el=$('cmdStrip');
+  const errText=($('err').textContent||'').trim() || (campaign&&campaign.last_error) || '';
+  if(errText){
+    el.textContent='Error: '+errText;
+    el.className='err';
+    return;
+  }
+  const smoke=$('mode').value==='smoke';
+  const running=!!campaign?.running;
+  const done=!!(campaign&&campaign.done&&!running);
+  const ollama=!!(preflight&&preflight.ollama_reachable);
+  const frozen=expectations&&expectations.status==='frozen'&&expectations.integrity_ok!==false;
+  const layerOk=!!(layerA&&(layerA.layer_a_pass||layerA.pass));
+  let msg='', cls='';
+  if(running){ msg=`Running · ${campaign.current_model||'model'} @ seed ${campaign.current_seed??'—'} · click seat to Inspect`; cls='ok'; }
+  else if(done){ msg='Complete — Inspect a seat for evidence (Research Console)'; cls='ok'; }
+  else if(!ollama){ msg='Next: start Ollama / install models (runtime OFFLINE)'; cls='warn'; }
+  else if(smoke){ msg='Ready to Go · Smoke (software path, non-claim)'; cls='ok'; }
+  else if(!frozen){ msg='Next: Freeze expectations on Research Console (Full mode)'; cls='warn'; }
+  else if(!layerOk){ msg='Next: Qualify market (Layer A) before Full Go'; cls='warn'; }
+  else { msg='Ready to Go · Full campaign gates satisfied'; cls='ok'; }
+  el.textContent=msg;
+  el.className=cls;
+}
+
+function openInspect(model, seed){
+  const m=model||inspectModel;
+  const s=seed!=null?seed:inspectSeed;
+  if(m!=null && s!=null && s!==''){
+    location.href=`/live.html?model=${encodeURIComponent(m)}&seed=${encodeURIComponent(s)}&panel=evidence`;
+  } else {
+    location.href='/live.html?panel=evidence';
+  }
+}
+
+function placeAgents(activeIdx, labels){
+  const host=$('agents');
+  const R=38;
+  host.innerHTML=seats.map((s,i)=>{
+    const rad=(s.ang)*Math.PI/180;
+    const left=50+R*Math.cos(rad);
+    const top=50+R*Math.sin(rad);
+    const lab=labels[i]||{title:s.id, sub:'idle', model:null, seed:null};
+    const active=i===activeIdx;
+    return `<button type="button" class="agent${active?' active':''}" data-i="${i}" data-model="${esc(lab.model||'')}" data-seed="${esc(lab.seed??'')}"
+      style="left:${left}%;top:${top}%;color:${s.color}" title="${esc((lab.model||lab.title)+((lab.seed!=null&&lab.seed!=='')?' @ '+lab.seed:''))}">
+      <div class="avatar"><i class="head"></i><i class="body"></i></div>
+      <b>${esc(lab.title)}</b><small>${esc(lab.sub)}</small>
+    </button>`;
+  }).join('');
+  host.querySelectorAll('.agent').forEach(btn=>{
+    btn.onclick=()=>{
+      const m=btn.dataset.model||inspectModel;
+      const s=btn.dataset.seed||inspectSeed;
+      if(m && s!=='') openInspect(m, s);
+      else if(inspectModel!=null) openInspect(inspectModel, inspectSeed);
+      else { $('err').textContent='No model/seed to inspect yet — start a campaign or wait for the first cell.'; updateCommandStrip(); }
+    };
+  });
+}
+
+function buildSeatLabels(activeIdx){
+  const names=catalogNames();
+  const running=!!campaign?.running;
+  const curModel=campaign?.current_model||null;
+  const curSeed=campaign?.current_seed;
+  return seats.map((s,i)=>{
+    if(running && i===activeIdx && curModel && curModel!=='(starting)'){
+      return {title:shortModel(curModel), sub:`seed ${curSeed??'—'}`, model:curModel, seed:curSeed};
+    }
+    const name=names[i]||null;
+    if(name) return {title:s.id, sub:shortModel(name), model:name, seed:curSeed!=null?curSeed:null};
+    return {title:s.id, sub:'idle', model:null, seed:null};
+  });
+}
+
+function drawEff(series){
+  const el=$('effPlot');
+  const vals=(series||[]).filter(Number.isFinite);
+  if(!vals.length){el.innerHTML='<svg viewBox="0 0 260 110"><text x="130" y="58" text-anchor="middle" fill="#5a7388" font-size="11">no cells yet</text></svg>';return;}
+  const W=260,H=110,L=28,R=8,T=10,B=18;
+  const lo=Math.min(80,...vals), hi=Math.max(100,...vals);
+  const X=i=>L+(i/Math.max(1,vals.length-1))*(W-L-R);
+  const Y=v=>H-B-((v-lo)/Math.max(1e-6,hi-lo))*(H-T-B);
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}"><polyline fill="none" stroke="#0b6e99" stroke-width="2" points="${vals.map((v,i)=>`${X(i)},${Y(v)}`).join(' ')}"/><text x="4" y="14" fill="#5a7388" font-size="9">${hi.toFixed(0)}</text><text x="4" y="${H-6}" fill="#5a7388" font-size="9">${lo.toFixed(0)}</text></svg>`;
+}
+
+function renderCampaign(c){
+  campaign=c||{};
+  const running=!!campaign.running;
+  $('go').disabled=running;
+  $('stop').disabled=!running;
+  const done=campaign.done||0, total=campaign.total||0;
+  const pct=total?Math.min(100,100*done/total):0;
+  $('prog').style.width=pct+'%';
+  $('progTxt').textContent=Math.round(pct)+'%';
+  $('tickLabel').textContent=String(done);
+  $('monStatus').textContent=running?'running':(campaign.last_error?'error':(done?'complete':'idle'));
+  $('monCells').textContent=`${done} / ${total||'—'}`;
+  $('monCurrent').textContent=campaign.current_model?`${campaign.current_model} @ ${campaign.current_seed??'—'}`:'—';
+  $('monClaim').textContent=campaign.darpa_claim_ready?'READY':(campaign.scope||'not_ready');
+  $('worldMsg').textContent=running
+    ? `Running · ${campaign.current_model||'model'} · seed ${campaign.current_seed??'—'}`
+    : (campaign.last_error?('Error: '+campaign.last_error):(done?'Complete — click a seat to Inspect':'Idle — press Go'));
+  const active=running?((done)%seats.length):-1;
+  if(campaign.current_model && campaign.current_model!=='(starting)'){
+    inspectModel=campaign.current_model;
+    inspectSeed=campaign.current_seed;
+  }
+  $('inspectBtn').disabled=!(inspectModel!=null && inspectSeed!=null && inspectSeed!=='');
+  placeAgents(active, buildSeatLabels(active));
+  updateCommandStrip();
+}
+
+async function refreshCharts(){
+  try{
+    const d=await get('/api/dv026/campaign/charts');
+    const live=d.human_ref&&d.human_ref.live_mean_efficiency;
+    $('monEff').textContent=live!=null&&Number.isFinite(Number(live))?Number(live).toFixed(1)+'%':'—';
+    const by=d.by_model||[];
+    const series=by.map(m=>Number(m.mean_treatment_efficiency)).filter(Number.isFinite);
+    drawEff(series.length?series:(live!=null?[Number(live)]:[]));
+    const p=d.pipeline||{};
+    $('pAtt').textContent=p.attempted||0;
+    $('pParse').textContent=p.parse_ok||0;
+    $('pAcc').textContent=p.market_accepted||0;
+    $('pOk').textContent=p.cell_ok||0;
+  }catch(e){}
+}
+
+function normalizePreflight(raw){
+  if(!raw || typeof raw!=='object') return {ollama_reachable:false, available_models:[], catalog_size:10};
+  const nest=(raw.preflight && typeof raw.preflight==='object')?raw.preflight:null;
+  const p=nest?{...raw, ...nest}:{...raw};
+  if(!Array.isArray(p.available_models)) p.available_models=[];
+  delete p.preflight;
+  return p;
+}
+async function refreshMeta(){
+  try{
+    preflight=normalizePreflight(await get('/api/dv026/preflight'));
+    const ok=!!preflight.ollama_reachable && preflight.available_models.length>0;
+    setPill($('pillRuntime'), ok, ok?('READY · '+preflight.available_models.length):(!preflight.ollama_reachable?'OFFLINE':'NO MODELS'));
+    $('monModels').textContent=`${preflight.available_models.length}/${preflight.catalog_size||10}`;
+  }catch(e){ setPill($('pillRuntime'), false, 'ERROR'); }
+  try{
+    expectations=await get('/api/dv026/expectations');
+    if(expectations.integrity_ok===false){
+      setPill($('pillExp'), false, 'INTEGRITY');
+      $('err').textContent=expectations.integrity_error||'Expectations integrity failed';
+    } else {
+      const frozen=expectations.status==='frozen';
+      setPill($('pillExp'), frozen?true:null, frozen?'FROZEN':'DRAFT');
+    }
+  }catch(e){ setPill($('pillExp'), false, 'ERROR'); }
+  try{
+    const last=await get('/api/dv026/last');
+    const la=last.layer_a||((last.layer_a_pass||last.pass)&&last.mean_efficiency_cda!=null?last:null);
+    layerA=la;
+    const pass=!!(la&&(la.layer_a_pass||la.pass));
+    setPill($('pillLayer'), pass?true:null, pass?'QUALIFIED':'NOT RUN');
+  }catch(e){}
+  if(!campaign||!campaign.running) placeAgents(-1, buildSeatLabels(-1));
+  updateCommandStrip();
+}
+
+async function refreshStatus(){
+  try{
+    const s=await get('/api/dv026/campaign/status');
+    renderCampaign(s);
+    if(s.running||(s.done&&s.done>0)) await refreshCharts();
+  }catch(e){ $('err').textContent=String(e.message||e); updateCommandStrip(); }
+}
+
+function startPoll(){
+  clearInterval(pollTimer);
+  pollTimer=setInterval(()=>{ refreshStatus(); }, layoutState.pollMs||1200);
+}
+
+$('btnQual').onclick=async()=>{
+  $('err').textContent=''; $('btnQual').disabled=true;
+  try{
+    const d=await post('/api/dv026/run',{command:'layer-a',seed:424242});
+    layerA=d.layer_a||d;
+    const pass=!!(layerA.layer_a_pass||layerA.pass);
+    setPill($('pillLayer'), pass, pass?'QUALIFIED':'FAIL');
+    if(!pass) $('err').textContent='Layer A did not pass (need η>90% every trial).';
+  }catch(e){ $('err').textContent=String(e.message||e); }
+  finally{ $('btnQual').disabled=false; updateCommandStrip(); }
+};
+
+async function ensureFullGates(nSeeds){
+  // Layer A
+  let layerOk=!!(layerA&&(layerA.layer_a_pass||layerA.pass));
+  if(!layerOk){
+    $('cmdStrip').textContent='Qualifying market (Layer A)…';
+    $('worldMsg').textContent='Layer A qualification…';
+    const d=await post('/api/dv026/run',{command:'layer-a',seed:424242},120000);
+    layerA=d.layer_a||d;
+    layerOk=!!(layerA.layer_a_pass||layerA.pass);
+    setPill($('pillLayer'), layerOk, layerOk?'QUALIFIED':'FAIL');
+    if(!layerOk) throw Error('Layer A did not pass (need η>90% every trial).');
+  }
+  // Freeze H01 / current expectations to match seed count
+  expectations=await get('/api/dv026/expectations');
+  if(expectations.integrity_ok===false) throw Error(expectations.integrity_error||'Expectations integrity failed');
+  if(expectations.status!=='frozen' || Number((expectations.sample_size||{}).planned_seeds)!==nSeeds){
+    $('cmdStrip').textContent='Freezing research expectations…';
+    $('worldMsg').textContent='Freezing H01 defaults…';
+    if(!(expectations.expectations||[]).length){
+      expectations.expectations=[{
+        id:'H01',priority:'primary',status:'primary',
+        research_question:'Do live LLM traders produce valid, non-HOLD market actions under local Ollama Phase I conditions?',
+        hypothesis:'Catalog LLMs submit schema-valid BUY/SELL actions meeting DV026 readiness thresholds.',
+        comparison:{conditions:'Live LLM cell vs HOLD-only failure modes',design:'model×seed campaign cells',manipulated:'LLM model identity',held_constant:'Market rules, seed schedule'},
+        expected:{type:'directional',direction:'positive',effect:'≥80',effect_unit:'percent_non_HOLD_accepted',range_low:'80',range_high:'100'},
+        metric:{name:'market_action_and_acceptance_rate',definition:'Fraction of attempted cells with parse+valid non-HOLD actions accepted',unit:'rate_0_to_1',population:'completed campaign cells',aggregation:'mean_across_attempted_cells'},
+        unit_of_analysis:'campaign_cell_model_seed',
+        estimand:'Interface-valid non-HOLD acceptance rate among attempted live cells.',
+        analysis:{method:'paired_difference_across_seeds',statistic:'mean_rate_with_exact_binomial_or_wilson_interval',uncertainty:'95_percent_confidence_interval',multiplicity:'holm_primary_hypotheses',exclusion:'skipped_cells_excluded_from_denominator',missing:'exclude_seed_if_either_arm_fails'},
+        rationale:'DV026 Phase I readiness requires demonstrable economic execution with provenance.',
+        source:{type:'engineering_requirement',citation:'docs/DV026_DARPA_PHASE_I_READINESS.md'},
+        narrative_prediction:'Full catalog campaign should clear interface and acceptance gates under local Ollama.',
+        notes:'Auto-frozen from Interface Go (Full live LLMs).'
+      }];
+    }
+    expectations.sample_size={planned_seeds:nSeeds,minimum_complete:Math.max(1,nSeeds-2),stopping_rule:'fixed_number_of_seeds'};
+    expectations.status='draft';
+    expectations=await post('/api/dv026/expectations/freeze',expectations,15000);
+    setPill($('pillExp'), true, 'FROZEN');
+  }
+}
+
+$('go').onclick=async()=>{
+  $('err').textContent='';
+  const smoke=$('mode').value==='smoke';
+  const nSeeds=Number($('seeds').value||(smoke?2:20));
+  const pop=$('pop').value;
+  const activation=pop==='heterogeneous_multi_llm'?'both':'sequential_interaction';
+  $('go').disabled=true;
+  $('worldMsg').textContent=smoke?'Starting Smoke…':'Starting full live LLM campaign…';
+  $('cmdStrip').textContent=smoke?'Starting Smoke…':'Preparing Full live LLM campaign…';
+  $('cmdStrip').className='ok';
+  try{
+    // If a Smoke run is in flight, stop it — user asked for real catalog LLMs.
+    if(campaign?.running){
+      if(smoke){ throw Error('Campaign already running. Press Stop first.'); }
+      $('cmdStrip').textContent='Stopping Smoke / prior run…';
+      await post('/api/dv026/campaign/cancel',{});
+      campaign=null;
+    }
+    if(!smoke) await ensureFullGates(nSeeds);
+    $('cmdStrip').textContent=smoke?'Starting Smoke…':'Starting Full · all catalog models…';
+    const d=await post('/api/dv026/campaign/start',{
+      base_seed:424242,
+      n_seeds:nSeeds,
+      smoke,
+      population_design:pop,
+      activation_design:activation
+    },20000);
+    renderCampaign(d);
+    startPoll();
+    $('cmdStrip').textContent=`Running · ${d.current_model||'starting'} · ${d.done||0}/${d.total||'?'} cells · ${smoke?'Smoke':'Full live'}`;
+    $('cmdStrip').className='ok';
+  }catch(e){
+    $('err').textContent=String(e.message||e);
+    $('worldMsg').textContent='Start failed — see error below';
+    $('go').disabled=false;
+    updateCommandStrip();
+  }
+};
+
+$('stop').onclick=async()=>{
+  try{ renderCampaign(await post('/api/dv026/campaign/cancel',{})); }
+  catch(e){ $('err').textContent=String(e.message||e); updateCommandStrip(); }
+};
+
+$('reset').onclick=async()=>{
+  if(!confirm('Reset console session? (Does not delete on-disk cells.)')) return;
+  $('err').textContent='';
+  try{
+    await post('/api/dv026/reset',{});
+    layerA=null; campaign=null; inspectModel=null; inspectSeed=null;
+    setPill($('pillLayer'), null, 'NOT RUN');
+    renderCampaign({});
+    drawEff([]);
+    await refreshMeta();
+    await refreshCharts();
+  }catch(e){ $('err').textContent=String(e.message||e); updateCommandStrip(); }
+};
+
+$('inspectBtn').onclick=()=>openInspect();
+$('mode').onchange=()=>updateCommandStrip();
+$('speed').oninput=()=>{
+  setPollMs(Number($('speed').value));
+  persistLayout();
+  startPoll();
+};
+$('collapseSetup').onclick=()=>{ layoutState.setupCollapsed=true; applyCollapsed(); persistLayout(); };
+$('collapseMon').onclick=()=>{ layoutState.monCollapsed=true; applyCollapsed(); persistLayout(); };
+$('showSetup').onclick=()=>{ layoutState.setupCollapsed=false; applyCollapsed(); persistLayout(); };
+$('showMon').onclick=()=>{ layoutState.monCollapsed=false; applyCollapsed(); persistLayout(); };
+
+loadLayout();
+bindSplitter($('splitSetup'), 'setup');
+bindSplitter($('splitMon'), 'mon');
+placeAgents(-1, buildSeatLabels(-1));
+drawEff([]);
+refreshMeta().then(refreshStatus).then(refreshCharts);
+startPoll();
+</script>
+</body>
+</html>

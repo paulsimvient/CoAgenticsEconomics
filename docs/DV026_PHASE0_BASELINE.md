@@ -33,7 +33,7 @@ Registered test count is **45** (Wave 1–4, Phase I/II, live campaign, workbenc
 | InformationContext (news/history/peer/constraints) | Present |
 | Parser: integer time, exact action enum, HOLD semantics | Strengthened |
 | Population via MarketMechanism (CDA + sealed) | Present |
-| Classifier self-pair | Labeled `synthetic_wiring`; real path = `run_population_behavioral_contrast` |
+| Standalone population classifier | Disabled (`classifier_mode=none`); classification is produced only from paired observed control/treatment behavior via `run_population_behavioral_contrast` |
 | Live campaign Layer A trials | `LiveCampaignSpec.layer_a_trials` (default 5) |
 | Live cell_ok | Requires non-HOLD market action + accepted + replay |
 | HumanComparison on live obs | Wired (not “≥2 metrics exist”) |

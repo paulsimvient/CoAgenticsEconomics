@@ -25,6 +25,28 @@ struct OllamaPreflight {
 
 OllamaPreflight preflight_ollama_live_catalog(const std::string& base_url="http://127.0.0.1:11434");
 
+enum class RepeatabilityStatus { NotMeasured, Exact, Variable, Failed };
+
+struct ReproducibilityGrade {
+ bool simulator_seed_controlled{true};
+ bool inference_seed_requested{false};
+ std::string inference_seed_support{"unknown"}; // supported | unsupported | unknown
+ std::string provider;
+ std::string model;
+ std::string version;
+ std::string inference_config;
+ std::size_t repeat_trials{0};
+ std::size_t exact_repeats{0};
+ RepeatabilityStatus repeatability{RepeatabilityStatus::NotMeasured};
+ std::string grade{"B"}; // A=empirically exact, B=controlled/requested but unmeasured, C=seed unsupported/unknown, F=failed
+ std::string interpretation;
+};
+
+ReproducibilityGrade grade_reproducibility(const agents::ModelIdentity& model,
+ const std::string& inference_config, bool inference_seed_requested,
+ const std::string& seed_support, const std::vector<std::string>& repeated_outputs={});
+std::string reproducibility_grade_json(const ReproducibilityGrade&);
+
 struct LiveCampaignCell {
  agents::ModelIdentity model;
  std::uint64_t seed{};
@@ -49,6 +71,7 @@ struct LiveCampaignCell {
  double treatment_efficiency{};
  std::uint64_t latency_ms{};
  std::string error;
+ ReproducibilityGrade reproducibility{};
 };
 
 struct ReadinessCheck {
@@ -72,7 +95,7 @@ struct LiveCampaignSpec {
  std::size_t n_seeds{20};
  std::size_t min_models{10};
  std::size_t layer_a_trials{5}; // DARPA FAQ: >90% across multiple trials
- std::string implementation_revision{"2026-10-01-scientific-integrity-pass-1"};
+ std::string implementation_revision{"2026-10-04-pass3-step22h-i-matched-provenance"};
  double min_provenance_rate{0.95};
  double min_interface_rate{0.90};
  double min_market_action_rate{0.80}; // fraction of attempted cells with non-HOLD action
@@ -96,6 +119,8 @@ struct LiveCampaignReport {
  analysis::HumanComparisonReport human_comparison{};
  DarpaPhaseIReadiness readiness;
  bool live_llm{true};
+ std::string manifest_sha256;
+ std::string manifest_path;
  analysis::EvidenceStore evidence;
 };
 
@@ -106,9 +131,10 @@ DarpaPhaseIReadiness evaluate_darpa_phase_i_readiness(const LiveCampaignReport& 
 struct HeterogeneousPopulationSpec {
  std::uint64_t seed{424242};
  int rounds{2};
- std::size_t max_llm_buyers{4}; // capped for runtime; smoke uses 2
+ std::size_t max_llm_seats{4}; // co-present LLM buyers + sellers; smoke uses 2
  bool smoke{false};
  bool use_live_ollama{true}; // false → RawJsonTransport for CI
+ ActivationDesign activation_design{ActivationDesign::SequentialInteraction};
  std::string results_dir{"results/dv026_hetero_population"};
 };
 
@@ -117,7 +143,10 @@ struct HeterogeneousPopulationReport {
  OllamaPreflight preflight;
  PopulationRunResult population;
  std::size_t llm_seats{0};
+ std::size_t llm_buyers{0};
+ std::size_t llm_sellers{0};
  bool shared_market{true};
+ std::string activation_design{"sequential_interaction"};
  std::string claim_boundary{
   "Heterogeneous multi-LLM shared-market population: co-present seats under one MarketMechanism. "
   "Observable outcomes only; not a commercial multi-provider claim."};

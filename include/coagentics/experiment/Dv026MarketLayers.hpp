@@ -71,7 +71,7 @@ struct PairedLlmExperimentResult {
 
 // Shared seed + identical private-value assignment / counterparty limits.
 // Control replaces the LLM slot with a programmed buyer; treatment uses transport.
-PairedLlmExperimentResult run_paired_zi_vs_llm(const ExperimentSpec& economics,
+PairedLlmExperimentResult run_paired_programmed_buyer_vs_llm(const ExperimentSpec& economics,
  const RunSpec& treatment_run,
  double control_buyer_limit_price);
 

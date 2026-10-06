@@ -129,7 +129,7 @@ MarketQualificationReport run_market_qualification(const MarketSpec& population,
  return rep;
 }
 
-PairedLlmExperimentResult run_paired_zi_vs_llm(const ExperimentSpec& economics,
+PairedLlmExperimentResult run_paired_programmed_buyer_vs_llm(const ExperimentSpec& economics,
  const RunSpec& treatment_run,
  double control_buyer_limit_price){
  if(!treatment_run.transport) throw std::invalid_argument("treatment transport required");

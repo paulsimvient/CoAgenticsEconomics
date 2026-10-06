@@ -1,0 +1,4 @@
+Current full codebase: EconomicGoagentics / CoAgentics Market Lab
+Base: market-lab visual shell build
+UI addition: workbench/market_lab_workbench_v2.html
+UI note: docs/MARKET_LAB_UI_V2.md

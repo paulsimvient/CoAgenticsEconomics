@@ -32,8 +32,18 @@ int main(){
  HeterogeneousPopulationSpec hs; hs.smoke=true; hs.use_live_ollama=false; hs.rounds=1;
  auto het=run_heterogeneous_ollama_population(hs);
  assert(het.shared_market);
- assert(het.llm_seats>=2);
- assert(het.population.agents.size()>=4);
+ assert(het.llm_seats==2);
+ assert(het.llm_buyers==1);
+ assert(het.llm_sellers==1);
+ assert(het.population.agents.size()==2);
+ assert(!het.population.trades.empty());
+ assert(het.population.agents[0].kind==AgentKind::Llm);
+ assert(het.population.agents[1].kind==AgentKind::Llm);
+ assert(het.population.agents[0].model.model!=het.population.agents[1].model.model);
+ assert(het.activation_design=="sequential_interaction");
+ HeterogeneousPopulationSpec snap=hs; snap.activation_design=ActivationDesign::FrozenSnapshot;
+ auto het_snap=run_heterogeneous_ollama_population(snap);
+ assert(het_snap.activation_design=="frozen_snapshot");
 
  auto pf=preflight_ollama_live_catalog();
  std::cout<<"catalog="<<catalog.size()

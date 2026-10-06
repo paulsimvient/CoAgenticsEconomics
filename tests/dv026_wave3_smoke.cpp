@@ -71,12 +71,32 @@ static void test_population_llm_plus_programmed(){
    require(a.llm_turns.size()==1, "llm turn record");
    require(a.llm_turns[0].canonical_request.find("private_value")!=std::string::npos, "own private state");
    require(a.llm_turns[0].canonical_request.find("S0")==std::string::npos, "no other agent id leak");
+   require(a.fingerprint_available, "observed fingerprint available");
+   require(a.fingerprint.observed, "fingerprint marked observed");
+   require(a.fingerprint.action_validity==1.0, "valid action rate");
+   require(a.fingerprint.reservation_value_violation_rate==0.0, "no reservation violation");
+   require(a.fingerprint.trade_frequency>0.0, "settlement-aware trade frequency");
+   require(a.fingerprint.response_consistency==1.0, "single valid response is consistent");
   }
  }
  require(saw_llm, "llm outcome missing");
- require(!run.classification.label.empty(), "operational classifier label");
+ require(!run.classifier_available, "standalone population must not emit classifier");
+ require(run.classifier_mode=="none", "standalone classifier mode none");
+ require(run.classification.label.empty(), "standalone classifier label empty");
  require(!run.human_reference.empty(), "human reference comparison present");
+ auto js=population_run_json(run);
+ require(js.find("\"fingerprints\":[{")!=std::string::npos, "fingerprints serialized");
+ require(js.find("\"action_validity\":1.0000")!=std::string::npos, "fingerprint validity serialized");
  require(run.claim_boundary.find("No Phase I classifier performance")!=std::string::npos, "classifier claim boundary");
+
+ // RawJsonTransport is a deterministic fixture and must never be mislabeled as live human-comparison evidence.
+ PopulationSpec all_llm_fixture=pop;
+ AgentSlot seller_llm=seller; seller_llm.agent_id="LLM-S0"; seller_llm.kind=AgentKind::Llm; seller_llm.model={"mock","fixture-seller","v1"};
+ seller_llm.transport=std::make_shared<RawJsonTransport>(std::vector<std::string>{R"({"action":"SELL","asset":"ASSET","quantity":1,"price":82,"time":0})"});
+ all_llm_fixture.agents={buyer_llm,seller_llm};
+ auto fixture=run_population_market(all_llm_fixture);
+ require(fixture.human_comparison.behavioral_benchmarks.size()==3, "human behavioral benchmarks emitted");
+ for(const auto& b:fixture.human_comparison.behavioral_benchmarks) require(b.status=="SCRIPTED_CONTROL_ONLY" || b.status=="NO_MATCHED_BEHAVIORAL_OBSERVATION", "fixture not live human evidence");
 }
 
 static void test_operational_classifier_no_perf_metrics(){
@@ -105,18 +125,75 @@ static void test_heterogeneous_programmed_population(){
  require(run.metrics.allocative_efficiency>=0.0, "efficiency computed");
 }
 
+static PopulationSpec two_llm_buyers(ActivationDesign design){
+ PopulationSpec pop; pop.seed=44; pop.rounds=1; pop.activation_design=design;
+ pop.market.asset="ASSET"; pop.market.fundamental=100;
+ for(int i=0;i<2;++i){
+  AgentSlot b; b.agent_id="L"+std::to_string(i); b.kind=AgentKind::Llm; b.side=market::Side::Buy;
+  b.private_value_or_cost=120+i; b.cash=5000; b.model={"mock","m"+std::to_string(i),"v1"};
+  b.transport=std::make_shared<RawJsonTransport>(std::vector<std::string>{
+   std::string("{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":")+(i?"106":"105")+",\"time\":0}"});
+  pop.agents.push_back(b);
+ }
+ return pop;
+}
+
+static void test_dual_activation_designs(){
+ auto frozen=run_population_market(two_llm_buyers(ActivationDesign::FrozenSnapshot));
+ require(frozen.agents.size()==2, "frozen two agents");
+ require(frozen.agents[0].llm_turns.size()==1 && frozen.agents[1].llm_turns.size()==1, "frozen turns");
+ const auto& f0=frozen.agents[0].llm_turns[0].market_state;
+ const auto& f1=frozen.agents[1].llm_turns[0].market_state;
+ require(f0.best_bid==f1.best_bid && f0.best_ask==f1.best_ask && f0.last_trade==f1.last_trade,
+  "frozen snapshot gives identical public market state");
+
+ auto seq=run_population_market(two_llm_buyers(ActivationDesign::SequentialInteraction));
+ require(seq.agents.size()==2, "sequential two agents");
+ const auto& s0=seq.agents[0].llm_turns[0].market_state;
+ const auto& s1=seq.agents[1].llm_turns[0].market_state;
+ require(s0.best_bid!=s1.best_bid, "sequential design exposes earlier same-round market update");
+}
+
 int main(){
  try{
   test_ten_llm_catalog_and_interface();
   test_population_llm_plus_programmed();
   test_operational_classifier_no_perf_metrics();
   test_heterogeneous_programmed_population();
+  test_dual_activation_designs();
   {
-   auto ic=run_information_contrast_experiment(7);
-   require(ic.contrast.control.classifier_synthetic, "control synthetic wiring ok");
-   require(!ic.contrast.treatment.classifier_synthetic, "treatment uses control/treatment path");
-   require(!ic.contrast.classifier.classification.label.empty(), "contrast label");
-   require(ic.claim_boundary.find("information contrast")!=std::string::npos, "info claim");
+   auto suite=run_information_treatment_suite(7);
+   require(suite.size()==3, "three independent information treatments");
+   for(const auto& ic:suite){
+    require(ic.matched_seed==7, "matched seed retained");
+    require(ic.contrast.control.spec.seed==ic.contrast.treatment.spec.seed, "paired arms share seed");
+    require(!ic.contrast.control.classifier_available, "control arm alone has no classifier");
+    require(!ic.contrast.control.classifier_synthetic, "no synthetic classifier on control arm");
+    require(ic.contrast.treatment.classifier_available, "paired treatment carries empirical classifier result");
+    require(ic.contrast.treatment.classifier_mode=="observed_control_treatment", "empirical classifier mode");
+    require(!ic.contrast.treatment.classifier_synthetic, "empirical contrast is not synthetic wiring");
+    require(!ic.contrast.classifier.classification.label.empty(), "contrast label");
+    require(!ic.manipulated_variable.empty(), "manipulated variable recorded");
+    bool fp=false; for(const auto& a:ic.contrast.treatment.agents) if(a.agent_id=="LLM-B0"){
+     require(a.fingerprint_available && a.fingerprint.observed, "treatment fingerprint observed");
+     fp=true;
+    }
+    require(fp, "target fingerprint present");
+   }
+   auto news=suite[0];
+   require(!news.contrast.control.spec.agents[0].information.news.present, "control news hidden");
+   require(news.contrast.treatment.spec.agents[0].information.news.present, "treatment news visible");
+   auto hist=suite[1];
+   require(!hist.contrast.control.spec.agents[0].information.history_visible, "control history hidden");
+   require(hist.contrast.treatment.spec.agents[0].information.history_visible, "treatment history visible");
+   require(hist.contrast.control.agents[0].llm_turns.size()==2, "history contrast has second decision");
+   require(hist.contrast.control.agents[0].llm_turns[1].canonical_request.find("\"history\":[") == std::string::npos, "control payload excludes history");
+   require(hist.contrast.treatment.agents[0].llm_turns[1].canonical_request.find("\"history\":[") != std::string::npos, "treatment payload includes history");
+   auto peer=suite[2];
+   require(!peer.contrast.control.spec.agents[0].information.peer.peer_visibility, "control peer hidden");
+   require(peer.contrast.treatment.spec.agents[0].information.peer.peer_visibility, "treatment peer visible");
+   require(news.contrast.treatment.agents[0].fingerprint.information_sensitivity>0, "news sensitivity measured from paired behavior");
+   require(peer.contrast.treatment.agents[0].fingerprint.peer_sensitivity>0, "peer sensitivity measured from paired behavior");
   }
   std::cout<<"dv026_wave3_smoke ok\n";
   return 0;

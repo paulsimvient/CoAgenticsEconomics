@@ -67,3 +67,7 @@ v17 adds train/held-out calibration of the full-market scientist. It freezes the
 Use `./start-workbench.sh` to configure and rebuild the current `build-dv026` targets before starting the console. This prevents a stale `dv026-workbench-runner` from being used after source updates.
 
 The console performs a bounded runtime preflight and reports one of: **READY**, **OFFLINE**, or **ERROR**. An offline Ollama runtime is not a platform limitation; it means the local provider is not currently reachable.
+
+## Step 15 heterogeneous campaign
+
+`dv026-workbench-runner hetero-campaign <base_seed> <n_seeds>` runs the multi-seed heterogeneous shared-market campaign. It supports both Frozen Snapshot and Sequential Interaction designs, balanced model/role/value/activation-position crossover, repeated inference under the same seed/configuration, and fixed-context counterfactual model substitution. The Research Console routes `Heterogeneous multi-LLM` campaigns to this runner rather than relabeling the reference-counterparty campaign.

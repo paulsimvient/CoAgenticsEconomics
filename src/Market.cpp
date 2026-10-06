@@ -1,13 +1,14 @@
 #include "coagentics/market/Market.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 namespace coagentics::market {
 Market::Market(MarketConfig config):config_(std::move(config)){}
 void Market::add_account(std::string id, Account account){ accounts_[std::move(id)]=std::move(account); }
 bool Market::submit(const Bid& b){ return submit_detailed(b).accepted; }
 SubmitResult Market::submit_detailed(const Bid& b){
  SubmitResult r; r.submitted_quantity=b.quantity;
- if(b.quantity<=0 || b.price<0 || !config_.fundamental_value.count(b.asset) || !accounts_.count(b.agent_id)){
+ if(b.quantity<=0 || b.price<0 || !std::isfinite(b.price) || !config_.fundamental_value.count(b.asset) || !accounts_.count(b.agent_id)){
   r.rejection_reason="invalid_order"; return r;
  }
  auto &a=accounts_.at(b.agent_id);
@@ -58,7 +59,9 @@ Metrics Market::metrics() const {
   std::sort(bvals.begin(),bvals.end(),std::greater<>()); std::sort(costs.begin(),costs.end());
   for(size_t i=0;i<std::min(bvals.size(),costs.size()) && bvals[i]>costs[i];++i){maxs+=bvals[i]-costs[i]; ++efficient_q;}
  }
- double eff=maxs>0?100.0*std::clamp(realized/maxs,0.0,1.0):100.0; return {realized,maxs,eff,efficient_q};
+ // When no gains-from-trade exist, efficiency is undefined — do not report a fake 100%.
+ double eff=maxs>0?100.0*std::clamp(realized/maxs,0.0,1.0):std::numeric_limits<double>::quiet_NaN();
+ return {realized,maxs,eff,efficient_q};
 }
 bool Market::has_bid(const std::string& asset) const { for(const auto& b:buys_) if(b.asset==asset) return true; return false; }
 bool Market::has_ask(const std::string& asset) const { for(const auto& b:sells_) if(b.asset==asset) return true; return false; }

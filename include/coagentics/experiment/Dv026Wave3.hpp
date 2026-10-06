@@ -2,6 +2,7 @@
 #include "coagentics/analysis/Classifier.hpp"
 #include "coagentics/analysis/HumanComparison.hpp"
 #include "coagentics/analysis/HumanReference.hpp"
+#include "coagentics/analysis/Phenotype.hpp"
 #include "coagentics/experiment/Dv026MarketLayers.hpp"
 #include "coagentics/experiment/LlmExperiment.hpp"
 #include <cstdint>
@@ -11,6 +12,12 @@
 namespace coagentics::experiment {
 
 enum class AgentKind { ProgrammedHeuristic, ProgrammedZI, Llm };
+// SequentialInteraction: each activation observes the market after earlier activations.
+// FrozenSnapshot: every activation in a round observes the same round-start public market
+// snapshot (and its own round-start account state). Orders are still processed by the
+// mechanism in the preregistered activation order, but no agent can observe an earlier
+// same-round action before choosing. This is the matched-input comparison design.
+enum class ActivationDesign { SequentialInteraction, FrozenSnapshot };
 
 // One seat in a shared market. LLM slots carry model identity + transport.
 struct AgentSlot {
@@ -31,6 +38,8 @@ struct PopulationSpec {
  std::vector<AgentSlot> agents;
  std::uint64_t seed{0};
  int rounds{1};
+ ActivationDesign activation_design{ActivationDesign::SequentialInteraction};
+ std::vector<std::string> activation_order; // optional preregistered order; empty => seed-controlled shuffle each round
 };
 
 struct PopulationAgentOutcome {
@@ -43,6 +52,8 @@ struct PopulationAgentOutcome {
  std::size_t action_validation_failures{0};
  std::size_t market_rejections{0};
  std::vector<AgentTurnRecord> llm_turns; // empty for programmed agents
+ analysis::BehavioralFingerprint fingerprint{};
+ bool fingerprint_available{false};
 };
 
 struct PopulationRunResult {
@@ -53,12 +64,13 @@ struct PopulationRunResult {
  std::vector<PopulationAgentOutcome> agents;
  analysis::BehavioralFeatureVector features{};
  analysis::Classification classification{};
- std::string classifier_mode{"synthetic_wiring"}; // or "control_treatment"
- bool classifier_synthetic{true};
+ std::string classifier_mode{"none"}; // "none" for standalone runs; "observed_control_treatment" for paired contrasts
+ bool classifier_available{false};
+ bool classifier_synthetic{false}; // retained for result-schema compatibility; experimental results must remain false
  std::vector<analysis::ReferenceComparison> human_reference;
  analysis::HumanComparisonReport human_comparison{};
  std::string claim_boundary{
-  "Wave 3 population run: observable market outcomes + operational classifier label. "
+  "Wave 3 population run: observable market outcomes only. A classifier is produced only from paired observed control/treatment behavior. "
   "No Phase I classifier performance metrics; no Phase II bias/deception claims."};
  analysis::EvidenceStore evidence;
 };
@@ -97,16 +109,25 @@ PopulationBehavioralContrastReport run_population_behavioral_contrast(
  std::uint64_t intervention_time=0,
  const std::vector<std::string>& targeted_agents={});
 
-// Preregistered information contrast: identical economics; treatment adds news + peer visibility.
+// Matched-seed experimental treatments. Each contrast changes exactly one information dimension.
+enum class InformationTreatment { News, MarketHistory, PeerObservations };
 struct InformationContrastReport {
+ InformationTreatment treatment{InformationTreatment::News};
  PopulationBehavioralContrastReport contrast;
+ std::uint64_t matched_seed{};
  std::string control_condition{"public_book"};
- std::string treatment_condition{"public_book+news+peer"};
+ std::string treatment_condition;
+ std::string manipulated_variable;
  std::string claim_boundary{
-  "Preregistered information contrast on observable bids under controlled news/peer visibility. "
+  "Matched-seed information contrast on observable bids with one controlled information variable. "
   "No Phase I classifier accuracy; does not claim human-equivalent information response."};
 };
+InformationContrastReport run_information_contrast_experiment(
+ InformationTreatment treatment, std::uint64_t seed=424242);
+// Backward-compatible default: news-only treatment.
 InformationContrastReport run_information_contrast_experiment(std::uint64_t seed=424242);
+std::vector<InformationContrastReport> run_information_treatment_suite(std::uint64_t seed=424242);
+std::vector<InformationContrastReport> run_information_treatment_suite_live(std::uint64_t seed=424242);
 
 // Ten distinct LLMs by provider/family/version (catalog identity). Config-only variants do not count.
 std::vector<agents::ModelIdentity> dv026_distinct_llm_catalog();

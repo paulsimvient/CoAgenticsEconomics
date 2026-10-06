@@ -1,32 +1,46 @@
-# DV026 Workbench — Market Live + Evidence
-
-Dual-mode UI at `http://127.0.0.1:8787` ([`workbench/matlab.html`](../workbench/matlab.html)). Live entry only — ignore legacy `workbench/index.html` / `live.html`.
+# DV026 Workbench — Interface + Research Console
 
 ```bash
 ./start-workbench.sh
-# opens Market Live by default; switch to DV026 Evidence in the title bar
+# GET /                → interface.html (primary NetLogo-style lab)
+# GET /live.html       → live.html (full Research Console: Gate · Bids · Method)
+# GET /market_lab.html → market_lab.html (secondary guided shell)
+# GET /interface.html  → same as /
 ```
 
-`start-workbench.sh` prefers `build-dv026/`, then `build/`, and builds both runners if missing.
+`start-workbench.sh` configures/builds runners in **`build-dv026/`** (`find_exe` may fall back to `build/` if a binary is missing).
 
-## Mental model: two products, one page
+## Mental model
 
-| Mode | Job | Engine | Success signal |
+| Surface | URL | Job | Success signal |
 |---|---|---|---|
-| **Market Live** | Watch / poke a paced 12-trader double auction | `v27-live-runner` | Trades, efficiency, interventions — **demo**, not DARPA |
-| **DV026 Evidence** | Software gates + optional local Ollama Layer B | `dv026-workbench-runner` | Three greens below (not interchangeable) |
+| **Interface** | `/` · [`interface.html`](../workbench/interface.html) | Daily driver — watch run, Go/Stop, monitors | Same campaign APIs |
+| **Research Console** | `/live.html` · [`live.html`](../workbench/live.html) | Full Gate · Bids · Method · proposal narrative | `darpa_claim_ready` under `scope=local_ollama_poc` |
+| **Market Lab** | `/market_lab.html` · [`market_lab.html`](../workbench/market_lab.html) | Secondary guided shell | Same API gates; thinner UI |
+| **Market Live** | `matlab.html` | Paced CDA demo | Demo only — not DARPA |
 
-### Three different “greens” (Evidence)
+### Three different “greens”
 
 | Flag | Means | Does **not** mean |
 |---|---|---|
 | **`software_green`** | Scripted Phase I A/B/C/D checks pass | Live LLM economics or DARPA milestone |
 | **`live_llm`** | This run talked to Ollama | Campaign readiness or Phase II |
-| **`darpa_claim_ready`** + `scope=local_ollama_poc` | Full Ollama 10×20 campaign gate passed | Phase II constructs / commercial 10-provider matrix |
+| **`darpa_claim_ready`** + `scope=local_ollama_poc` | Full Ollama campaign gate passed under current revision | Phase II constructs / commercial 10-provider matrix |
 
-Phase II cards stay scaffold / “not validated” even when `darpa_claim_ready` is true.
+### Two “expectations” (do not conflate)
 
-See [`DV026_DARPA_PHASE_I_READINESS.md`](DV026_DARPA_PHASE_I_READINESS.md) for the readiness checklist. The Research Console claim surface (`workbench/live.html` · `#claimSurface`) puts **Readiness predicate** beside **Campaign progress** at the top; bottom panels are live SVG charts from `cells.jsonl` (models × seeds, human η, evidence pipeline), not narrative placeholders. **Proposal expectations (auto)** scores white-paper M2/M6/M9/M12 items (fixture [`DV026_PROPOSAL_EXPECTATIONS.json`](DV026_PROPOSAL_EXPECTATIONS.json)) against live Layer A + campaign evidence via `GET /api/dv026/proposal-narrative` (`?format=txt` for download). Readiness is a Check/Value/Require/Status table; Start opens a market-calibration modal when Layer A is not yet QUALIFIED.
+| Surface | API / fixture |
+|---|---|
+| **Preregistered hypotheses (freeze)** | `/api/dv026/expectations` · SHA bound before full campaign |
+| **Proposal readiness (gates)** | `/api/dv026/proposal-narrative` · fixture [`DV026_PROPOSAL_EXPECTATIONS.json`](DV026_PROPOSAL_EXPECTATIONS.json) |
+
+Full campaign start requires frozen preregistration **and** Layer A qualification (server-enforced; Smoke exempt). Start also requires live runtime (Ollama + installed models).
+
+**Reset** (`POST /api/dv026/reset`) returns the console to workflow start: cancel running campaign, clear READY hydrate, unfreeze hypotheses to draft, hide chart/bid aggregates until a new run. Prior `cells.jsonl` / `cell_*.jsonl` files are retained on disk.
+
+Each chart/analysis panel has a **Method** control documenting how aggregates are computed (read-only provenance).
+
+See [`DV026_DARPA_PHASE_I_READINESS.md`](DV026_DARPA_PHASE_I_READINESS.md) for the readiness checklist. Charts aggregate `cells.jsonl` (models × seeds, human η, evidence pipeline). If on-disk `summary.json` has a different `implementation_revision` than the running server, it is **not** hydrated as READY — re-run under the current build.
 
 ## Which button for what (DV026 ribbon)
 
@@ -63,27 +77,35 @@ Mutual exclusion: market vs batch vs campaign (and single runs while those run).
 
 ## Suggested first clicks
 
-1. **Market Live** → Run once → watch chart/trace.
-2. **DV026 Evidence** → command `phase-i` → Run Evidence → read the three greens.
-3. Open the campaign panel / Export — confirm existing `results/dv026_ollama_campaign/` artifacts without re-running 10×20 unless needed.
-4. Optional CLI-only: `hetero-pop`, `info-contrast` (not first-class ribbon buttons yet).
+1. Open `http://127.0.0.1:8787/` (Interface) to watch runs; use `/live.html` for science gates.
+2. **Qualify market** with **Layer A** (η > 90% every trial) — not Phase I `software_green`.
+3. Fill **Preregistered hypotheses** → **Freeze expectations** (required for Full; Smoke exempt).
+4. **Start live campaign** (Interface Go or Console) → Inspect seat / evidence.
+5. On Research Console, open **Method** on charts for formula provenance.
+6. Optional CLI: `hetero-pop`, `info-contrast`, or full `ollama-campaign`.
 
 ```bash
-./build/dv026-workbench-runner hetero-pop 424242 --smoke
-./build/dv026-workbench-runner info-contrast 424242
-./build/dv026-workbench-runner ollama-campaign 424242 20   # full gate
-./build/dv026-workbench-runner phase-i 424242             # D6 reads summary.json
+./build-dv026/dv026-workbench-runner hetero-pop 424242 --smoke
+./build-dv026/dv026-workbench-runner info-contrast 424242
+./build-dv026/dv026-workbench-runner ollama-campaign 424242 20   # full gate
+./build-dv026/dv026-workbench-runner phase-i 424242             # D6 reads summary.json
 ```
 
 ## API
 
 | Route | Role |
 |---|---|
-| `/api/start\|pause\|resume\|reset\|replay\|intervention\|state\|export` | Market Live |
+| `GET /` · `/interface.html` | Interface (`interface.html`) — primary |
+| `GET /live.html` | Research Console (`live.html`) |
+| `GET /market_lab.html` | Market Lab (`market_lab.html`) — secondary |
+| `POST /api/dv026/reset` | Console Reset (workflow start; does not delete evidence files) |
+| `GET/POST /api/dv026/expectations` · `/freeze` | Preregistered hypotheses |
+| `GET /api/dv026/proposal-narrative` | Proposal readiness (gates) |
+| `POST/GET /api/dv026/campaign/*` | Ollama campaign (start rejects unfrozen Full) |
 | `POST /api/dv026/run` | Single evidence / Ollama slice-paired |
 | `GET /api/dv026/last` · `/export` | Last DV026 payload |
 | `POST/GET /api/dv026/batch/*` | Phase I seed sweep |
-| `POST/GET /api/dv026/campaign/*` | Ollama campaign |
+| `/api/start\|pause\|resume\|…` | Market Live (`matlab.html` only) |
 
 Live local LLM setup: [`DV026_OLLAMA.md`](DV026_OLLAMA.md).
 

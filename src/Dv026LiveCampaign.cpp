@@ -1,4 +1,6 @@
 #include "coagentics/experiment/Dv026LiveCampaign.hpp"
+#include "coagentics/util/Json.hpp"
+#include "coagentics/experiment/ExperimentManifest.hpp"
 #include "coagentics/experiment/Dv026Wave3.hpp"
 #include "coagentics/analysis/HumanComparison.hpp"
 #include <algorithm>
@@ -12,6 +14,50 @@
 #include <sstream>
 #include <stdexcept>
 namespace coagentics::experiment {
+
+ReproducibilityGrade grade_reproducibility(const agents::ModelIdentity& model,
+ const std::string& inference_config, bool inference_seed_requested,
+ const std::string& seed_support, const std::vector<std::string>& repeated_outputs){
+ ReproducibilityGrade g; g.provider=model.provider; g.model=model.model; g.version=model.version;
+ g.inference_config=inference_config; g.inference_seed_requested=inference_seed_requested;
+ g.inference_seed_support=seed_support.empty()?"unknown":seed_support;
+ g.repeat_trials=repeated_outputs.size();
+ if(repeated_outputs.empty()){
+  g.repeatability=RepeatabilityStatus::NotMeasured;
+  if(!inference_seed_requested || g.inference_seed_support=="unsupported"){
+   g.grade="C"; g.interpretation="Simulator seed is controlled; provider inference seeding is not available. Empirical repeatability not measured.";
+  }else if(g.inference_seed_support=="supported"){
+   g.grade="B"; g.interpretation="Simulator seed is controlled and provider seed is requested/supported; deterministic repeatability has not yet been empirically measured.";
+  }else{
+   g.grade="C"; g.interpretation="Simulator seed is controlled and inference seed was requested, but provider seed support is unverified. Empirical repeatability not measured.";
+  }
+  return g;
+ }
+ if(std::any_of(repeated_outputs.begin(), repeated_outputs.end(), [](const std::string& x){return x.empty();})){
+  g.repeatability=RepeatabilityStatus::Failed; g.grade="F";
+  g.interpretation="At least one repeated provider response failed or was empty."; return g;
+ }
+ const auto& first=repeated_outputs.front();
+ g.exact_repeats=std::count(repeated_outputs.begin(), repeated_outputs.end(), first);
+ if(g.exact_repeats==g.repeat_trials){
+  g.repeatability=RepeatabilityStatus::Exact; g.grade="A";
+  g.interpretation="Identical repeated provider outputs observed under the same frozen request and inference settings.";
+ }else{
+  g.repeatability=RepeatabilityStatus::Variable; g.grade="B";
+  g.interpretation="Repeated provider outputs varied under the same frozen request; simulator remains reproducible but provider inference is empirically nondeterministic.";
+ }
+ return g;
+}
+
+std::string reproducibility_grade_json(const ReproducibilityGrade& g){
+ auto rs=[](RepeatabilityStatus x){switch(x){case RepeatabilityStatus::Exact:return "exact";case RepeatabilityStatus::Variable:return "variable";case RepeatabilityStatus::Failed:return "failed";default:return "not_measured";}};
+ std::ostringstream o; o<<std::boolalpha<<"{\"simulator_seed_controlled\":"<<g.simulator_seed_controlled
+  <<",\"inference_seed_requested\":"<<g.inference_seed_requested<<",\"inference_seed_support\":\""<<g.inference_seed_support
+  <<"\",\"provider\":\""<<g.provider<<"\",\"model\":\""<<g.model<<"\",\"version\":\""<<g.version
+  <<"\",\"inference_config\":\""<<g.inference_config<<"\",\"repeat_trials\":"<<g.repeat_trials
+  <<",\"exact_repeats\":"<<g.exact_repeats<<",\"repeatability\":\""<<rs(g.repeatability)
+  <<"\",\"grade\":\""<<g.grade<<"\",\"interpretation\":\""<<g.interpretation<<"\"}"; return o.str();
+}
 namespace {
 std::string esc(const std::string& s){
  std::string o; o.reserve(s.size());
@@ -74,7 +120,7 @@ std::string cell_json(const LiveCampaignCell& c){
   <<",\"delta_trades\":"<<c.delta_trades
   <<",\"delta_mean_price\":"<<c.delta_mean_price
   <<",\"latency_ms\":"<<c.latency_ms
-  <<",\"error\":\""<<esc(c.error)<<"\"}";
+  <<",\"error\":\""<<esc(c.error)<<"\",\"reproducibility\":"<<reproducibility_grade_json(c.reproducibility)<<"}";
  return o.str();
 }
 }
@@ -105,19 +151,9 @@ std::vector<std::string> ollama_installed_model_tags(const std::string& base_url
  while(fgets(buf,sizeof(buf),p)) body+=buf;
  pclose(p);
  std::vector<std::string> tags;
- // Naive extract of "name":"..." fields under models
- std::size_t pos=0;
- while(true){
-  auto k=body.find("\"name\"", pos);
-  if(k==std::string::npos) break;
-  auto colon=body.find(':', k);
-  auto q1=body.find('"', colon+1);
-  if(q1==std::string::npos) break;
-  auto q2=body.find('"', q1+1);
-  if(q2==std::string::npos) break;
-  tags.push_back(body.substr(q1+1, q2-q1-1));
-  pos=q2+1;
- }
+ auto root=coagentics::util::parse_json(body); if(!root||!root->is_object()) return tags;
+ auto models=root->get("models"); if(!models||!models->is_array()) return tags;
+ for(const auto& model:models->as_array()){ if(!model.is_object()) continue; auto name=model.get("name"); if(name&&name->is_string()) tags.push_back(name->as_string()); }
  return tags;
 }
 
@@ -242,6 +278,23 @@ LiveCampaignReport run_ollama_layer_b_campaign(const LiveCampaignSpec& spec_in){
 
  rep.preflight=preflight_ollama_live_catalog(ollama_base);
 
+ std::vector<agents::ModelIdentity> models=rep.preflight.available;
+ std::size_t n_seeds=spec_in.n_seeds;
+ if(spec_in.smoke){
+  if(models.size()>2) models.resize(2);
+  n_seeds=std::min(n_seeds, std::size_t{2});
+ }
+ rep.spec.n_seeds=n_seeds;
+
+ // Freeze the exact campaign design before any market/LLM observation is collected.
+ // Preflight is infrastructure discovery, not an experimental observation.
+ rep.spec.n_seeds=n_seeds;
+ auto manifest=make_live_campaign_manifest(rep.spec, models);
+ rep.manifest_sha256=experiment_manifest_hash(manifest);
+ rep.manifest_path=(std::filesystem::path(spec_in.results_dir)/"preregistration.json").string();
+ write_frozen_manifest(manifest, rep.manifest_path);
+
+ // Only after preregistration is frozen do qualification trials or model observations begin.
  MarketSpec mspec=spec_in.market;
  if(mspec.buyers==0){ mspec.buyers=4; mspec.sellers=4; mspec.periods=5; mspec.efficiency_gate=90; }
  const std::size_t n_trials=std::max<std::size_t>(1, spec_in.layer_a_trials);
@@ -250,14 +303,6 @@ LiveCampaignReport run_ollama_layer_b_campaign(const LiveCampaignSpec& spec_in){
  rep.layer_a_trials=n_trials;
  rep.mean_efficiency_cda=mq.mean_efficiency_cda;
  rep.mean_efficiency_sealed=mq.mean_efficiency_sealed;
-
- std::vector<agents::ModelIdentity> models=rep.preflight.available;
- std::size_t n_seeds=spec_in.n_seeds;
- if(spec_in.smoke){
-  if(models.size()>2) models.resize(2);
-  n_seeds=std::min(n_seeds, std::size_t{2});
- }
- rep.spec.n_seeds=n_seeds;
 
  std::filesystem::create_directories(spec_in.results_dir);
  auto cells_path=std::filesystem::path(spec_in.results_dir)/"cells.jsonl";
@@ -286,7 +331,7 @@ LiveCampaignReport run_ollama_layer_b_campaign(const LiveCampaignSpec& spec_in){
     for(char& ch:leaf) if(ch==':'||ch=='/') ch='_';
     run.log_path=(std::filesystem::path(spec_in.results_dir)/leaf).string();
 
-    auto paired=run_paired_zi_vs_llm(exp, run, /*control_buyer_limit_price=*/95.0);
+    auto paired=run_paired_programmed_buyer_vs_llm(exp, run, /*control_buyer_limit_price=*/95.0);
     cell.delta_efficiency=paired.deltas.delta_efficiency;
     cell.delta_surplus=paired.deltas.delta_surplus;
     cell.delta_trades=paired.deltas.delta_trades;
@@ -303,6 +348,8 @@ LiveCampaignReport run_ollama_layer_b_campaign(const LiveCampaignSpec& spec_in){
      cell.market_accepted=t.submission.accepted;
      cell.execution_observed=t.submission.filled_quantity>0;
      cell.latency_ms=t.latency_ms;
+     cell.reproducibility=grade_reproducibility(model, t.inference_config, true,
+      model.provider=="ollama" ? "supported" : "unknown");
      if(!t.parse.success) cell.error=t.parse.error;
      else if(!t.action_validation.valid && !t.action_validation.errors.empty())
       cell.error=t.action_validation.errors.front();
@@ -344,6 +391,7 @@ LiveCampaignReport run_ollama_layer_b_campaign(const LiveCampaignSpec& spec_in){
   skip.skipped=true;
   skip.skip_reason="model not installed (ollama pull required)";
   skip.seed=spec_in.base_seed;
+  skip.reproducibility=grade_reproducibility(miss, "", false, "unknown");
   rep.cells.push_back(skip);
   append_jsonl(cells_path, cell_json(skip));
  }
@@ -408,6 +456,8 @@ std::string live_campaign_json(const LiveCampaignReport& r){
   <<",\"layer_a_pass\":"<<r.layer_a_pass
   <<",\"layer_a_trials\":"<<r.layer_a_trials
   <<",\"implementation_revision\":\""<<esc(r.spec.implementation_revision)<<"\""
+  <<",\"manifest_sha256\":\""<<esc(r.manifest_sha256)<<"\""
+  <<",\"manifest_path\":\""<<esc(r.manifest_path)<<"\""
   <<",\"mean_efficiency_cda\":"<<r.mean_efficiency_cda
   <<",\"mean_efficiency_sealed\":"<<r.mean_efficiency_sealed
   <<",\"cells_attempted\":"<<r.cells_attempted
@@ -461,53 +511,53 @@ HeterogeneousPopulationReport run_heterogeneous_ollama_population(const Heteroge
  HeterogeneousPopulationReport rep;
  rep.spec=spec_in;
  rep.shared_market=true;
+ rep.activation_design=spec_in.activation_design==ActivationDesign::FrozenSnapshot?"frozen_snapshot":"sequential_interaction";
  rep.preflight=preflight_ollama_live_catalog();
 
  std::vector<agents::ModelIdentity> models=rep.preflight.available;
- std::size_t n=spec_in.max_llm_buyers;
- if(spec_in.smoke) n=std::min(n, std::size_t{2});
+ std::size_t n=std::max<std::size_t>(2, spec_in.max_llm_seats);
+ if(spec_in.smoke) n=2;
  if(models.size()>n) models.resize(n);
 
  PopulationSpec pop;
  pop.seed=spec_in.seed;
  pop.rounds=spec_in.rounds;
+ pop.activation_design=spec_in.activation_design;
  pop.market.asset="ASSET";
  pop.market.fundamental=100;
  pop.market.mechanism=market::MechanismKind::ContinuousDoubleAuction;
 
- const bool live=spec_in.use_live_ollama && rep.preflight.ollama_reachable && !models.empty();
+ const bool live=spec_in.use_live_ollama && rep.preflight.ollama_reachable && models.size()>=2;
  const std::size_t n_llm=live? models.size() : (spec_in.smoke?2:std::min(n, std::size_t{2}));
  for(std::size_t i=0;i<n_llm;++i){
   AgentSlot slot;
-  slot.agent_id="LLM-B"+std::to_string(i);
+  const bool buyer=(i%2==0);
+  slot.agent_id=std::string("LLM-")+(buyer?"B":"S")+std::to_string(i);
   slot.kind=AgentKind::Llm;
-  slot.side=market::Side::Buy;
-  slot.private_value_or_cost=120.0 - 2.0*static_cast<double>(i);
+  slot.side=buyer?market::Side::Buy:market::Side::Sell;
+  slot.private_value_or_cost=buyer ? 120.0-static_cast<double>(i) : 80.0+static_cast<double>(i);
   slot.cash=10000;
+  slot.inventory=buyer?0:1;
   if(live){
    slot.model=models[i];
+   // Each transport snapshots its model/provider configuration when constructed. This is
+   // essential in a heterogeneous market: later seats must not overwrite earlier seats.
    setenv("COAGENTICS_LLM_PROVIDER","ollama",1);
    setenv("COAGENTICS_LLM_BASE_URL","http://127.0.0.1:11434/v1",1);
    setenv("COAGENTICS_LLM_MODEL", models[i].model.c_str(), 1);
    slot.transport=make_live_openai_compatible_transport(models[i]);
   }else{
    slot.model={"mock","hetero-"+std::to_string(i),"v1"};
-   slot.transport=std::make_shared<RawJsonTransport>(std::vector<std::string>{
-    R"({"action":"BUY","asset":"ASSET","quantity":1,"price":95,"time":0})",
-    R"({"action":"BUY","asset":"ASSET","quantity":1,"price":94,"time":1})"
-   });
+   const std::string action=buyer?"BUY":"SELL";
+   const int price=buyer?105:95;
+   std::vector<std::string> payloads;
+   for(int r=0;r<std::max(1,spec_in.rounds);++r){
+    payloads.push_back(std::string("{\"action\":\"")+action+"\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":"+std::to_string(price)+",\"time\":"+std::to_string(r)+"}");
+   }
+   slot.transport=std::make_shared<RawJsonTransport>(std::move(payloads));
   }
+  if(buyer) ++rep.llm_buyers; else ++rep.llm_sellers;
   pop.agents.push_back(slot);
- }
- for(std::size_t i=0;i<std::max<std::size_t>(1, n_llm);++i){
-  AgentSlot s;
-  s.agent_id="S"+std::to_string(i);
-  s.kind=AgentKind::ProgrammedHeuristic;
-  s.side=market::Side::Sell;
-  s.private_value_or_cost=80.0 + static_cast<double>(i);
-  s.inventory=1;
-  s.cash=0;
-  pop.agents.push_back(s);
  }
 
  rep.llm_seats=n_llm;
@@ -524,12 +574,16 @@ std::string heterogeneous_population_json(const HeterogeneousPopulationReport& r
  std::ostringstream o;
  o<<std::boolalpha<<std::fixed<<std::setprecision(4)
   <<"{\"shared_market\":"<<r.shared_market
+  <<",\"activation_design\":\""<<esc(r.activation_design)<<"\""
   <<",\"llm_seats\":"<<r.llm_seats
+  <<",\"llm_buyers\":"<<r.llm_buyers
+  <<",\"llm_sellers\":"<<r.llm_sellers
   <<",\"smoke\":"<<r.spec.smoke
   <<",\"use_live_ollama\":"<<r.spec.use_live_ollama
   <<",\"available_models\":"<<r.preflight.available.size()
   <<",\"trades\":"<<r.population.trades.size()
   <<",\"efficiency\":"<<r.population.metrics.allocative_efficiency
+  <<",\"classifier_available\":"<<r.population.classifier_available
   <<",\"classifier_mode\":\""<<esc(r.population.classifier_mode)<<"\""
   <<",\"claim_boundary\":\""<<esc(r.claim_boundary)<<"\"}";
  return o.str();

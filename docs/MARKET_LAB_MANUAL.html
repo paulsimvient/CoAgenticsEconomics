@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CoAgentics Market Lab — Researcher Manual</title>
+<style>
+:root{--ink:#18344f;--muted:#617b94;--line:#d8e2ea;--bg:#f4f7fa;--card:#fff;--blue:#1777c9;--blue2:#eaf4fc;--green:#138a62;--amber:#a56a00;--red:#b53d3d;--nav:#0a1a2a;--code:#0c1724}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}.shell{display:grid;grid-template-columns:285px 1fr;min-height:100vh}.side{position:sticky;top:0;height:100vh;overflow:auto;background:var(--nav);color:#dbe8f3;padding:24px 18px}.side h1{font-size:19px;margin:0 0 3px}.side .sub{color:#8da5b9;font-size:12px;margin-bottom:22px}.side a{display:block;color:#b8cada;padding:7px 9px;border-radius:6px;font-size:13px}.side a:hover{background:#122b42;color:#fff;text-decoration:none}.side .group{margin:18px 0 6px;color:#6f8ba3;font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}.main{max-width:1180px;width:100%;padding:38px 46px 80px;margin:auto}.hero{background:linear-gradient(135deg,#fff,#eef6fc);border:1px solid var(--line);border-radius:14px;padding:30px 34px;margin-bottom:26px}.hero h2{font-size:30px;line-height:1.15;margin:0 0 9px}.hero p{margin:0;color:var(--muted);max-width:850px}.badge{display:inline-block;background:var(--blue2);color:#1269ad;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}h2{font-size:25px;margin:42px 0 14px}h3{font-size:18px;margin:27px 0 9px}h4{font-size:15px;margin:22px 0 6px}.lead{font-size:17px;color:#48647c}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:17px}.card h3{margin-top:0}.callout{border-left:4px solid var(--blue);background:#eef7ff;padding:13px 16px;margin:16px 0;border-radius:5px}.warn{border-color:#d59b2a;background:#fff7e7}.good{border-color:#15936a;background:#effaf5}.danger{border-color:#c34a4a;background:#fff0f0}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:12px 0 20px}th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f0f5f8;color:#49657c;font-size:12px;text-transform:uppercase;letter-spacing:.04em}tr:last-child td{border-bottom:0}.steps{counter-reset:s;display:grid;gap:9px}.step{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px}.step:before{content:counter(s);display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800}.flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:15px 0}.flow span{background:#fff;border:1px solid var(--line);border-radius:7px;padding:8px 11px;font-weight:700}.flow b{color:#7890a6}code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}code{background:#edf2f6;padding:2px 5px;border-radius:4px}pre{background:var(--code);color:#d9e7f3;padding:16px;border-radius:9px;overflow:auto;font-size:12px}.screenshot{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px}.screenshot img{display:block;width:100%;height:auto;border-radius:5px}.caption{font-size:12px;color:var(--muted);margin:7px 2px}.tocmini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tocmini a{background:#fff;border:1px solid var(--line);padding:10px;border-radius:7px}.term{font-weight:750}.small{font-size:12px;color:var(--muted)}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 7px;font-size:11px;background:#fff}.ok{color:var(--green)}.amber{color:var(--amber)}.red{color:var(--red)}footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}@media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.main{padding:25px 18px 60px}.grid,.grid3,.tocmini{grid-template-columns:1fr}.hero h2{font-size:25px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+  <h1>CoAgentics Market Lab</h1><div class="sub">Researcher Manual · DV026</div>
+  <div class="group">Start</div>
+  <a href="#overview">Overview</a><a href="#mental-model">Mental model</a><a href="#workflow">Six-step workflow</a>
+  <div class="group">Use the application</div>
+  <a href="#design">1 · Experiment design</a><a href="#expectations">2 · Research expectations</a><a href="#qualification">3 · Qualification</a><a href="#run">4 · Run</a><a href="#results">5 · Results</a><a href="#evidence">6 · Evidence</a>
+  <div class="group">Scientific use</div>
+  <a href="#frozen-sequential">Frozen vs sequential</a><a href="#metrics">Metrics & estimands</a><a href="#evidence-chain">Evidence chain</a><a href="#boundaries">Claim boundaries</a>
+  <div class="group">Reference</div>
+  <a href="#tooltips">Tooltips</a><a href="#troubleshooting">Troubleshooting</a><a href="#architecture">Application architecture</a><a href="#files">Key files</a><a href="#glossary">Glossary</a>
+</aside>
+<main class="main">
+<section class="hero" id="overview">
+  <div class="badge">Researcher manual</div>
+  <h2>CoAgentics Market Lab</h2>
+  <p class="lead">A top-down research interface for designing, preregistering, qualifying, running, analyzing, and inspecting market experiments involving AI agents.</p>
+  <div class="callout good"><strong>Core rule:</strong> start at the top, then drill down. The visual workflow is the front door; the persisted data, statistical analysis, and decision traces are the scientific record underneath it.</div>
+</section>
+
+<section id="mental-model">
+<h2>1. The mental model</h2>
+<p>The application separates three levels of interaction so a researcher can understand the experiment quickly without losing scientific depth.</p>
+<div class="grid3">
+<div class="card"><h3>Understand</h3><p>Configure and visually inspect the experiment: participants, market, activation design, seeds, and current state.</p></div>
+<div class="card"><h3>Measure</h3><p>State hypotheses, expected direction, estimand, operational metric definition, uncertainty, and comparison plan before interpreting outcomes.</p></div>
+<div class="card"><h3>Verify</h3><p>Trace a reported result to the retained model response, parsed action, legality, acceptance, execution, payoff, and provenance.</p></div>
+</div>
+<div class="flow"><span>Experiment design</span><b>→</b><span>Research expectations</span><b>→</b><span>Qualification</span><b>→</b><span>Run</span><b>→</b><span>Results</span><b>→</b><span>Evidence</span></div>
+<div class="callout"><strong>Important:</strong> the visual Market view is a projection of retained campaign state. It does not invent market outcomes, model actions, prices, or evidence.</div>
+</section>
+
+<section id="workflow"><h2>2. Six-step workflow</h2>
+<div class="steps">
+<div class="step"><div><strong>Experiment design</strong><br><span class="small">Define the test.</span></div></div>
+<div class="step"><div><strong>Research expectations</strong><br><span class="small">Define and freeze H01, H02, … before interpreting outcomes.</span></div></div>
+<div class="step"><div><strong>Qualification</strong><br><span class="small">Validate the market and connected model runtime.</span></div></div>
+<div class="step"><div><strong>Run</strong><br><span class="small">Execute the frozen experimental design and persist cells.</span></div></div>
+<div class="step"><div><strong>Results</strong><br><span class="small">Compare observed outcomes and statistical summaries.</span></div></div>
+<div class="step"><div><strong>Evidence</strong><br><span class="small">Inspect model × seed decision traces and provenance.</span></div></div>
+</div>
+</section>
+
+<section id="design"><h2>3. Experiment design</h2>
+<p>Use this page to define the experiment before looking at outcomes. The current implementation exposes the design through the live DV026 API and persists it through the design endpoints.</p>
+<div class="screenshot"><img src="assets/experiment-design-ui.png" alt="Experiment design screen"><div class="caption">Current Experiment Design screen. The UI uses compact descriptions and on-demand tooltips for additional explanation.</div></div>
+<h3>3.1 What are you testing?</h3>
+<table><tr><th>Control</th><th>What it means</th></tr>
+<tr><td>Compare LLMs</td><td>Compare model behavior while holding the market and experimental context constant.</td></tr>
+<tr><td>Study market interaction</td><td>Tests whether a model changes behavior in response to other agents in the market.</td></tr>
+<tr><td>Test information effects</td><td>Tests whether additional public information such as news, history, or peer observations changes behavior.</td></tr>
+<tr><td>Compare frozen vs sequential</td><td>Compares decisions from one shared snapshot with decisions made after the market state changes.</td></tr>
+<tr><td>Counterfactual model substitution</td><td>Keeps the decision context fixed while changing which model supplies the decision.</td></tr>
+</table>
+<h3>3.2 Models and population</h3>
+<table><tr><th>Setting</th><th>Meaning</th></tr>
+<tr><td>Runtime model catalog</td><td>The models actually available to the connected runtime. Availability is checked rather than assumed.</td></tr>
+<tr><td>Heterogeneous multi-LLM</td><td>Each experimental seat can use a different model while sharing the same market environment.</td></tr>
+<tr><td>Single LLM vs reference</td><td>One LLM is evaluated against a programmed non-LLM counterparty.</td></tr>
+</table>
+<h3>3.3 Market design</h3>
+<table><tr><th>Setting</th><th>Meaning</th></tr>
+<tr><td>Continuous double auction (CDA)</td><td>Bids and asks can arrive continuously and compatible orders can execute against one another.</td></tr>
+<tr><td>Sealed-bid</td><td>A separate mechanism in which bids/offers are not continuously exposed in the same way as a CDA. Qualification is separate from live campaign wiring.</td></tr>
+<tr><td>Frozen Snapshot</td><td>Every agent receives the same public market snapshot for its decision. Other agents’ actions are not visible as they occur.</td></tr>
+<tr><td>Sequential Interaction</td><td>Agents act in order; later agents receive the updated public market state created by earlier actions.</td></tr>
+<tr><td>Both designs</td><td>Runs separate experimental cells for frozen and sequential activation so the designs can be compared without conflating them.</td></tr>
+</table>
+<h3>3.4 Experimental controls</h3>
+<table><tr><th>Control</th><th>Purpose</th></tr>
+<tr><td>Number of seeds</td><td>Independent random seeds. Each seed defines one reproducible market realization.</td></tr>
+<tr><td>Repeats per cell</td><td>Repeated executions using the same experimental cell definition.</td></tr>
+<tr><td>Role assignment</td><td>Controls how market roles are assigned. Balanced crossover rotates assignments to reduce confounding.</td></tr>
+<tr><td>Private values</td><td>Controls how private value or cost schedules are assigned and rotated across models.</td></tr>
+<tr><td>Activation order</td><td>Controls seat positions in sequential designs. Randomized balanced order reduces position effects.</td></tr>
+<tr><td>Advanced settings</td><td>Less frequently changed mechanism, information, and stopping-rule controls. Use them only when they are part of the hypothesis or design.</td></tr>
+</table>
+<div class="callout warn"><strong>Do not infer:</strong> a control being visible in the UI does not mean it changes the live runner. Unsupported configuration choices are retained as design metadata and are not presented as if they alter execution unless the backend accepts them.</div>
+</section>
+
+<section id="expectations"><h2>4. Research expectations</h2>
+<p>This is the preregistration layer. Define the scientific target before inspecting results. The current application freezes expectations through the existing SHA-bound expectations API.</p>
+<h3>4.1 Required H01 fields</h3>
+<table><tr><th>Field</th><th>Purpose</th></tr>
+<tr><td>Research question</td><td>The question the hypothesis is intended to answer.</td></tr>
+<tr><td>Hypothesis</td><td>The expected relationship or difference.</td></tr>
+<tr><td>Comparison</td><td>The treatment/control or other comparison being made.</td></tr>
+<tr><td>Metric name</td><td>Human-readable name of the outcome measure.</td></tr>
+<tr><td><strong>Operational definition</strong></td><td><strong>Precise rule for how the metric is computed from retained observations. This is required by the current schema.</strong></td></tr>
+<tr><td>Metric unit</td><td>Unit of the metric, such as percent or price units.</td></tr>
+<tr><td>Population</td><td>The observational population to which the metric applies.</td></tr>
+<tr><td>Aggregation</td><td>How cell-level observations are aggregated for the displayed metric.</td></tr>
+<tr><td>Unit of analysis</td><td>The experimental unit, such as seed cell.</td></tr>
+<tr><td>Estimand</td><td>The quantity the experiment is designed to estimate.</td></tr>
+<tr><td>Expected direction</td><td>Direction predicted before seeing the outcome.</td></tr>
+<tr><td>Expected effect</td><td>Prespecified effect magnitude where applicable.</td></tr>
+<tr><td>Analysis method</td><td>Prespecified statistical procedure.</td></tr>
+<tr><td>Uncertainty</td><td>Uncertainty representation, such as a 95% confidence interval.</td></tr>
+<tr><td>Rationale</td><td>Why the expectation was specified this way.</td></tr>
+</table>
+<h3>4.2 Freeze</h3>
+<div class="callout good"><strong>Freeze means lock.</strong> Freezing the preregistered expectations prevents later results from silently changing the analysis target. The current implementation binds the frozen expectation record to a SHA.</div>
+<h3>4.3 H01 schema correction</h3>
+<p>The current codebase includes a backward-compatible migration from the legacy <code>metric.definition</code> field to the canonical <code>metric.operational_definition</code> field. The legacy alias is removed after migration. The existing H01 wording is preserved; the fix normalizes the schema field name.</p>
+</section>
+
+<section id="qualification"><h2>5. Qualification</h2>
+<p>Qualification answers a different question from LLM behavior: <strong>is the experimental environment usable and interpretable?</strong></p>
+<div class="grid">
+<div class="card"><h3>Market qualification</h3><p>Tests whether the simulated market behaves correctly under reference conditions. This is separate from evaluating LLM behavior.</p></div>
+<div class="card"><h3>LLM runtime</h3><p>Checks whether the configured provider is reachable and can execute the selected models.</p></div>
+<div class="card"><h3>Expectations</h3><p>Confirms the preregistered expectations are frozen.</p></div>
+<div class="card"><h3>Experiment readiness</h3><p>Combines the applicable market, runtime, and expectation gates for the campaign scope.</p></div>
+</div>
+<div class="callout warn"><strong>Do not conflate qualification with model performance.</strong> A market passing its reference-condition qualification does not mean an LLM is efficient, truthful, rational, or otherwise successful.</div>
+</section>
+
+<section id="run"><h2>6. Run</h2>
+<p>The Run page executes the frozen experimental design and persists each completed experimental cell.</p>
+<h3>6.1 What a cell is</h3>
+<p>A cell is an individual experimental unit, typically a model × seed combination under a specified design. Cells are persisted so later results can be traced back to exact evidence.</p>
+<h3>6.2 Live market view</h3>
+<p>The abstract A/B/C/D visual is a projection of retained run state. It is intended to make the experiment legible without replacing the data underneath it.</p>
+<div class="flow"><span>Observed</span><b>→</b><span>Parsed</span><b>→</b><span>Legal</span><b>→</b><span>Accepted</span><b>→</b><span>Executed</span><b>→</b><span>Payoff</span></div>
+<h3>6.3 Campaign controls</h3>
+<table><tr><th>Control</th><th>Meaning</th></tr>
+<tr><td>Population</td><td>Heterogeneous multi-LLM or single LLM vs programmed reference.</td></tr>
+<tr><td>Activation</td><td>Sequential Interaction, Frozen Snapshot, or Both designs.</td></tr>
+<tr><td>Seeds</td><td>Number of planned seeds for the campaign.</td></tr>
+<tr><td>Start live campaign</td><td>Starts the configured campaign only after the required gates are satisfied.</td></tr>
+<tr><td>Cancel</td><td>Requests cancellation of a currently running campaign.</td></tr>
+</table>
+</section>
+
+<section id="results"><h2>7. Results</h2>
+<p>Results are computed from persisted campaign observations. The frontend intentionally leaves unsupported or unavailable values empty rather than filling them for presentation.</p>
+<h3>7.1 Common measures</h3>
+<table><tr><th>Measure</th><th>Interpretation</th></tr>
+<tr><td>Efficiency</td><td>Observed market efficiency for the current scope.</td></tr>
+<tr><td>Δ</td><td>Difference relative to the relevant reference condition.</td></tr>
+<tr><td>Parse</td><td>Rate at which provider responses were successfully parsed into structured actions.</td></tr>
+<tr><td>Valid</td><td>Rate at which parsed actions satisfied the market action schema and legality checks.</td></tr>
+<tr><td>Accepted</td><td>Rate at which valid submissions were accepted by the market.</td></tr>
+<tr><td>Executed</td><td>Rate at which accepted submissions actually executed.</td></tr>
+<tr><td>95% CI</td><td>A 95% confidence interval when the underlying analysis provides one.</td></tr>
+</table>
+<h3>7.2 Model comparison</h3>
+<p>Model comparison should use the same experimental definitions and distinguish model-level observations from market qualification. A model does not have to meet the market's reference qualification threshold for the market itself to be considered qualified.</p>
+</section>
+
+<section id="evidence"><h2>8. Evidence</h2>
+<p>The Evidence page is where the researcher moves from a model × seed cell into the retained decision trace.</p>
+<table><tr><th>Column</th><th>Meaning</th></tr>
+<tr><td>Model</td><td>Model identifier for the cell.</td></tr>
+<tr><td>Seed</td><td>Random seed defining the reproducible market realization.</td></tr>
+<tr><td>Turns</td><td>Number of retained decision turns.</td></tr>
+<tr><td>Cell OK</td><td>Whether the retained cell passed required integrity checks.</td></tr>
+<tr><td>Efficiency</td><td>Observed efficiency for the cell when available.</td></tr>
+<tr><td>Δ</td><td>Difference relative to the relevant reference condition when available.</td></tr>
+<tr><td>Open</td><td>Opens the retained cell-level evidence trace.</td></tr>
+</table>
+<h3 id="evidence-chain">8.1 The evidence chain</h3>
+<div class="grid3">
+<div class="card"><h3>Observed</h3><p>Raw provider response or retained observation before interpretation.</p></div>
+<div class="card"><h3>Parsed</h3><p>Structured action extracted from the provider response.</p></div>
+<div class="card"><h3>Legal</h3><p>Whether the parsed action is valid under the market rules and current state.</p></div>
+<div class="card"><h3>Accepted</h3><p>Whether the market accepted the legal submission.</p></div>
+<div class="card"><h3>Executed</h3><p>Whether the accepted action actually produced an execution or fill.</p></div>
+<div class="card"><h3>Payoff</h3><p>Economic outcome assigned by the market and agent state.</p></div>
+</div>
+</section>
+
+<section id="frozen-sequential"><h2>9. Frozen vs sequential: the critical distinction</h2>
+<div class="grid">
+<div class="card"><h3>Frozen Snapshot</h3><p>Every agent sees the same public market snapshot for its decision. Other agents' actions are not visible as they occur.</p><pre>S₀ → A
+S₀ → B
+S₀ → C
+S₀ → D</pre></div>
+<div class="card"><h3>Sequential Interaction</h3><p>Agents act in sequence. Later agents receive the updated public market state created by earlier actions.</p><pre>S₀ → A → S₁
+S₁ → B → S₂
+S₂ → C → S₃
+S₃ → D</pre></div>
+</div>
+<div class="callout"><strong>Scientific implication:</strong> if the research question concerns information exposure, reaction, adaptation, or peer influence, the activation design is part of the treatment definition. Do not describe the two designs as interchangeable.</div>
+</section>
+
+<section id="metrics"><h2>10. Metrics, operational definitions, and estimands</h2>
+<p>The application distinguishes the <strong>name</strong> of a metric from its <strong>operational definition</strong>. A name such as “efficiency” is not enough for a reproducible research record.</p>
+<div class="grid">
+<div class="card"><h3>Metric name</h3><p>Human-readable label used throughout the interface.</p></div>
+<div class="card"><h3>Operational definition</h3><p>The explicit rule that maps retained observations to the metric. This is required by the current research-expectations schema.</p></div>
+<div class="card"><h3>Unit of analysis</h3><p>The level at which the estimand is defined, such as a seed cell.</p></div>
+<div class="card"><h3>Estimand</h3><p>The quantity the analysis intends to estimate, such as a mean treatment effect across complete cells.</p></div>
+</div>
+<div class="callout warn"><strong>Do not use a tooltip or UI label as a substitute for an operational definition.</strong> Tooltips explain concepts; the preregistration field defines the actual scientific measure.</div>
+</section>
+
+<section id="boundaries"><h2>11. Scientific and claim boundaries</h2>
+<div class="grid">
+<div class="card"><h3>Software qualification</h3><p>Passing scripted software-path checks means the implementation path passed those checks. It does not establish live LLM economics or a DARPA milestone.</p></div>
+<div class="card"><h3>Live LLM status</h3><p><code>live_llm</code> means the run talked to the configured live provider. It does not by itself mean the campaign is ready or that a scientific claim is supported.</p></div>
+<div class="card"><h3>Market qualification</h3><p>Validates the market environment under reference conditions. It does not score the LLM.</p></div>
+<div class="card"><h3>Phase II boundary</h3><p>The current codebase does not claim Phase II constructs such as bias, deception, collaboration, or intent classification as validated results.</p></div>
+</div>
+</section>
+
+<section id="tooltips"><h2>12. Tooltips and on-demand explanation</h2>
+<p>The UI uses compact <strong>?</strong> affordances and native titles to keep the permanent interface concise. The tooltip system is attached to the real <code>workbench/market_lab.html</code> DOM and survives dynamic re-rendering through a MutationObserver.</p>
+<h3>What gets explained</h3>
+<p>Major scientific concepts, configuration controls, workflow steps, result metrics, evidence stages, and table columns have a compact explanation available on demand.</p>
+<div class="callout good"><strong>Design rule:</strong> the screen should remain generic and readable. If a concept needs more explanation, use the tooltip rather than expanding the permanent UI copy.</div>
+</section>
+
+<section id="troubleshooting"><h2>13. Troubleshooting</h2>
+<table><tr><th>Symptom</th><th>What to check</th></tr>
+<tr><td>LLM runtime unavailable</td><td>Refresh the runtime status. The local provider must be reachable for live campaigns. Market qualification can still run without a live LLM runtime.</td></tr>
+<tr><td>Campaign blocked</td><td>Check that expectations are frozen, the market qualification gate has passed, and the configured runtime is reachable.</td></tr>
+<tr><td>H01 says <code>metric.operational_definition</code> is required</td><td>Use the current v6 codebase. The application migrates the legacy <code>metric.definition</code> field to the canonical field and exposes the operational-definition editor.</td></tr>
+<tr><td>Results are empty</td><td>This is expected until persisted campaign data exists. The frontend does not fabricate results.</td></tr>
+<tr><td>Old UI appears</td><td>Confirm the server is serving <code>workbench/market_lab.html</code> at <code>/</code>. The legacy console remains available at <code>/live.html</code>.</td></tr>
+<tr><td>Stale runtime behavior</td><td>Use <code>./start-workbench.sh</code> so the configured/rebuilt <code>build-dv026</code> targets are used rather than a stale runner.</td></tr>
+</table>
+<h3>Reset behavior</h3>
+<p>The existing DV026 reset endpoint returns the console to workflow start, cancels a running campaign, clears READY hydration, unfreezes hypotheses to draft, and hides chart/bid aggregates until a new run. Prior cell evidence files are retained on disk.</p>
+</section>
+
+<section id="architecture"><h2>14. Application architecture</h2>
+<div class="flow"><span>Browser UI</span><b>→</b><span>live_server.py</span><b>→</b><span>DV026 API</span><b>→</b><span>Runner / campaign</span><b>→</b><span>Persisted cells + evidence</span></div>
+<div class="card"><h3>Primary frontend</h3><p><code>workbench/market_lab.html</code> is served at <code>/</code> and <code>/index.html</code>. The previous <code>workbench/live.html</code> remains available at <code>/live.html</code>.</p></div>
+<h3>Primary live endpoints used by Market Lab</h3>
+<table><tr><th>Endpoint</th><th>Role</th></tr>
+<tr><td><code>/api/dv026/design</code></td><td>Read persisted experiment design.</td></tr>
+<tr><td><code>/api/dv026/design/save</code></td><td>Persist experiment design.</td></tr>
+<tr><td><code>/api/dv026/expectations</code> / <code>/freeze</code></td><td>Read/save/freeze preregistered hypotheses.</td></tr>
+<tr><td><code>/api/dv026/preflight</code></td><td>Runtime and model availability check.</td></tr>
+<tr><td><code>/api/dv026/run</code></td><td>Single evidence / qualification execution path.</td></tr>
+<tr><td><code>/api/dv026/campaign/start</code></td><td>Start a live campaign.</td></tr>
+<tr><td><code>/api/dv026/campaign/status</code></td><td>Poll campaign status.</td></tr>
+<tr><td><code>/api/dv026/campaign/charts</code></td><td>Read persisted chart aggregates.</td></tr>
+<tr><td><code>/api/dv026/campaign/analysis</code></td><td>Read persisted statistical analysis.</td></tr>
+<tr><td><code>/api/dv026/campaign/cells</code></td><td>Read persisted model × seed cells.</td></tr>
+<tr><td><code>/api/dv026/campaign/cell</code></td><td>Open an individual retained cell trace.</td></tr>
+</table>
+</section>
+
+<section id="files"><h2>15. Key files</h2>
+<table><tr><th>File</th><th>Purpose</th></tr>
+<tr><td><code>workbench/market_lab.html</code></td><td>Integrated Market Lab frontend.</td></tr>
+<tr><td><code>workbench/live.html</code></td><td>Legacy Research Console retained for reference.</td></tr>
+<tr><td><code>live_server.py</code></td><td>Serves the application and exposes the DV026 API.</td></tr>
+<tr><td><code>docs/MARKET_LAB_UI_V3.md</code></td><td>UI integration and scientific boundary notes.</td></tr>
+<tr><td><code>docs/MARKET_LAB_UI_TOOLTIPS.md</code></td><td>Tooltip coverage and design rule.</td></tr>
+<tr><td><code>docs/BUGFIX_H01_METRIC_OPERATIONAL_DEFINITION_20261004.md</code></td><td>H01 schema migration and validation fix.</td></tr>
+<tr><td><code>docs/DV026_WORKBENCH.md</code></td><td>Research Console mental model, workflow, gates, API, and claim boundaries.</td></tr>
+<tr><td><code>docs/DV026_DARPA_PHASE_I_READINESS.md</code></td><td>Phase I readiness checklist.</td></tr>
+</table>
+</section>
+
+<section id="glossary"><h2>16. Glossary</h2>
+<table><tr><th>Term</th><th>Definition in this application</th></tr>
+<tr><td class="term">CDA</td><td>Continuous double auction.</td></tr>
+<tr><td class="term">Cell</td><td>Individual persisted experimental unit, typically model × seed under a specified design.</td></tr>
+<tr><td class="term">Frozen Snapshot</td><td>All agents decide from the same public market snapshot.</td></tr>
+<tr><td class="term">Sequential Interaction</td><td>Agents act in sequence and later agents receive updated public market state.</td></tr>
+<tr><td class="term">Operational definition</td><td>Precise rule for computing a preregistered metric from retained observations.</td></tr>
+<tr><td class="term">Estimand</td><td>Quantity the experiment is designed to estimate.</td></tr>
+<tr><td class="term">Qualification</td><td>Evidence that the market/runtime environment is usable under the applicable gate.</td></tr>
+<tr><td class="term">Evidence chain</td><td>Observed → Parsed → Legal → Accepted → Executed → Payoff.</td></tr>
+<tr><td class="term">Preregistration</td><td>Research expectations frozen before the full campaign.</td></tr>
+<tr><td class="term">Provenance</td><td>Metadata and retained records needed to trace a result back to its originating run and model response.</td></tr>
+</table>
+</section>
+
+<footer>
+<strong>Source basis:</strong> this manual is derived from the current Market Lab codebase and its included documentation, including <code>workbench/market_lab.html</code>, <code>docs/MARKET_LAB_UI_V3.md</code>, <code>docs/MARKET_LAB_UI_TOOLTIPS.md</code>, <code>docs/DV026_WORKBENCH.md</code>, and <code>docs/BUGFIX_H01_METRIC_OPERATIONAL_DEFINITION_20261004.md</code>. It describes the current implementation and preserves its stated scientific boundaries; it does not add unsupported experimental claims.
+</footer>
+</main></div>
+</body></html>

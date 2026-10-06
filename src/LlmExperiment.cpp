@@ -1,5 +1,6 @@
 #include "coagentics/experiment/LlmExperiment.hpp"
 #include "coagentics/market/Mechanism.hpp"
+#include "coagentics/util/Json.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -13,63 +14,27 @@
 #include <stdexcept>
 namespace coagentics::experiment {
 namespace {
-std::string esc(const std::string& s){std::string o;for(char c:s){if(c=='"'||c=='\\')o.push_back('\\');o.push_back(c);}return o;}
+std::string esc(const std::string& s){
+ // Must escape control chars — raw LLM replies often contain newlines; without this,
+ // cell_*.jsonl splits mid-record and Live seats show empty turns for those models.
+ std::string o; o.reserve(s.size()+8);
+ for(unsigned char c:s){
+  switch(c){
+   case '"': o+="\\\""; break;
+   case '\\': o+="\\\\"; break;
+   case '\n': o+="\\n"; break;
+   case '\r': o+="\\r"; break;
+   case '\t': o+="\\t"; break;
+   default:
+    if(c<0x20){ char buf[8]; std::snprintf(buf,sizeof(buf),"\\u%04x", (unsigned)c); o+=buf; }
+    else o.push_back((char)c);
+  }
+ }
+ return o;
+}
 std::string getenv_str(const char* k){ if(const char* v=std::getenv(k)) return v; return {}; }
 
-bool find_string_field(const std::string& j,const std::string& key,std::string& out){
- const std::string pat="\""+key+"\""; auto p=j.find(pat); if(p==std::string::npos)return false;
- p=j.find(':',p+pat.size()); if(p==std::string::npos)return false;
- p=j.find('"',p+1); if(p==std::string::npos)return false;
- auto q=p+1; std::string v;
- while(q<j.size()){ if(j[q]=='\\'&&q+1<j.size()){v.push_back(j[q+1]);q+=2;continue;} if(j[q]=='"'){out=v;return true;} v.push_back(j[q++]); }
- return false;
-}
-bool find_number_field(const std::string& j,const std::string& key,double& out){
- const std::string pat="\""+key+"\""; auto p=j.find(pat); if(p==std::string::npos)return false;
- p=j.find(':',p+pat.size()); if(p==std::string::npos)return false; ++p;
- while(p<j.size()&&(j[p]==' '||j[p]=='\t'||j[p]=='\n'||j[p]=='\r'))++p;
- if(p<j.size()&&j.compare(p,4,"null")==0) return false;
- try{ size_t n=0; out=std::stod(j.substr(p),&n); return n>0; }catch(...){return false;}
-}
-// Integer field: digit text with optional sign; rejects fractions (e.g. 0.5) and non-integers.
-bool find_integer_field(const std::string& j,const std::string& key,std::int64_t& out){
- const std::string pat="\""+key+"\""; auto p=j.find(pat); if(p==std::string::npos)return false;
- p=j.find(':',p+pat.size()); if(p==std::string::npos)return false; ++p;
- while(p<j.size()&&(j[p]==' '||j[p]=='\t'||j[p]=='\n'||j[p]=='\r'))++p;
- if(p>=j.size()) return false;
- if(j.compare(p,4,"null")==0) return false;
- std::size_t start=p;
- if(j[p]=='+'||j[p]=='-') ++p;
- if(p>=j.size()||j[p]<'0'||j[p]>'9') return false;
- while(p<j.size()&&j[p]>='0'&&j[p]<='9') ++p;
- // Reject fractional / exponent forms: must not continue with '.' 'e' 'E'
- if(p<j.size()&&(j[p]=='.'||j[p]=='e'||j[p]=='E')) return false;
- try{ out=std::stoll(j.substr(start,p-start)); return true; }catch(...){return false;}
-}
-bool field_is_null(const std::string& j,const std::string& key){
- const std::string pat="\""+key+"\""; auto p=j.find(pat); if(p==std::string::npos)return false;
- p=j.find(':',p+pat.size()); if(p==std::string::npos)return false; ++p;
- while(p<j.size()&&(j[p]==' '||j[p]=='\t'||j[p]=='\n'||j[p]=='\r'))++p;
- return j.compare(p,4,"null")==0;
-}
-bool field_present(const std::string& j,const std::string& key){
- return j.find("\""+key+"\"")!=std::string::npos;
-}
 const char* role_name(AgentRole r){ return r==AgentRole::Seller?"SELLER":"BUYER"; }
-std::string strip_to_object(std::string s){
- auto l=s.find_first_not_of(" \t\r\n"); if(l==std::string::npos) return {};
- auto r=s.find_last_not_of(" \t\r\n"); s=s.substr(l,r-l+1);
- if(s.rfind("```",0)==0){
-  auto nl=s.find('\n'); if(nl!=std::string::npos) s=s.substr(nl+1);
-  auto end=s.rfind("```"); if(end!=std::string::npos) s=s.substr(0,end);
-  l=s.find_first_not_of(" \t\r\n"); r=s.find_last_not_of(" \t\r\n");
-  if(l==std::string::npos) return {};
-  s=s.substr(l,r-l+1);
- }
- auto a=s.find('{'); auto b=s.rfind('}');
- if(a==std::string::npos||b==std::string::npos||b<=a) return {};
- return s.substr(a,b-a+1);
-}
 std::string opt_num(const std::optional<double>& v){
  if(!v) return "null";
  std::ostringstream o; o<<std::setprecision(17)<<*v; return o.str();
@@ -232,62 +197,23 @@ std::string canonical_decision_context_json(const DecisionContext& ctx,
 
 MarketActionParseResult parse_canonical_market_action(const std::string& raw_output){
  MarketActionParseResult r; r.raw_retained=raw_output;
- const std::string obj=strip_to_object(raw_output);
- if(obj.empty()){ r.error=raw_output.empty()?"empty_payload":"missing_json_object"; return r; }
- std::string action;
- if(!find_string_field(obj,"action",action)){ r.error="missing_action"; return r; }
- // Exact enum; no case folding / silent repair.
- MarketAction a;
- if(action=="BUY") a.action=ActionType::Buy;
- else if(action=="SELL") a.action=ActionType::Sell;
- else if(action=="HOLD") a.action=ActionType::Hold;
- else { r.error="invalid_action"; return r; }
-
- std::int64_t time_i=0;
- if(!find_integer_field(obj,"time",time_i)){
-  // Distinguish missing vs non-integer
-  double junk=0;
-  if(find_number_field(obj,"time",junk)) r.error="time_not_integer";
-  else r.error="missing_time";
-  return r;
- }
- if(time_i<0){ r.error="time_negative"; return r; }
- a.time=static_cast<std::uint64_t>(time_i);
-
- std::string asset;
- if(!find_string_field(obj,"asset",asset)){ r.error="missing_asset"; return r; }
- if(asset.empty()){ r.error="asset_empty"; return r; }
- a.asset=asset;
-
- if(a.action==ActionType::Hold){
-  std::int64_t qty_i=0;
-  if(field_present(obj,"quantity")){
-   if(!find_integer_field(obj,"quantity",qty_i)){ r.error="quantity_not_integer"; return r; }
-   if(qty_i!=0){ r.error="hold_quantity_must_be_zero"; return r; }
-  }
-  a.quantity=0;
-  if(field_present(obj,"price") && !field_is_null(obj,"price")){
-   r.error="hold_price_must_be_null"; return r;
-  }
-  r.ok=true; r.action=a; return r;
- }
-
- std::int64_t qty_i=0;
- if(!find_integer_field(obj,"quantity",qty_i)){
-  double junk=0;
-  if(find_number_field(obj,"quantity",junk)) r.error="quantity_not_integer";
-  else r.error="missing_quantity";
-  return r;
- }
- if(qty_i<=0 || qty_i>1000000){ r.error="invalid_quantity"; return r; }
- a.quantity=static_cast<int>(qty_i);
-
- double price=0;
- if(field_is_null(obj,"price")){ r.error="missing_price"; return r; }
- if(!find_number_field(obj,"price",price)){ r.error="missing_price"; return r; }
- if(!std::isfinite(price)){ r.error="price_not_finite"; return r; }
- a.price=price;
- r.ok=true; r.action=a; return r;
+ std::string payload=raw_output;
+ auto l=payload.find_first_not_of(" \t\r\n");
+ if(l==std::string::npos){r.error="empty_payload";return r;}
+ auto rr=payload.find_last_not_of(" \t\r\n"); payload=payload.substr(l,rr-l+1);
+ if(payload.rfind("```",0)==0){auto nl=payload.find('\n');auto end=payload.rfind("```");if(nl==std::string::npos||end==std::string::npos||end<=nl){r.error="invalid_json";return r;}payload=payload.substr(nl+1,end-nl-1);l=payload.find_first_not_of(" \t\r\n");rr=payload.find_last_not_of(" \t\r\n");if(l==std::string::npos){r.error="empty_payload";return r;}payload=payload.substr(l,rr-l+1);}
+ auto parsed=coagentics::util::parse_json(payload);
+ if(!parsed){r.error="invalid_json";return r;} if(!parsed->is_object()){r.error="schema_root_not_object";return r;}
+ const auto field=[&](const char*k){return parsed->get(k);};
+ auto action=field("action"); if(!action){r.error="missing_action";return r;} if(!action->is_string()){r.error="action_wrong_type";return r;}
+ MarketAction a; if(action->as_string()=="BUY")a.action=ActionType::Buy;else if(action->as_string()=="SELL")a.action=ActionType::Sell;else if(action->as_string()=="HOLD")a.action=ActionType::Hold;else{r.error="invalid_action";return r;}
+ auto asset=field("asset"); if(!asset){r.error="missing_asset";return r;} if(!asset->is_string()){r.error="asset_wrong_type";return r;} if(asset->as_string().empty()){r.error="asset_empty";return r;} a.asset=asset->as_string();
+ auto time=field("time"); if(!time){r.error="missing_time";return r;} if(!time->is_number()){r.error="time_wrong_type";return r;} double td=time->as_number(); if(td<0||std::floor(td)!=td||td>static_cast<double>(UINT64_MAX)){r.error="time_not_integer";return r;} a.time=static_cast<std::uint64_t>(td);
+ auto qty=field("quantity"); auto price=field("price");
+ if(a.action==ActionType::Hold){if(qty){if(!qty->is_number()||std::floor(qty->as_number())!=qty->as_number()){r.error="quantity_not_integer";return r;}if(qty->as_number()!=0){r.error="hold_quantity_must_be_zero";return r;}}if(price&&!price->is_null()){r.error="hold_price_must_be_null";return r;}a.quantity=0;r.ok=true;r.action=a;return r;}
+ if(!qty){r.error="missing_quantity";return r;} if(!qty->is_number()||std::floor(qty->as_number())!=qty->as_number()){r.error="quantity_not_integer";return r;} if(qty->as_number()<=0||qty->as_number()>1000000){r.error="invalid_quantity";return r;} a.quantity=static_cast<int>(qty->as_number());
+ if(!price||price->is_null()){r.error="missing_price";return r;} if(!price->is_number()){r.error="price_wrong_type";return r;} if(!std::isfinite(price->as_number())){r.error="price_not_finite";return r;} a.price=price->as_number();
+ r.ok=true;r.action=a;return r;
 }
 
 ActionValidationResult validate_market_action(const MarketAction& action, const DecisionContext& ctx){
@@ -437,6 +363,8 @@ void LlmAgentAdapter::append_log(const AgentTurnRecord& t) const {
  };
  f<<"{\"run_id\":\""<<esc(t.run_id)<<"\",\"request_id\":\""<<esc(t.request_id)
   <<"\",\"agent_id\":\""<<esc(t.agent_id)<<"\",\"time\":"<<t.time
+  <<",\"seed\":"<<t.seed
+  <<",\"inference_config\":\""<<esc(t.inference_config)<<"\""
   <<",\"adapter_version\":\""<<esc(t.adapter_version)<<"\""
   <<",\"model\":{\"provider\":\""<<esc(t.model.provider)<<"\",\"name\":\""<<esc(t.model.model)
   <<"\",\"version\":\""<<esc(t.model.version)<<"\"}"
@@ -495,17 +423,25 @@ bool live_llm_configured(){
 namespace {
 class OpenAiCompatibleTransport final : public agents::ModelTransport {
 public:
- explicit OpenAiCompatibleTransport(agents::ModelIdentity identity):identity_(std::move(identity)){}
+ explicit OpenAiCompatibleTransport(agents::ModelIdentity identity):identity_(std::move(identity)){
+  // Snapshot endpoint/model credentials at construction. A shared heterogeneous market may
+  // contain multiple model transports; invoke() must not read a later seat's mutable env.
+  provider_=getenv_str("COAGENTICS_LLM_PROVIDER");
+  base_=getenv_str("COAGENTICS_LLM_BASE_URL");
+  model_=getenv_str("COAGENTICS_LLM_MODEL");
+  key_=getenv_str("COAGENTICS_LLM_API_KEY");
+  if(key_.empty()) key_=getenv_str("OPENAI_API_KEY");
+ }
  agents::ModelResponse invoke(const agents::ModelRequest& req) override {
   agents::ModelResponse out; out.request_id=req.request_id;
-  const bool ollama=live_uses_ollama();
-  std::string key=[&]{ auto a=getenv_str("COAGENTICS_LLM_API_KEY"); return a.empty()?getenv_str("OPENAI_API_KEY"):a; }();
+  const bool ollama=(provider_=="ollama" || provider_=="OLLAMA" || base_.find("11434")!=std::string::npos || base_.find("ollama")!=std::string::npos);
+  std::string key=key_;
   if(key.empty() && ollama) key="ollama";
   if(key.empty()){ out.error="missing_api_key"; return out; }
-  std::string base=getenv_str("COAGENTICS_LLM_BASE_URL");
+  std::string base=base_;
   if(base.empty()) base=ollama? "http://127.0.0.1:11434/v1" : "https://api.openai.com/v1";
   while(!base.empty()&&base.back()=='/') base.pop_back();
-  std::string model=getenv_str("COAGENTICS_LLM_MODEL");
+  std::string model=model_;
   if(model.empty()){
    if(!identity_.model.empty()) model=identity_.model;
    else model=ollama? "llama3.2" : "gpt-4o-mini";
@@ -514,18 +450,22 @@ public:
   // Prefer decision context (market + own private state). Fall back to public observation JSON.
   const std::string user_payload = !req.decision_context_json.empty()
    ? req.decision_context_json : agents::canonical_observation_json(req);
+  // The system message defines only the interface contract.  It intentionally does NOT
+  // prescribe a trading heuristic: behavioral choice is the experimental observation.
   const std::string system =
-   "You are a buyer/seller in a market experiment. Use only the supplied observation. "
-   "Reply with ONLY one JSON object, no markdown: "
+   "You are participating in an economic market experiment. Use only the supplied observation. "
+   "Choose one permitted action and reply with ONLY one JSON object, no markdown: "
    "{\"action\":\"BUY|SELL|HOLD\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}. "
    "Copy asset and time from market.asset and market.time exactly. "
-   "BUYER with remaining_demand>=1 and best_ask<=private_value: BUY quantity 1 price=best_ask. "
-   "SELLER with inventory>=1 and best_bid>=private_value: SELL quantity 1 price=best_bid. "
-   "Else HOLD quantity 0 price null. Never omit time. BUY/SELL price must be a number.";
+   "Respect the supplied action constraints. HOLD uses quantity 0 and price null. "
+   "Never invent information that was not supplied.";
 
   std::ostringstream body;
-  body<<"{\"model\":\""<<esc(model)<<"\",\"temperature\":0,"
-      <<"\"messages\":[{\"role\":\"system\",\"content\":\""<<esc(system)
+  body<<"{\"model\":\""<<esc(model)<<"\",\"temperature\":0,";
+  // OpenAI-compatible/Ollama endpoints support seed in the request schema.  The simulator
+  // seed and provider inference seed are the same value here and are recorded separately.
+  body<<"\"seed\":"<<req.seed<<",";
+  body<<"\"messages\":[{\"role\":\"system\",\"content\":\""<<esc(system)
       <<"\"},{\"role\":\"user\",\"content\":\""<<esc(user_payload)<<"\"}]}";
 
   const std::string url=base+"/chat/completions";
@@ -535,7 +475,7 @@ public:
    +" -H "+shell_quote("Content-Type: application/json")
    +" -d "+shell_quote(body.str());
   out.inference_config="transport=OpenAiCompatible;provider="+(ollama?std::string("ollama"):std::string("openai-compatible"))
-   +";model="+model+";base="+base+";temperature=0";
+   +";model="+model+";base="+base+";temperature=0;inference_seed="+std::to_string(req.seed);
   auto t0=std::chrono::steady_clock::now();
   std::string raw=run_cmd(cmd);
   out.latency_ms=static_cast<std::uint64_t>(
@@ -543,13 +483,13 @@ public:
   if(raw.empty()){ out.error="empty_provider_response"; return out; }
   out.raw_output=extract_message_content(raw);
   if(out.raw_output.empty()){ out.error="missing_message_content"; out.raw_output=raw; return out; }
-  double pt=0,ct=0;
-  if(find_number_field(raw,"prompt_tokens",pt)) out.prompt_tokens=static_cast<std::uint64_t>(pt);
-  if(find_number_field(raw,"completion_tokens",ct)) out.completion_tokens=static_cast<std::uint64_t>(ct);
+  if(auto pt=provider_number(raw,"usage","prompt_tokens")) out.prompt_tokens=static_cast<std::uint64_t>(*pt);
+  if(auto ct=provider_number(raw,"usage","completion_tokens")) out.completion_tokens=static_cast<std::uint64_t>(*ct);
   return out;
  }
 private:
  agents::ModelIdentity identity_;
+ std::string provider_, base_, model_, key_;
  static std::string shell_quote(const std::string& s){
   std::string o="'"; for(char c:s){ if(c=='\'') o+="'\\''"; else o.push_back(c);} o.push_back('\''); return o;
  }
@@ -558,22 +498,13 @@ private:
   std::string out; char buf[4096]; while(fgets(buf,sizeof buf,p)) out+=buf; pclose(p); return out;
  }
  static std::string extract_message_content(const std::string& raw){
-  const std::string marker="\"content\"";
-  auto p=raw.find(marker); if(p==std::string::npos) return {};
-  p=raw.find(':',p+marker.size()); if(p==std::string::npos) return {};
-  ++p; while(p<raw.size()&&(raw[p]==' '||raw[p]=='\t'||raw[p]=='\n')) ++p;
-  if(p>=raw.size()||raw[p]!='"') return {};
-  ++p; std::string v;
-  while(p<raw.size()){
-   if(raw[p]=='\\'&&p+1<raw.size()){
-    char n=raw[p+1];
-    if(n=='n') v.push_back('\n'); else if(n=='t') v.push_back('\t'); else if(n=='r') v.push_back('\r'); else v.push_back(n);
-    p+=2; continue;
-   }
-   if(raw[p]=='"') return v;
-   v.push_back(raw[p++]);
-  }
-  return {};
+  auto j=coagentics::util::parse_json(raw); if(!j||!j->is_object()) return {};
+  auto choices=j->get("choices"); if(!choices||!choices->is_array()||choices->as_array().empty()) return {};
+  auto msg=choices->as_array().front().get("message"); if(!msg||!msg->is_object()) return {};
+  auto content=msg->get("content"); return content&&content->is_string()?content->as_string():std::string{};
+ }
+ static std::optional<double> provider_number(const std::string& raw,const char* parent,const char* key){
+  auto j=coagentics::util::parse_json(raw);if(!j)return {};auto p=j->get(parent);if(!p||!p->is_object())return {};auto v=p->get(key);if(!v||!v->is_number())return {};return v->as_number();
  }
 };
 }

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <filesystem>
 #include <iostream>
+#include <fstream>
 #include <string>
 using namespace coagentics;
 using namespace coagentics::experiment;
@@ -37,7 +38,7 @@ static void parsing_invalid_json(){
  const std::string raw="not-json-at-all";
  auto p=parse_canonical_market_action(raw);
  assert(!p.ok);
- assert(p.error=="missing_json_object");
+ assert(p.error=="invalid_json");
  assert(p.raw_retained==raw);
 }
 
@@ -263,6 +264,12 @@ static void llm_market_slice_smoke(){
  assert(result.evidence.records()[0].evidence.rationale.find("Traceability-only")!=std::string::npos);
  assert(result.evidence.records()[0].evidence.rationale.find("MarketMechanism")!=std::string::npos);
  assert(std::filesystem::file_size(log)>0);
+ // Step 9 evidence browser provenance: audit-only seed/config must be retained in the researcher log.
+ { std::ifstream lf(log); std::string line; std::getline(lf,line);
+   assert(line.find("\"seed\":")!=std::string::npos);
+   assert(line.find("\"inference_config\":\"transport=RawJsonTransport\"")!=std::string::npos);
+   assert(line.find("\"canonical_request\":")!=std::string::npos);
+ }
  // Repeat with a fresh transport (RawJsonTransport is single-use / exhausted after one invoke).
  auto run2=base_run(make_transport());
  run2.log_path=log;

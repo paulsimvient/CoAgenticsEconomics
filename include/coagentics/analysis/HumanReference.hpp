@@ -25,4 +25,19 @@ private: std::map<std::string,ReferenceDistribution> refs_;
 HumanReferenceSet qualification_reference_fixture();
 // Literature-grounded catalog. Values are entered only when directly reported by the cited source.
 HumanReferenceSet empirical_market_reference_catalog();
+
+// Directional human-market behavioral benchmarks from published laboratory
+// double-auction research. These are not numeric human distributions and are
+// therefore never used as numeric equivalence tests.
+struct HumanBehavioralBenchmark {
+ std::string metric;
+ std::string expected_pattern;
+ std::string description;
+ std::string population;
+ std::string condition;
+ std::string source_id;
+ std::string source_url;
+ std::size_t observations{};
+};
+std::vector<HumanBehavioralBenchmark> empirical_human_behavioral_benchmarks();
 }

@@ -65,4 +65,32 @@ HumanReferenceSet empirical_market_reference_catalog(){
  // no source-pinnable human distributions in-repo; HumanComparison reports NO_EMPIRICAL_HUMAN_REFERENCE.
  return s;
 }
+
+std::vector<HumanBehavioralBenchmark> empirical_human_behavioral_benchmarks(){
+ std::vector<HumanBehavioralBenchmark> b;
+ // Ikica et al. (2023), International Economic Review. The study reports 104
+ // continuous double-auction markets, more than 1,700 subjects and more than
+ // 80,000 individual bids/asks. It reports initially lower-than-equilibrium
+ // prices, convergence after a handful of periods, and greater initial buyer
+ // aggressiveness than seller aggressiveness.
+ const std::string source="doi:10.1111/iere.12630";
+ const std::string url="https://doi.org/10.1111/iere.12630";
+ b.push_back({"initial_buyer_seller_aggressiveness",
+   "buyers_more_aggressive_initially",
+   "Initial bids were reported as more aggressive than initial asks in the experimental double-auction markets.",
+   "human laboratory traders",
+   "private-information continuous double auctions",source,url,80000});
+ b.push_back({"initial_price_relative_to_equilibrium",
+   "initial_prices_below_equilibrium",
+   "Initial trading prices were typically below competitive-equilibrium levels before subsequent equilibration.",
+   "human laboratory traders",
+   "private-information continuous double auctions",source,url,104});
+ b.push_back({"price_convergence_over_periods",
+   "convergence_after_multiple_periods",
+   "Prices converged toward competitive equilibrium after a handful of trading periods.",
+   "human laboratory traders",
+   "private-information continuous double auctions",source,url,104});
+ return b;
+}
+
 }

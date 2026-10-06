@@ -20,6 +20,45 @@ double price(AgentPolicy&a,const Observation&o){return a.act(o).price;}
 double clamp01(double x){return std::clamp(x,0.,1.);}
 std::string esc(std::string s){std::string o;for(char c:s){if(c=='"')o+="\\\"";else if(c=='\n')o+="\\n";else o+=c;}return o;}
 }
+
+BehavioralFingerprint fingerprint_observed_llm(
+ const std::string& agent_id, const std::string& mechanism, double reservation,
+ coagentics::experiment::AgentRole role,
+ const std::vector<coagentics::experiment::AgentTurnRecord>& turns){
+ BehavioralFingerprint f; f.agent_id=agent_id; f.mechanism=mechanism; f.observed=true;
+ if(turns.empty()) return f;
+ std::vector<double> prices; double agg=0, improve=0, payoff=0; int valid=0, violations=0, fills=0, quote_refs=0;
+ for(const auto& t:turns){
+  if(t.parse.success && t.action_validation.valid) ++valid;
+  payoff=std::max(payoff,t.agent_state_after.realized_payoff);
+  if(!t.parsed_action || t.parsed_action->action==coagentics::experiment::ActionType::Hold || !t.parsed_action->price) continue;
+  const double px=*t.parsed_action->price; prices.push_back(px);
+  const double denom=std::max(1.0,std::abs(reservation));
+  if(role==coagentics::experiment::AgentRole::Buyer){
+   agg += px/denom;
+   if(px>reservation+1e-9) ++violations;
+   if(t.market_state.best_ask){ improve += (*t.market_state.best_ask-px)/std::max(1.0,std::abs(*t.market_state.best_ask)); ++quote_refs; }
+  }else{
+   agg += (2.0-px/denom); // higher aggressiveness means quoting closer to/below cost for sellers
+   if(px<reservation-1e-9) ++violations;
+   if(t.market_state.best_bid){ improve += (px-*t.market_state.best_bid)/std::max(1.0,std::abs(*t.market_state.best_bid)); ++quote_refs; }
+  }
+  if(t.submission.filled_quantity>0) ++fills;
+ }
+ f.aggressiveness=prices.empty()?0:agg/prices.size();
+ f.reservation_value_violation_rate=prices.empty()?0:double(violations)/prices.size();
+ f.price_improvement=quote_refs?improve/quote_refs:0;
+ f.trade_frequency=double(fills)/turns.size();
+ f.action_validity=double(valid)/turns.size();
+ const double fundamental=turns.back().market_state.fundamental;
+ const double opportunity=std::abs(reservation-fundamental)*std::max(1,fills);
+ f.surplus_capture=opportunity>1e-9?clamp01(payoff/opportunity):0;
+ if(prices.size()<2) f.response_consistency=prices.empty()?0:1;
+ else { double mean=0; for(double x:prices) mean+=x; mean/=prices.size(); double var=0; for(double x:prices)var+=(x-mean)*(x-mean); var/=prices.size(); f.response_consistency=clamp01(1.-std::sqrt(var)/std::max(1.0,std::abs(reservation))); }
+ f.abstentions=0; for(const auto&t:turns) if(t.held) ++f.abstentions;
+ f.malformed_actions=0; f.provider_failures=0; for(const auto&t:turns){ if(!t.parse.success) ++f.malformed_actions; if(t.raw_provider_response.empty()) ++f.provider_failures; }
+ return f;
+}
 PhenotypeResult phenotype_known_mechanism(const std::string&m,std::uint64_t seed){
  BehavioralFingerprint f;f.agent_id=m;f.mechanism=m;
  auto a=make(m,seed);double p0=price(*a,obs(0));f.value_shading=(p0-100.)/100.;

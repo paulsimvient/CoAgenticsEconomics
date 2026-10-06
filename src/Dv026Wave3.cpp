@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include "coagentics/experiment/Dv026Wave3.hpp"
 #include "coagentics/analysis/Behavior.hpp"
 #include "coagentics/market/Mechanism.hpp"
@@ -98,30 +99,37 @@ PopulationRunResult run_population_market(const PopulationSpec& population){
  std::mt19937_64 rng(population.seed);
  std::vector<MarketHistoryEntry> shared_history;
  for(int r=0;r<population.rounds;++r){
+  const bool frozen_snapshot=population.activation_design==ActivationDesign::FrozenSnapshot;
+  const auto round_start_accounts=mech->accounts();
+  const auto round_start_market=market_state_from_mechanism(*mech, static_cast<std::uint64_t>(r), population.market.asset,
+   population.market.fundamental, 0.0);
   std::vector<std::string> order;
-  for(const auto& slot:population.agents) order.push_back(slot.agent_id);
-  std::shuffle(order.begin(), order.end(), rng);
+  if(!population.activation_order.empty()) order=population.activation_order;
+  else {
+   for(const auto& slot:population.agents) order.push_back(slot.agent_id);
+   std::shuffle(order.begin(), order.end(), rng);
+  }
   for(const auto& id:order){
    const AgentSlot* slot=nullptr;
    for(const auto& s:population.agents) if(s.agent_id==id){ slot=&s; break; }
    if(!slot) continue;
-   const auto& acct=mech->accounts().at(id);
+   const auto& acct=(frozen_snapshot?round_start_accounts:mech->accounts()).at(id);
    if(slot->side==market::Side::Buy && inv_of(acct, population.market.asset)>0) continue;
    if(slot->side==market::Side::Sell && inv_of(acct, population.market.asset)<=0) continue;
 
-   auto mstate=market_state_from_mechanism(*mech, static_cast<std::uint64_t>(r), population.market.asset,
+   auto mstate=frozen_snapshot?round_start_market:market_state_from_mechanism(*mech, static_cast<std::uint64_t>(r), population.market.asset,
     population.market.fundamental, 0.0);
    if(slot->kind==AgentKind::Llm){
     auto& tr=llm_trans[id];
     const AgentRole role=role_of(slot->side);
-    auto astate=build_agent_state_from_accounts(mech->accounts(), id, population.market.asset,
+    auto astate=build_agent_state_from_accounts(frozen_snapshot?round_start_accounts:mech->accounts(), id, population.market.asset,
      slot->private_value_or_cost, tr.remaining, role, tr.prev_action, tr.prev_fill, tr.payoff);
     DecisionContext ctx;
     ctx.market=mstate;
     ctx.agent=astate;
     ctx.information=slot->information;
     ctx.information.information_condition=slot->information_condition;
-    ctx.information.history=shared_history;
+    ctx.information.history = slot->information.history_visible ? shared_history : std::vector<MarketHistoryEntry>{};
     ctx.information.constraints=ActionConstraints::for_role(role);
     AgentTurnRecord turn=llm_adapters[id]->decide(ctx);
     ++outcomes[id].turns;
@@ -175,22 +183,38 @@ PopulationRunResult run_population_market(const PopulationSpec& population){
 
  out.trades=mech->trades();
  out.metrics=mech->metrics();
- for(auto& [_, oa]:outcomes) out.agents.push_back(oa);
+ for(auto& [id, oa]:outcomes){
+  if(oa.kind==AgentKind::Llm){
+   const AgentSlot* slot=nullptr; for(const auto& s:population.agents) if(s.agent_id==id){slot=&s;break;}
+   if(slot){
+    const std::string mech_name=population.market.mechanism==market::MechanismKind::SealedBidDoubleAuction?"sealed_bid":"cda";
+    oa.fingerprint=analysis::fingerprint_observed_llm(id,mech_name,slot->private_value_or_cost,role_of(slot->side),oa.llm_turns);
+    // Settlement-aware metrics: a resting order may fill on another agent's later turn.
+    std::size_t settled_trades=0; double settled_payoff=0;
+    for(const auto& tr:out.trades){
+     if(tr.buyer==id){ ++settled_trades; settled_payoff+=(slot->private_value_or_cost-tr.price)*tr.quantity; }
+     if(tr.seller==id){ ++settled_trades; settled_payoff+=(tr.price-slot->private_value_or_cost)*tr.quantity; }
+    }
+    oa.fills=settled_trades;
+    oa.fingerprint.trade_frequency=oa.turns?double(settled_trades)/oa.turns:0;
+    const double opp=std::abs(slot->private_value_or_cost-population.market.fundamental)*std::max<std::size_t>(1,settled_trades);
+    oa.fingerprint.surplus_capture=opp>1e-9?std::clamp(settled_payoff/opp,0.0,1.0):0;
+    oa.fingerprint_available=true;
+   }
+  }
+  out.agents.push_back(oa);
+ }
 
- // SYNTHETIC WIRING ONLY: self-paired bids prove classifier plumbing, not behavior.
- out.classifier_mode="synthetic_wiring";
- out.classifier_synthetic=true;
- out.features={0,0,0, out.metrics.allocative_efficiency};
- auto prop=analysis::compare_paired_bids(out.bids, out.bids, 0, {});
- out.features.information_sensitivity=prop.targeted_mean_abs_shift;
- out.features.peer_sensitivity=prop.non_target_mean_abs_shift;
- out.features.persistence=prop.propagation_ratio;
- analysis::MechanismClassifier clf;
- out.classification=clf.classify(out.features);
+ // A standalone population run has no behavioral contrast, so it must not emit a classifier result.
+ // Classification is reserved for paired observed control/treatment behavior below.
+ out.classifier_mode="none";
+ out.classifier_available=false;
+ out.classifier_synthetic=false;
+ out.features={};
+ out.classification={};
  out.claim_boundary=
-  "Wave 3 population run: observable market outcomes. "
-  "Classifier label from synthetic self-paired bids (wiring only) — not a behavioral experiment. "
-  "Use run_population_behavioral_contrast / run_operational_classifier for control/treatment. "
+  "Wave 3 standalone population run: observable market outcomes only; no classifier result without a paired behavioral contrast. "
+  "Use run_population_behavioral_contrast / run_operational_classifier on observed control/treatment bids. "
   "No Phase I classifier performance metrics; no Phase I classifier accuracy; no Phase II constructs.";
 
  auto refs=analysis::empirical_market_reference_catalog();
@@ -201,16 +225,65 @@ PopulationRunResult run_population_market(const PopulationSpec& population){
  std::vector<analysis::ModelObservation> obs;
  const bool any_llm=std::any_of(population.agents.begin(), population.agents.end(),
   [](const AgentSlot& s){ return s.kind==AgentKind::Llm; });
+ const bool all_llm=!population.agents.empty() && std::all_of(population.agents.begin(), population.agents.end(),
+  [](const AgentSlot& s){ return s.kind==AgentKind::Llm; });
+ bool all_live_transport=all_llm;
+ if(all_live_transport){
+  for(const auto& oa:outcomes){
+   if(oa.second.kind!=AgentKind::Llm){ all_live_transport=false; break; }
+   for(const auto& turn:oa.second.llm_turns){
+    if(turn.inference_config.find("transport=OpenAiCompatible")!=0){ all_live_transport=false; break; }
+   }
+  }
+ }
+ const auto origin=all_live_transport?analysis::EvidenceOrigin::LiveProvider:
+  (any_llm?analysis::EvidenceOrigin::Unknown:analysis::EvidenceOrigin::ScriptedControl);
+ const std::string model_id=all_live_transport?"heterogeneous-live-llm":(any_llm?"mixed-population":"population-programmed");
+ const std::string run_id="pop:"+std::to_string(population.seed);
  if(refs.has("allocative_efficiency")){
   const auto& ref=refs.get("allocative_efficiency");
   analysis::ModelObservation mo;
-  mo.metric="allocative_efficiency";
-  mo.condition=ref.condition;
-  mo.model_id=any_llm?"population-llm":"population-programmed";
-  mo.run_id="pop:"+std::to_string(population.seed);
-  mo.value=out.metrics.allocative_efficiency;
-  mo.origin=any_llm?analysis::EvidenceOrigin::LiveProvider:analysis::EvidenceOrigin::ScriptedControl;
-  obs.push_back(mo);
+  mo.metric="allocative_efficiency"; mo.condition=ref.condition; mo.model_id=model_id; mo.run_id=run_id;
+  mo.value=out.metrics.allocative_efficiency; mo.origin=origin; obs.push_back(mo);
+ }
+ // Directional human-market benchmarks from Ikica et al. (2023). These are
+ // deliberately separate from numeric human distributions. We only emit them
+ // as live-model observations when every seat is a live LLM; mixed populations
+ // cannot be interpreted as a pure human-vs-LLM behavioral comparison.
+ if(all_live_transport){
+  std::map<std::string,double> reservation;
+  std::map<std::string,market::Side> side;
+  for(const auto& slot:population.agents){ reservation[slot.agent_id]=slot.private_value_or_cost; side[slot.agent_id]=slot.side; }
+  double bsum=0,ssum=0; int bn=0,sn=0;
+  for(const auto& bid:out.bids){
+   if(bid.time!=0) continue;
+   auto rit=reservation.find(bid.agent_id); if(rit==reservation.end()||std::abs(rit->second)<1e-9) continue;
+   double a=bid.side==market::Side::Buy ? bid.price/rit->second : 2.0-bid.price/rit->second;
+   if(bid.side==market::Side::Buy){bsum+=a;++bn;} else {ssum+=a;++sn;}
+  }
+  if(bn>0 && sn>0){
+   analysis::ModelObservation mo; mo.metric="initial_buyer_seller_aggressiveness"; mo.condition="private-information continuous double auctions";
+   mo.model_id=model_id; mo.run_id=run_id; mo.value=(bsum/double(bn))-(ssum/double(sn)); mo.origin=origin; obs.push_back(mo);
+  }
+  if(!out.trades.empty()){
+   const double eq=population.market.fundamental;
+   auto min_time=out.trades.front().time, max_time=out.trades.back().time;
+   double first_sum=0,last_sum=0; int first_n=0,last_n=0;
+   for(const auto& tr:out.trades){
+    if(tr.time==min_time){first_sum+=tr.price;++first_n;}
+    if(tr.time==max_time){last_sum+=tr.price;++last_n;}
+   }
+   if(first_n>0){
+    analysis::ModelObservation mo; mo.metric="initial_price_relative_to_equilibrium"; mo.condition="private-information continuous double auctions";
+    mo.model_id=model_id; mo.run_id=run_id; mo.value=(first_sum/double(first_n))-eq; mo.origin=origin; obs.push_back(mo);
+   }
+   if(first_n>0 && last_n>0 && max_time>min_time){
+    const double first_gap=std::abs((first_sum/double(first_n))-eq);
+    const double last_gap=std::abs((last_sum/double(last_n))-eq);
+    analysis::ModelObservation mo; mo.metric="price_convergence_over_periods"; mo.condition="private-information continuous double auctions";
+    mo.model_id=model_id; mo.run_id=run_id; mo.value=first_gap-last_gap; mo.origin=origin; obs.push_back(mo);
+   }
+  }
  }
  out.human_comparison=analysis::compare_human_behavior(refs, obs);
 
@@ -219,11 +292,11 @@ PopulationRunResult run_population_market(const PopulationSpec& population){
  env.seed=population.seed;
  env.treatment_run_id="population:"+std::to_string(population.agents.size());
  env.evidence.hypothesis_id="H_MULTIAGENT_OBSERVABLE_RUN";
- env.evidence.discriminator_id="D_OPERATIONAL_CLASSIFIER_SYNTHETIC";
+ env.evidence.discriminator_id="D_OBSERVABLE_POPULATION_OUTCOME";
  env.evidence.direction=analysis::EvidenceDirection::Inconclusive;
  env.evidence.rationale=
-  "Population run with "+std::to_string(population.agents.size())+" agents; classifier_mode=synthetic_wiring; "
-  "label="+out.classification.label+"; efficiency="+std::to_string(out.metrics.allocative_efficiency)+
+  "Population run with "+std::to_string(population.agents.size())+" agents; classifier_mode=none; "
+  "efficiency="+std::to_string(out.metrics.allocative_efficiency)+
   "; mechanism="+(population.market.mechanism==market::MechanismKind::SealedBidDoubleAuction?"sealed":"cda")+
   ". Operational demonstration only.";
  out.evidence.append(std::move(env));
@@ -240,7 +313,11 @@ PopulationBehavioralContrastReport run_population_behavioral_contrast(
  rep.treatment=run_population_market(treatment);
  rep.classifier=run_operational_classifier(rep.control.bids, rep.treatment.bids,
   intervention_time, targeted_agents);
- rep.treatment.classifier_mode="control_treatment";
+ // Complete the feature vector from observed market outcomes, not a fixture/default.
+ rep.classifier.features.efficiency_delta = rep.treatment.metrics.allocative_efficiency - rep.control.metrics.allocative_efficiency;
+ { analysis::MechanismClassifier clf; rep.classifier.classification=clf.classify(rep.classifier.features); }
+ rep.treatment.classifier_mode="observed_control_treatment";
+ rep.treatment.classifier_available=true;
  rep.treatment.classifier_synthetic=false;
  rep.treatment.classification=rep.classifier.classification;
  rep.treatment.features=rep.classifier.features;
@@ -248,51 +325,77 @@ PopulationBehavioralContrastReport run_population_behavioral_contrast(
 }
 
 namespace {
-PopulationSpec base_info_pop(std::uint64_t seed, bool treatment){
- PopulationSpec pop; pop.seed=seed; pop.rounds=1;
+const char* treatment_name(InformationTreatment t){
+ switch(t){
+  case InformationTreatment::News: return "news";
+  case InformationTreatment::MarketHistory: return "market_history";
+  case InformationTreatment::PeerObservations: return "peer_observations";
+ }
+ return "unknown";
+}
+PopulationSpec base_info_pop(std::uint64_t seed, InformationTreatment dimension, bool treatment, bool live=false){
+ PopulationSpec pop; pop.seed=seed; pop.rounds=(dimension==InformationTreatment::MarketHistory?2:1);
  pop.market.asset="ASSET"; pop.market.fundamental=100;
  AgentSlot buyer_llm;
- buyer_llm.agent_id="LLM-B0";
- buyer_llm.kind=AgentKind::Llm;
- buyer_llm.side=market::Side::Buy;
- buyer_llm.private_value_or_cost=120;
- buyer_llm.cash=10000;
- buyer_llm.model={"mock","info-contrast","v1"};
- buyer_llm.transport=std::make_shared<RawJsonTransport>(std::vector<std::string>{
-  R"({"action":"BUY","asset":"ASSET","quantity":1,"price":95,"time":0})"
- });
- buyer_llm.information_condition=treatment?"public_book+news+peer":"public_book";
+ buyer_llm.agent_id="LLM-B0"; buyer_llm.kind=AgentKind::Llm; buyer_llm.side=market::Side::Buy;
+ buyer_llm.private_value_or_cost=120; buyer_llm.cash=10000; buyer_llm.model={"mock","info-contrast","v2"};
+ // Scripted transport is a deterministic qualification fixture. The treatment framework itself is transport-agnostic.
+ std::vector<std::string> responses;
+ if(dimension==InformationTreatment::MarketHistory) responses={
+  R"({"action":"HOLD","asset":"ASSET","quantity":0,"price":0,"time":0})",
+  treatment ? R"({"action":"BUY","asset":"ASSET","quantity":1,"price":105,"time":1})"
+            : R"({"action":"BUY","asset":"ASSET","quantity":1,"price":95,"time":1})"};
+ else responses={treatment ? R"({"action":"BUY","asset":"ASSET","quantity":1,"price":105,"time":0})"
+                           : R"({"action":"BUY","asset":"ASSET","quantity":1,"price":95,"time":0})"};
+ if(live){
+  const char* model=std::getenv("COAGENTICS_LLM_MODEL");
+  buyer_llm.model={"ollama",model&&*model?model:"llama3.2","local"};
+  buyer_llm.transport=make_live_openai_compatible_transport(buyer_llm.model);
+ }else buyer_llm.transport=std::make_shared<RawJsonTransport>(responses);
+ buyer_llm.information.history_visible=false;
+ buyer_llm.information_condition="public_book";
  if(treatment){
-  buyer_llm.information.news.present=true;
-  buyer_llm.information.news.headline="public demand shock";
-  buyer_llm.information.news.signal=1.0;
-  buyer_llm.information.news.reliability=0.8;
-  buyer_llm.information.peer.peer_visibility=true;
-  buyer_llm.information.peer.peer_mid_quote=92.0;
-  buyer_llm.information.information_condition="public_book+news+peer";
+  if(dimension==InformationTreatment::News){
+   buyer_llm.information.news.present=true; buyer_llm.information.news.headline="public demand shock";
+   buyer_llm.information.news.signal=1.0; buyer_llm.information.news.reliability=0.8;
+   buyer_llm.information_condition="public_book+news";
+  }else if(dimension==InformationTreatment::PeerObservations){
+   buyer_llm.information.peer.peer_visibility=true; buyer_llm.information.peer.visible_agent_ids={"PEER-PUBLIC"};
+   buyer_llm.information.peer.peer_mid_quote=92.0; buyer_llm.information_condition="public_book+peer_observations";
+  }else{
+   buyer_llm.information.history_visible=true; buyer_llm.information_condition="public_book+market_history";
+  }
  }
- AgentSlot seller;
- seller.agent_id="S0";
- seller.kind=AgentKind::ProgrammedHeuristic;
- seller.side=market::Side::Sell;
- seller.private_value_or_cost=80;
- seller.inventory=1;
- seller.cash=0;
- pop.agents={buyer_llm, seller};
- return pop;
+ AgentSlot seller; seller.agent_id="S0"; seller.kind=AgentKind::ProgrammedHeuristic; seller.side=market::Side::Sell;
+ seller.private_value_or_cost=80; seller.inventory=1; seller.cash=0;
+ pop.agents={buyer_llm,seller}; return pop;
 }
 }
 
-InformationContrastReport run_information_contrast_experiment(std::uint64_t seed){
- InformationContrastReport out;
- auto control=base_info_pop(seed, false);
- auto treatment=base_info_pop(seed, true);
- // Distinct treatment bid so classifier sees a real contrast (scripted BUY vs slightly higher BUY).
- treatment.agents[0].transport=std::make_shared<RawJsonTransport>(std::vector<std::string>{
-  R"({"action":"BUY","asset":"ASSET","quantity":1,"price":105,"time":0})"
- });
- out.contrast=run_population_behavioral_contrast(control, treatment, 0, {"LLM-B0"});
+static InformationContrastReport run_information_contrast_impl(InformationTreatment dimension, std::uint64_t seed, bool live){
+ InformationContrastReport out; out.treatment=dimension; out.matched_seed=seed; out.manipulated_variable=treatment_name(dimension);
+ auto control=base_info_pop(seed, dimension, false, live); auto treatment=base_info_pop(seed, dimension, true, live);
+ out.control_condition="public_book"; out.treatment_condition=treatment.agents[0].information_condition;
+ out.contrast=run_population_behavioral_contrast(control,treatment,dimension==InformationTreatment::MarketHistory?1:0,{"LLM-B0"});
+ for(auto& a:out.contrast.treatment.agents) if(a.agent_id=="LLM-B0" && a.fingerprint_available){
+  if(dimension==InformationTreatment::PeerObservations) a.fingerprint.peer_sensitivity=out.contrast.classifier.features.information_sensitivity;
+  else a.fingerprint.information_sensitivity=out.contrast.classifier.features.information_sensitivity;
+ }
  return out;
+}
+InformationContrastReport run_information_contrast_experiment(InformationTreatment dimension, std::uint64_t seed){ return run_information_contrast_impl(dimension,seed,false); }
+InformationContrastReport run_information_contrast_experiment(std::uint64_t seed){
+ return run_information_contrast_experiment(InformationTreatment::News, seed);
+}
+std::vector<InformationContrastReport> run_information_treatment_suite(std::uint64_t seed){
+ return {run_information_contrast_experiment(InformationTreatment::News,seed),
+         run_information_contrast_experiment(InformationTreatment::MarketHistory,seed),
+         run_information_contrast_experiment(InformationTreatment::PeerObservations,seed)};
+}
+std::vector<InformationContrastReport> run_information_treatment_suite_live(std::uint64_t seed){
+ return {run_information_contrast_impl(InformationTreatment::News,seed,true),
+         run_information_contrast_impl(InformationTreatment::MarketHistory,seed,true),
+         run_information_contrast_impl(InformationTreatment::PeerObservations,seed,true)};
 }
 
 TenLlmQualificationReport run_ten_llm_interface_qualification(
@@ -374,9 +477,27 @@ std::string population_run_json(const PopulationRunResult& r){
  o<<std::fixed<<std::setprecision(4)
   <<"{\"agents\":"<<r.agents.size()<<",\"trades\":"<<r.trades.size()
   <<",\"efficiency\":"<<r.metrics.allocative_efficiency
+  <<",\"classifier_available\":"<<(r.classifier_available?"true":"false")
   <<",\"classifier\":\""<<r.classification.label<<"\""
   <<",\"classifier_mode\":\""<<r.classifier_mode<<"\""
-  <<",\"classifier_synthetic\":"<<(r.classifier_synthetic?"true":"false")<<"}";
- return o.str();
+  <<",\"classifier_synthetic\":"<<(r.classifier_synthetic?"true":"false")
+  <<",\"fingerprints\":[";
+ bool first=true;
+ for(const auto& a:r.agents) if(a.fingerprint_available){
+  if(!first) o<<",";
+  first=false;
+  const auto& f=a.fingerprint;
+  o<<"{\"agent_id\":\""<<f.agent_id<<"\",\"model\":\""<<a.model.model<<"\""
+   <<",\"aggressiveness\":"<<f.aggressiveness
+   <<",\"reservation_value_violation_rate\":"<<f.reservation_value_violation_rate
+   <<",\"information_sensitivity\":"<<f.information_sensitivity
+   <<",\"peer_sensitivity\":"<<f.peer_sensitivity
+   <<",\"price_improvement\":"<<f.price_improvement
+   <<",\"trade_frequency\":"<<f.trade_frequency
+   <<",\"surplus_capture\":"<<f.surplus_capture
+   <<",\"action_validity\":"<<f.action_validity
+   <<",\"response_consistency\":"<<f.response_consistency<<"}";
+ }
+ o<<"]}"; return o.str();
 }
 }

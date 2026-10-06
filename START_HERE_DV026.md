@@ -1,4 +1,4 @@
-# EconomicGoagentics — DV026 Research Console v3
+# EconomicGoagentics — DV026 entry
 
 ## Start
 
@@ -10,49 +10,54 @@ From the repository root:
 
 Then open:
 
-`http://127.0.0.1:8787`
+| URL | UI | Use for |
+|---|---|---|
+| `http://127.0.0.1:8787/` | **Interface** ([`workbench/interface.html`](workbench/interface.html)) | Daily driver — NetLogo-style Setup · World · Monitors |
+| `http://127.0.0.1:8787/live.html` | Research Console ([`workbench/live.html`](workbench/live.html)) | Full Gate · Bids · Method · proposal readiness |
+| `http://127.0.0.1:8787/market_lab.html` | Market Lab ([`workbench/market_lab.html`](workbench/market_lab.html)) | Secondary guided shell |
 
-The start script **reconfigures and rebuilds the current DV026 runner every time** so an older `dv026-workbench-runner` cannot silently remain in use after source changes.
+**Primary entry is Interface at `/`.** Readiness claims and Method provenance live on `/live.html`. Market Lab is secondary — do not treat Phase I `software_green` as market Layer A qualification.
 
-To use another port:
+Legacy `workbench/matlab.html` is not the DV026 readiness entry.
+
+The start script **reconfigures and rebuilds** runners in `build-dv026/`.
 
 ```bash
-./start-workbench.sh 8788
+./start-workbench.sh 8788   # alternate port
 ```
+
+## First run (easiest)
+
+1. Open `http://127.0.0.1:8787/` (Interface).
+2. Press **Go** — Smoke · 2 seeds · defaults already set (no freeze, no Layer A).
+3. Watch seats move; click a seat or **Inspect** for evidence on Research Console.
+
+## Workflow (full campaign)
+
+1. **Reset** (Research Console) — return to workflow start (cancels a running campaign, clears READY display, unfreezes hypotheses; prior evidence files stay on disk).
+2. **Qualify market** — Layer A (`layer-a`: CDA + sealed-bid, every trial η > 90%). Required server-side for Full campaigns (Smoke exempt).
+3. **Accept H01 defaults & freeze** — or edit then freeze. Required for Full mode.
+4. **Start live campaign** — model × seed cells; inspect bids.
+5. Read **Proposal readiness (gates)** — separate from the freeze form.
+6. Use **Method** on chart/table panels (Research Console) for formula provenance.
+
+**Smoke** skips freeze and Layer A — software path only, not a DARPA readiness claim.
 
 ## Live LLM runtime
 
-The console supports live LLMs. The runtime card distinguishes:
-
 - **READY** — runner works, Ollama responds, and at least one configured model is installed.
-- **OFFLINE** — the console works but Ollama is not reachable.
-- **ERROR** — the DV026 runner or runtime check returned an error.
+- **OFFLINE** — Ollama is not reachable.
+- **ERROR** — runner / runtime check failed.
 
-A runtime check is bounded; the UI cannot remain indefinitely on “Checking LLM runtime…”.
+## Two different “expectations”
 
-## Ollama
+| Surface | What it is |
+|---|---|
+| **Preregistered hypotheses (freeze)** | Locked research questions / analysis plan before observation |
+| **Proposal readiness (gates)** | Auto-scored white-paper gate items from Layer A + `cells.jsonl` |
 
-If Ollama is installed but not running, start it using the normal Ollama service/application, then press **Refresh LLM availability**.
+If a frozen expectations file fails SHA-256 verification, the API surfaces `integrity_error` and Full campaigns are blocked until you re-save / re-freeze.
 
-The configured local catalog contains 10 distinct model identities. The UI reports exactly how many are installed; it does not infer availability.
+## Stale on-disk summary
 
-## Experimental controls
-
-The live campaign is intentionally gated by:
-
-1. live LLM runtime availability;
-2. installed model availability;
-3. successful 5-trial market qualification.
-
-The progress meter reports completed cells, total expected cells, current model, current seed, and ETA when enough information exists.
-
-## Scientific UI boundary
-
-The interface distinguishes:
-
-- agent-visible information;
-- experiment/audit metadata;
-- live LLM execution;
-- archival/literature human reference data.
-
-It does not imply new human-subject data collection.
+Mismatched `implementation_revision` on `summary.json` is not loaded as READY. After **Reset**, on-disk cells remain but charts/bids hide them until a new campaign run.

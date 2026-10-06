@@ -86,6 +86,7 @@ struct ActionConstraints {
 
 struct InformationContext {
  NewsState news;
+ bool history_visible{true}; // explicit experimental treatment gate
  std::vector<MarketHistoryEntry> history;
  PeerObservation peer;
  std::string information_condition{"public_book"};
