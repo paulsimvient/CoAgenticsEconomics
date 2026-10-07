@@ -553,9 +553,16 @@ class Session:
     self.dv026_last=data
    if command in ('layer-a','bundle'):
     la=_layer_a_payload_from_doc(data if isinstance(data,dict) else {})
-    if la: self.layer_a_cache=la
+    if la:
+     self.layer_a_cache=la
+     # Fresh Layer A after Reset counts for Full gates; chart hide stays until campaign_start.
    if command=='ollama-preflight':
     self.preflight=data.get('preflight', data) if isinstance(data,dict) else data
+    # Do not resurrect Layer A from a prior session after Reset.
+    if self.campaign_display_reset and not self.layer_a_cache:
+     if isinstance(self.dv026_last,dict):
+      self.dv026_last={k:v for k,v in self.dv026_last.items()
+                       if k not in ('layer_a','layer_a_pass','mean_efficiency_cda','mean_efficiency_sealed')}
   return data
  def batch_start(self,n=1000,base_seed=424242):
   with self.lock:
@@ -628,10 +635,11 @@ class Session:
      return
 
  def _layer_a_is_qualified(self):
-  """True when Layer A (η gate) has passed in-session, cache, or on-disk summary.
+  """True when Layer A (η gate) has passed in this session (or pre-reset disk hydrate).
 
-  Layer A is engine calibration (no LLMs). Accept on-disk layer_a_pass even when
-  campaign implementation_revision differs — revision gates claim READY, not η.
+  After console Reset, on-disk summary.json is ignored until a fresh layer-a run
+  repopulates layer_a_cache. Layer A is engine calibration (no LLMs); revision
+  still gates claim READY, not η.
   """
   with self.lock:
    if isinstance(self.layer_a_cache,dict) and (self.layer_a_cache.get('layer_a_pass') or self.layer_a_cache.get('pass')):
@@ -647,6 +655,9 @@ class Session:
     if la and la.get('layer_a_pass'):
      self.layer_a_cache=la
      return True
+   # After Reset, require a fresh in-session Layer A — do not rehydrate from disk.
+   if self.campaign_display_reset:
+    return False
   path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
   if path.is_file():
    try:
@@ -654,6 +665,8 @@ class Session:
     la=_layer_a_payload_from_doc(summ)
     if la and la.get('layer_a_pass'):
      with self.lock:
+      if self.campaign_display_reset:
+       return False
       self.layer_a_cache=la
      return True
    except Exception:
@@ -661,21 +674,27 @@ class Session:
   return False
  def layer_a_status(self):
   """Layer A payload for Console hydration (survives preflight /last overwrites)."""
+  empty={'layer_a_pass':False,'pass':False,'mean_efficiency_cda':None,'mean_efficiency_sealed':None,'trials':[]}
   with self.lock:
    if isinstance(self.layer_a_cache,dict):
     return dict(self.layer_a_cache)
-  la=_layer_a_payload_from_doc(self.dv026_last if isinstance(self.dv026_last,dict) else {})
-  if la: return la
+   la=_layer_a_payload_from_doc(self.dv026_last if isinstance(self.dv026_last,dict) else {})
+   if la: return la
+   if self.campaign_display_reset:
+    return empty
   path=ROOT/'results'/'dv026_ollama_campaign'/'summary.json'
   if path.is_file():
    try:
     la=_layer_a_payload_from_doc(json.loads(path.read_text()))
     if la:
-     self.layer_a_cache=la
+     with self.lock:
+      if self.campaign_display_reset:
+       return empty
+      self.layer_a_cache=la
      return la
    except Exception:
     pass
-  return {'layer_a_pass':False,'pass':False,'mean_efficiency_cda':None,'mean_efficiency_sealed':None,'trials':[]}
+  return empty
  def campaign_start(self, base_seed=424242, n_seeds=20, smoke=False, population_design='reference_counterparty', activation_design='sequential_interaction'):
   with self.lock:
    if self.batch.running or self.campaign.running: raise ValueError('Job already running')
@@ -1204,7 +1223,12 @@ class Session:
      scope='not_ready'
     darpa=bool(c.darpa_claim_ready if c.result is not None else
                (camp.get('darpa_claim_ready') if camp else summ.get('darpa_claim_ready')))
-   layer_a_pass=bool(camp.get('layer_a_pass') or summ.get('layer_a_pass'))
+   # Respect Reset: do not score Layer A MET from on-disk summary alone.
+   layer_a_pass=False
+   if isinstance(self.layer_a_cache,dict) and (self.layer_a_cache.get('layer_a_pass') or self.layer_a_cache.get('pass')):
+    layer_a_pass=True
+   elif not self.campaign_display_reset:
+    layer_a_pass=bool(camp.get('layer_a_pass') or summ.get('layer_a_pass'))
    last=self.dv026_last if isinstance(self.dv026_last,dict) else {}
    la=last.get('layer_a') if isinstance(last.get('layer_a'),dict) else last
    if isinstance(la,dict) and (la.get('layer_a_pass') or la.get('pass')):
@@ -1754,14 +1778,16 @@ class Handler(BaseHTTPRequestHandler):
    self.send_response(200);self.send_header('Content-Type','application/json')
    self.send_header('Content-Disposition','attachment; filename="coagentics-dv026-campaign-summary.json"')
    self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
-  if url.path in ('/','/index.html','/market_lab.html'):
-   data=(ROOT/'workbench'/'market_lab.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
-  if url.path=='/interface.html':
+  if url.path in ('/','/index.html','/interface.html'):
    data=(ROOT/'workbench'/'interface.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
   if url.path=='/live.html':
    data=(ROOT/'workbench'/'live.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
   if url.path=='/market_lab.html':
    data=(ROOT/'workbench'/'market_lab.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/matlab.html':
+   data=(ROOT/'workbench'/'matlab.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/api.js':
+   data=(ROOT/'workbench'/'api.js').read_bytes();self.send_response(200);self.send_header('Content-Type','application/javascript; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
   if url.path=='/favicon.ico':
    # Tiny empty response so browsers stop 404-spamming the console.
    self.send_response(204);self.send_header('Content-Length','0');self.end_headers();return

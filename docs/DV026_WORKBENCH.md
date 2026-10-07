@@ -17,7 +17,7 @@
 | **Interface** | `/` · [`interface.html`](../workbench/interface.html) | Daily driver — watch run, Go/Stop, monitors | Same campaign APIs |
 | **Research Console** | `/live.html` · [`live.html`](../workbench/live.html) | Full Gate · Bids · Method · proposal narrative | `darpa_claim_ready` under `scope=local_ollama_poc` |
 | **Market Lab** | `/market_lab.html` · [`market_lab.html`](../workbench/market_lab.html) | Secondary guided shell | Same API gates; thinner UI |
-| **Market Live** | `matlab.html` | Paced CDA demo | Demo only — not DARPA |
+| **Market Live** | `/matlab.html` · [`matlab.html`](../workbench/matlab.html) | Paced CDA demo | Demo only — not DARPA |
 
 ### Three different “greens”
 
@@ -36,7 +36,7 @@
 
 Full campaign start requires frozen preregistration **and** Layer A qualification (server-enforced; Smoke exempt). Start also requires live runtime (Ollama + installed models).
 
-**Reset** (`POST /api/dv026/reset`) returns the console to workflow start: cancel running campaign, clear READY hydrate, unfreeze hypotheses to draft, hide chart/bid aggregates until a new run. Prior `cells.jsonl` / `cell_*.jsonl` files are retained on disk.
+**Reset** (`POST /api/dv026/reset`) returns the console to workflow start: cancel running campaign, clear READY hydrate, unfreeze hypotheses to draft, clear in-session Layer A qualification (on-disk `summary.json` is ignored until a fresh `layer-a` run), and hide chart/bid aggregates until a new run. Prior `cells.jsonl` / `cell_*.jsonl` files are retained on disk.
 
 Each chart/analysis panel has a **Method** control documenting how aggregates are computed (read-only provenance).
 
@@ -98,6 +98,8 @@ Mutual exclusion: market vs batch vs campaign (and single runs while those run).
 | `GET /` · `/interface.html` | Interface (`interface.html`) — primary |
 | `GET /live.html` | Research Console (`live.html`) |
 | `GET /market_lab.html` | Market Lab (`market_lab.html`) — secondary |
+| `GET /matlab.html` | Market Live paced CDA demo (not DARPA readiness) |
+| `GET /api.js` | Shared Interface/Console fetch helpers |
 | `POST /api/dv026/reset` | Console Reset (workflow start; does not delete evidence files) |
 | `GET/POST /api/dv026/expectations` · `/freeze` | Preregistered hypotheses |
 | `GET /api/dv026/proposal-narrative` | Proposal readiness (gates) |

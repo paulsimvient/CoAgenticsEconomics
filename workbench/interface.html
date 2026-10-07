@@ -223,6 +223,7 @@ body.resizing .agent{pointer-events:none}
   </footer>
 </div>
 
+<script src="/api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -238,14 +239,9 @@ const seats=[
   {id:'D', color:'var(--seat4)', ang:180},
 ];
 
-async function api(path, opt={}){
-  const r=await fetch(path,{cache:'no-store',...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});
-  const d=await r.json().catch(()=>({error:'Invalid JSON'}));
-  if(!r.ok||d.error) throw new Error(d.error||('HTTP '+r.status));
-  return d;
-}
-const get=p=>api(p);
-const post=(p,b)=>api(p,{method:'POST',body:JSON.stringify(b||{})});
+const api=(path,opt={},timeoutMs)=>CoAgenticsApi.api(path,opt,timeoutMs);
+const get=(p,timeoutMs)=>CoAgenticsApi.get(p,timeoutMs);
+const post=(p,b,timeoutMs)=>CoAgenticsApi.post(p,b,timeoutMs);
 
 function setPill(el, ok, text){
   el.textContent=text;

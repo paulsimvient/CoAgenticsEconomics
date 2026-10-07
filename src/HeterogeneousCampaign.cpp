@@ -1,4 +1,5 @@
 #include "coagentics/experiment/HeterogeneousCampaign.hpp"
+#include "coagentics/util/Json.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
@@ -7,10 +8,10 @@
 #include <sstream>
 namespace coagentics::experiment {
 namespace {
-std::string esc(const std::string&s){std::string o;for(char c:s){if(c=='"'||c=='\\')o+='\\';if(c=='\n'){o+="\\n";continue;}o+=c;}return o;}
+std::string esc(const std::string&s){return coagentics::util::json_escape(s);}
 std::string design_name(ActivationDesign d){return d==ActivationDesign::FrozenSnapshot?"frozen_snapshot":"sequential_interaction";}
 std::shared_ptr<agents::ModelTransport> transport_for(const agents::ModelIdentity&m,bool live,market::Side side,int rounds){
- if(live){setenv("COAGENTICS_LLM_PROVIDER","ollama",1);setenv("COAGENTICS_LLM_BASE_URL","http://127.0.0.1:11434/v1",1);setenv("COAGENTICS_LLM_MODEL",m.model.c_str(),1);return make_live_openai_compatible_transport(m);}
+ if(live) return make_live_openai_compatible_transport(m, default_ollama_transport_config(m.model));
  std::vector<std::string> p; const bool buy=side==market::Side::Buy; for(int r=0;r<std::max(1,rounds);++r)
   p.push_back(std::string("{\"action\":\"")+(buy?"BUY":"SELL")+"\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":"+(buy?"105":"95")+",\"time\":"+std::to_string(r)+"}");
  return std::make_shared<RawJsonTransport>(std::move(p));

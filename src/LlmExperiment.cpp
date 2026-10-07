@@ -1,5 +1,6 @@
 #include "coagentics/experiment/LlmExperiment.hpp"
 #include "coagentics/market/Mechanism.hpp"
+#include "coagentics/util/Http.hpp"
 #include "coagentics/util/Json.hpp"
 #include <algorithm>
 #include <chrono>
@@ -14,24 +15,8 @@
 #include <stdexcept>
 namespace coagentics::experiment {
 namespace {
-std::string esc(const std::string& s){
- // Must escape control chars — raw LLM replies often contain newlines; without this,
- // cell_*.jsonl splits mid-record and Live seats show empty turns for those models.
- std::string o; o.reserve(s.size()+8);
- for(unsigned char c:s){
-  switch(c){
-   case '"': o+="\\\""; break;
-   case '\\': o+="\\\\"; break;
-   case '\n': o+="\\n"; break;
-   case '\r': o+="\\r"; break;
-   case '\t': o+="\\t"; break;
-   default:
-    if(c<0x20){ char buf[8]; std::snprintf(buf,sizeof(buf),"\\u%04x", (unsigned)c); o+=buf; }
-    else o.push_back((char)c);
-  }
- }
- return o;
-}
+using coagentics::util::json_escape;
+std::string esc(const std::string& s){ return json_escape(s); }
 std::string getenv_str(const char* k){ if(const char* v=std::getenv(k)) return v; return {}; }
 
 const char* role_name(AgentRole r){ return r==AgentRole::Seller?"SELLER":"BUYER"; }
@@ -423,35 +408,36 @@ bool live_llm_configured(){
 namespace {
 class OpenAiCompatibleTransport final : public agents::ModelTransport {
 public:
- explicit OpenAiCompatibleTransport(agents::ModelIdentity identity):identity_(std::move(identity)){
-  // Snapshot endpoint/model credentials at construction. A shared heterogeneous market may
-  // contain multiple model transports; invoke() must not read a later seat's mutable env.
-  provider_=getenv_str("COAGENTICS_LLM_PROVIDER");
-  base_=getenv_str("COAGENTICS_LLM_BASE_URL");
-  model_=getenv_str("COAGENTICS_LLM_MODEL");
-  key_=getenv_str("COAGENTICS_LLM_API_KEY");
-  if(key_.empty()) key_=getenv_str("OPENAI_API_KEY");
+ OpenAiCompatibleTransport(agents::ModelIdentity identity, LiveTransportConfig cfg)
+  :identity_(std::move(identity)), cfg_(std::move(cfg)){
+  // Snapshot endpoint/model at construction so multi-seat markets stay independent.
+  if(cfg_.provider.empty()) cfg_.provider=getenv_str("COAGENTICS_LLM_PROVIDER");
+  if(cfg_.base_url.empty()) cfg_.base_url=getenv_str("COAGENTICS_LLM_BASE_URL");
+  if(cfg_.model.empty()) cfg_.model=getenv_str("COAGENTICS_LLM_MODEL");
+  if(cfg_.api_key.empty()){
+   cfg_.api_key=getenv_str("COAGENTICS_LLM_API_KEY");
+   if(cfg_.api_key.empty()) cfg_.api_key=getenv_str("OPENAI_API_KEY");
+  }
  }
  agents::ModelResponse invoke(const agents::ModelRequest& req) override {
   agents::ModelResponse out; out.request_id=req.request_id;
-  const bool ollama=(provider_=="ollama" || provider_=="OLLAMA" || base_.find("11434")!=std::string::npos || base_.find("ollama")!=std::string::npos);
-  std::string key=key_;
+  std::string provider=cfg_.provider;
+  std::string base=cfg_.base_url;
+  const bool ollama=(provider=="ollama" || provider=="OLLAMA" || base.find("11434")!=std::string::npos || base.find("ollama")!=std::string::npos);
+  if(provider.empty() && ollama) provider="ollama";
+  std::string key=cfg_.api_key;
   if(key.empty() && ollama) key="ollama";
   if(key.empty()){ out.error="missing_api_key"; return out; }
-  std::string base=base_;
   if(base.empty()) base=ollama? "http://127.0.0.1:11434/v1" : "https://api.openai.com/v1";
   while(!base.empty()&&base.back()=='/') base.pop_back();
-  std::string model=model_;
+  std::string model=cfg_.model;
   if(model.empty()){
    if(!identity_.model.empty()) model=identity_.model;
    else model=ollama? "llama3.2" : "gpt-4o-mini";
   }
 
-  // Prefer decision context (market + own private state). Fall back to public observation JSON.
   const std::string user_payload = !req.decision_context_json.empty()
    ? req.decision_context_json : agents::canonical_observation_json(req);
-  // The system message defines only the interface contract.  It intentionally does NOT
-  // prescribe a trading heuristic: behavioral choice is the experimental observation.
   const std::string system =
    "You are participating in an economic market experiment. Use only the supplied observation. "
    "Choose one permitted action and reply with ONLY one JSON object, no markdown: "
@@ -462,24 +448,25 @@ public:
 
   std::ostringstream body;
   body<<"{\"model\":\""<<esc(model)<<"\",\"temperature\":0,";
-  // OpenAI-compatible/Ollama endpoints support seed in the request schema.  The simulator
-  // seed and provider inference seed are the same value here and are recorded separately.
   body<<"\"seed\":"<<req.seed<<",";
   body<<"\"messages\":[{\"role\":\"system\",\"content\":\""<<esc(system)
       <<"\"},{\"role\":\"user\",\"content\":\""<<esc(user_payload)<<"\"}]}";
 
   const std::string url=base+"/chat/completions";
-  const int timeout_s=ollama?180:60;
-  std::string cmd="curl -sS --max-time "+std::to_string(timeout_s)+" -X POST "+shell_quote(url)
-   +" -H "+shell_quote("Authorization: Bearer "+key)
-   +" -H "+shell_quote("Content-Type: application/json")
-   +" -d "+shell_quote(body.str());
+  const int timeout_s=cfg_.timeout_s>0?cfg_.timeout_s:(ollama?180:60);
   out.inference_config="transport=OpenAiCompatible;provider="+(ollama?std::string("ollama"):std::string("openai-compatible"))
    +";model="+model+";base="+base+";temperature=0;inference_seed="+std::to_string(req.seed);
   auto t0=std::chrono::steady_clock::now();
-  std::string raw=run_cmd(cmd);
+  auto http=coagentics::util::http_post_json(url, body.str(), key, timeout_s);
   out.latency_ms=static_cast<std::uint64_t>(
    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-t0).count());
+  if(!http.error.empty()){ out.error=std::string("http_transport:")+http.error; return out; }
+  if(http.status>0 && (http.status<200 || http.status>=300)){
+   out.error="http_status_"+std::to_string(http.status);
+   out.raw_output=http.body;
+   return out;
+  }
+  const std::string& raw=http.body;
   if(raw.empty()){ out.error="empty_provider_response"; return out; }
   out.raw_output=extract_message_content(raw);
   if(out.raw_output.empty()){ out.error="missing_message_content"; out.raw_output=raw; return out; }
@@ -489,14 +476,7 @@ public:
  }
 private:
  agents::ModelIdentity identity_;
- std::string provider_, base_, model_, key_;
- static std::string shell_quote(const std::string& s){
-  std::string o="'"; for(char c:s){ if(c=='\'') o+="'\\''"; else o.push_back(c);} o.push_back('\''); return o;
- }
- static std::string run_cmd(const std::string& cmd){
-  FILE* p=popen(cmd.c_str(),"r"); if(!p) return {};
-  std::string out; char buf[4096]; while(fgets(buf,sizeof buf,p)) out+=buf; pclose(p); return out;
- }
+ LiveTransportConfig cfg_;
  static std::string extract_message_content(const std::string& raw){
   auto j=coagentics::util::parse_json(raw); if(!j||!j->is_object()) return {};
   auto choices=j->get("choices"); if(!choices||!choices->is_array()||choices->as_array().empty()) return {};
@@ -509,8 +489,21 @@ private:
 };
 }
 
-std::shared_ptr<agents::ModelTransport> make_live_openai_compatible_transport(const agents::ModelIdentity& identity){
- return std::make_shared<OpenAiCompatibleTransport>(identity);
+LiveTransportConfig default_ollama_transport_config(const std::string& model){
+ LiveTransportConfig c;
+ c.provider="ollama";
+ if(const char* b=std::getenv("COAGENTICS_LLM_BASE_URL"); b&&*b) c.base_url=b;
+ if(c.base_url.empty()) c.base_url="http://127.0.0.1:11434/v1";
+ if(!model.empty()) c.model=model;
+ else if(const char* m=std::getenv("COAGENTICS_LLM_MODEL"); m&&*m) c.model=m;
+ if(c.model.empty()) c.model="llama3.2";
+ c.api_key="ollama";
+ return c;
+}
+
+std::shared_ptr<agents::ModelTransport> make_live_openai_compatible_transport(
+ const agents::ModelIdentity& identity, const LiveTransportConfig& cfg){
+ return std::make_shared<OpenAiCompatibleTransport>(identity, cfg);
 }
 
 RunResult run_llm_market_experiment(const ExperimentSpec& experiment, const RunSpec& run){

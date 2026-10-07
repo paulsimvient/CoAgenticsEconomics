@@ -6,4 +6,13 @@ Interventions set an exogenous message impulse and enable/disable edge 1→2; th
 
 This is a real-time **controlled C++ simulation**, not a live-LLM market. The synthetic private-value schedules are protocol analogues. The UI does not report unsupported confidence scores or human baselines. The engine is not yet a general arbitrary-time intervention scheduler or a multi-user service; the localhost server manages one experiment at a time.
 
-Run `./start-workbench.sh` and open http://127.0.0.1:8787. To run tests: `ctest --test-dir build --output-on-failure`.
+## Routes (current)
+
+| URL | Surface |
+|---|---|
+| `http://127.0.0.1:8787/` | **Interface** — primary DV026 daily driver |
+| `http://127.0.0.1:8787/live.html` | Research Console — gates, bids, Method |
+| `http://127.0.0.1:8787/market_lab.html` | Market Lab — secondary guided shell |
+| `http://127.0.0.1:8787/matlab.html` | This paced CDA Market Live demo |
+
+Run `./start-workbench.sh` and open the Interface at `/`. Open `/matlab.html` for the v27 paced CDA controller. To run tests: `ctest --test-dir build --output-on-failure`.

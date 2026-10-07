@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
+find_package(CURL REQUIRED)
 add_library(coagentics_lab
   src/Market.cpp
   src/Agents.cpp
@@ -12,8 +13,10 @@ add_library(coagentics_lab
   src/Behavior.cpp
   src/Hypothesis.cpp
   src/Evidence.cpp
+  src/Http.cpp
 )
 target_include_directories(coagentics_lab PUBLIC include)
+target_link_libraries(coagentics_lab PUBLIC CURL::libcurl)
 target_compile_options(coagentics_lab PRIVATE -Wall -Wextra -Wpedantic)
 add_executable(dv026-demo src/main.cpp)
 target_link_libraries(dv026-demo PRIVATE coagentics_lab)

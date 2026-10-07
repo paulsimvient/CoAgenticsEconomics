@@ -229,7 +229,7 @@ S₃ → D</pre></div>
 <tr><td>Campaign blocked</td><td>Check that expectations are frozen, the market qualification gate has passed, and the configured runtime is reachable.</td></tr>
 <tr><td>H01 says <code>metric.operational_definition</code> is required</td><td>Use the current v6 codebase. The application migrates the legacy <code>metric.definition</code> field to the canonical field and exposes the operational-definition editor.</td></tr>
 <tr><td>Results are empty</td><td>This is expected until persisted campaign data exists. The frontend does not fabricate results.</td></tr>
-<tr><td>Old UI appears</td><td>Confirm the server is serving <code>workbench/market_lab.html</code> at <code>/</code>. The legacy console remains available at <code>/live.html</code>.</td></tr>
+<tr><td>Old UI appears</td><td>Confirm the server is serving Interface at <code>/</code> and Market Lab at <code>/market_lab.html</code>. The Research Console remains at <code>/live.html</code>.</td></tr>
 <tr><td>Stale runtime behavior</td><td>Use <code>./start-workbench.sh</code> so the configured/rebuilt <code>build-dv026</code> targets are used rather than a stale runner.</td></tr>
 </table>
 <h3>Reset behavior</h3>
@@ -238,7 +238,7 @@ S₃ → D</pre></div>
 
 <section id="architecture"><h2>14. Application architecture</h2>
 <div class="flow"><span>Browser UI</span><b>→</b><span>live_server.py</span><b>→</b><span>DV026 API</span><b>→</b><span>Runner / campaign</span><b>→</b><span>Persisted cells + evidence</span></div>
-<div class="card"><h3>Primary frontend</h3><p><code>workbench/market_lab.html</code> is served at <code>/</code> and <code>/index.html</code>. The previous <code>workbench/live.html</code> remains available at <code>/live.html</code>.</p></div>
+<div class="card"><h3>Primary frontend</h3><p><code>workbench/interface.html</code> is served at <code>/</code> and <code>/index.html</code>. Market Lab is at <code>/market_lab.html</code>; Research Console at <code>/live.html</code>.</p></div>
 <h3>Primary live endpoints used by Market Lab</h3>
 <table><tr><th>Endpoint</th><th>Role</th></tr>
 <tr><td><code>/api/dv026/design</code></td><td>Read persisted experiment design.</td></tr>

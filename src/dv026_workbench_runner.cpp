@@ -6,6 +6,7 @@
 #include "coagentics/experiment/Dv026Wave3.hpp"
 #include "coagentics/experiment/Dv026Wave4.hpp"
 #include "coagentics/experiment/Scientist.hpp"
+#include "coagentics/util/Json.hpp"
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -16,15 +17,7 @@ using namespace coagentics;
 using namespace coagentics::experiment;
 
 namespace {
-std::string esc(const std::string& s){
- std::string o; o.reserve(s.size());
- for(char c:s){
-  if(c=='\\'||c=='"') o.push_back('\\');
-  if(c=='\n'){ o+="\\n"; continue; }
-  o.push_back(c);
- }
- return o;
-}
+std::string esc(const std::string& s){ return coagentics::util::json_escape(s); }
 
 std::string wrap(const std::string& command, std::uint64_t seed, const std::string& body,
  bool live_llm=false, bool darpa_claim_ready=false, const std::string& scope=""){
@@ -143,24 +136,12 @@ std::string ollama_preflight_json(){
 }
 
 std::string ollama_slice_json(std::uint64_t seed){
- // Ensure Ollama defaults for this command even if the parent only set LIVE_LLM.
- if(std::getenv("COAGENTICS_LLM_PROVIDER")==nullptr)
-  setenv("COAGENTICS_LLM_PROVIDER","ollama",1);
- if(std::getenv("COAGENTICS_LLM_BASE_URL")==nullptr)
-  setenv("COAGENTICS_LLM_BASE_URL","http://127.0.0.1:11434/v1",1);
- if(!live_llm_configured()){
-  throw std::runtime_error(
-   "Ollama not configured. Ensure ollama serve is running on :11434 "
-   "(optional COAGENTICS_LLM_MODEL, default llama3.2)");
- }
- std::string model_name= []{
-  const char* m=std::getenv("COAGENTICS_LLM_MODEL");
-  return (m&&*m)? std::string(m) : std::string("llama3.2");
- }();
+ auto cfg=default_ollama_transport_config();
+ std::string model_name=cfg.model.empty()?"llama3.2":cfg.model;
  agents::ModelIdentity model{"ollama", model_name, "local", "chat-completions"};
  ExperimentSpec exp; exp.deterministic_counterparty=true; exp.counterparty_limit_price=90;
  RunSpec run; run.seed=seed; run.model=model;
- run.transport=make_live_openai_compatible_transport(model);
+ run.transport=make_live_openai_compatible_transport(model, cfg);
  run.run_id="ollama-slice:"+std::to_string(seed);
  run.log_path="ollama_slice.jsonl";
  auto original=run_llm_market_experiment(exp, run);
@@ -186,21 +167,12 @@ std::string ollama_slice_json(std::uint64_t seed){
 }
 
 std::string ollama_paired_json(std::uint64_t seed){
- if(std::getenv("COAGENTICS_LLM_PROVIDER")==nullptr)
-  setenv("COAGENTICS_LLM_PROVIDER","ollama",1);
- if(std::getenv("COAGENTICS_LLM_BASE_URL")==nullptr)
-  setenv("COAGENTICS_LLM_BASE_URL","http://127.0.0.1:11434/v1",1);
- if(!live_llm_configured()){
-  throw std::runtime_error("Ollama not configured for Layer B paired run");
- }
- std::string model_name= []{
-  const char* m=std::getenv("COAGENTICS_LLM_MODEL");
-  return (m&&*m)? std::string(m) : std::string("llama3.2");
- }();
+ auto cfg=default_ollama_transport_config();
+ std::string model_name=cfg.model.empty()?"llama3.2":cfg.model;
  agents::ModelIdentity model{"ollama", model_name, "local", "chat-completions"};
  ExperimentSpec exp; exp.deterministic_counterparty=true; exp.counterparty_limit_price=90;
  RunSpec run; run.seed=seed; run.model=model;
- run.transport=make_live_openai_compatible_transport(model);
+ run.transport=make_live_openai_compatible_transport(model, cfg);
  run.run_id="ollama-paired:"+std::to_string(seed);
  auto paired=run_paired_programmed_buyer_vs_llm(exp, run, /*control_buyer_limit_price=*/95.0);
  return paired_llm_json(paired);

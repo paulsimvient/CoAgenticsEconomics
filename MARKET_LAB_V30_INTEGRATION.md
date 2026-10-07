@@ -1,8 +1,9 @@
 # Market Lab integration pass
 
 ## Changes
-- Market Lab is now the primary web application at `/` and `/index.html`.
-- `/interface.html` remains available as the general simulation/interface view.
+- Interface is the primary web application at `/` and `/index.html`.
+- Market Lab remains available at `/market_lab.html` as the secondary guided shell.
+- `/interface.html` aliases the same Interface primary surface.
 - Run visualization now reads persisted `/api/dv026/campaign/cell` turn records.
 - The abstract A/B/C/D layer highlights the retained agent/seat when a cell turn is selected.
 - Market state, parsed action, acceptance, execution, and payoff are populated from the retained turn; no synthetic values are created.

@@ -34,8 +34,8 @@ The start script **reconfigures and rebuilds** runners in `build-dv026/`.
 
 ## Workflow (full campaign)
 
-1. **Reset** (Research Console) — return to workflow start (cancels a running campaign, clears READY display, unfreezes hypotheses; prior evidence files stay on disk).
-2. **Qualify market** — Layer A (`layer-a`: CDA + sealed-bid, every trial η > 90%). Required server-side for Full campaigns (Smoke exempt).
+1. **Reset** (Research Console) — return to workflow start (cancels a running campaign, clears READY display, clears in-session Layer A so qualify must be re-run, unfreezes hypotheses; prior evidence files stay on disk).
+2. **Qualify market** — Layer A (`layer-a`: CDA + sealed-bid, every trial η > 90%). Required server-side for Full campaigns (Smoke exempt); on-disk summary is not reused after Reset.
 3. **Accept H01 defaults & freeze** — or edit then freeze. Required for Full mode.
 4. **Start live campaign** — model × seed cells; inspect bids.
 5. Read **Proposal readiness (gates)** — separate from the freeze form.

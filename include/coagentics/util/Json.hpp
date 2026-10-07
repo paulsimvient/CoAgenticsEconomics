@@ -2,6 +2,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <map>
 #include <optional>
 #include <stdexcept>
@@ -28,4 +29,25 @@ class JsonParser { const std::string&s; size_t p=0; std::string err;
 public: explicit JsonParser(const std::string&x):s(x){} std::optional<Json> parse(){auto x=val();ws();if(!x||p!=s.size())return {};return x;}
 };
 inline std::optional<Json> parse_json(const std::string&s){return JsonParser(s).parse();}
+
+/** Canonical JSON string escape for evidence / request payloads (control chars included). */
+inline std::string json_escape(const std::string& s){
+ std::string o; o.reserve(s.size()+8);
+ for(unsigned char c:s){
+  switch(c){
+   case '"': o+="\\\""; break;
+   case '\\': o+="\\\\"; break;
+   case '\n': o+="\\n"; break;
+   case '\r': o+="\\r"; break;
+   case '\t': o+="\\t"; break;
+   default:
+    if(c<0x20){
+     char buf[8];
+     std::snprintf(buf,sizeof(buf),"\\u%04x",(unsigned)c);
+     o+=buf;
+    }else o.push_back(static_cast<char>(c));
+  }
+ }
+ return o;
+}
 }

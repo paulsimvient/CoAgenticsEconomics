@@ -348,9 +348,9 @@ PopulationSpec base_info_pop(std::uint64_t seed, InformationTreatment dimension,
  else responses={treatment ? R"({"action":"BUY","asset":"ASSET","quantity":1,"price":105,"time":0})"
                            : R"({"action":"BUY","asset":"ASSET","quantity":1,"price":95,"time":0})"};
  if(live){
-  const char* model=std::getenv("COAGENTICS_LLM_MODEL");
-  buyer_llm.model={"ollama",model&&*model?model:"llama3.2","local"};
-  buyer_llm.transport=make_live_openai_compatible_transport(buyer_llm.model);
+  auto cfg=default_ollama_transport_config();
+  buyer_llm.model={"ollama",cfg.model,"local"};
+  buyer_llm.transport=make_live_openai_compatible_transport(buyer_llm.model, cfg);
  }else buyer_llm.transport=std::make_shared<RawJsonTransport>(responses);
  buyer_llm.information.history_visible=false;
  buyer_llm.information_condition="public_book";

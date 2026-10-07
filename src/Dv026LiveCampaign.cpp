@@ -1,4 +1,5 @@
 #include "coagentics/experiment/Dv026LiveCampaign.hpp"
+#include "coagentics/util/Http.hpp"
 #include "coagentics/util/Json.hpp"
 #include "coagentics/experiment/ExperimentManifest.hpp"
 #include "coagentics/experiment/Dv026Wave3.hpp"
@@ -59,21 +60,7 @@ std::string reproducibility_grade_json(const ReproducibilityGrade& g){
   <<"\",\"grade\":\""<<g.grade<<"\",\"interpretation\":\""<<g.interpretation<<"\"}"; return o.str();
 }
 namespace {
-std::string esc(const std::string& s){
- std::string o; o.reserve(s.size());
- for(char c:s){
-  if(c=='\\'||c=='"') o.push_back('\\');
-  if(c=='\n'){ o+="\\n"; continue; }
-  o.push_back(c);
- }
- return o;
-}
-
-std::string shell_quote(const std::string& s){
- std::string o="'";
- for(char c:s){ if(c=='\'') o+="'\\''"; else o+=c; }
- return o+"'";
-}
+std::string esc(const std::string& s){ return coagentics::util::json_escape(s); }
 
 // Prefer exact tag, else installed "name:tag" matching catalog base name.
 std::string resolve_installed_tag(const std::string& catalog_model,
@@ -144,14 +131,10 @@ std::vector<agents::ModelIdentity> dv026_ollama_live_catalog(){
 
 std::vector<std::string> ollama_installed_model_tags(const std::string& base_url){
  std::string url=base_url+"/api/tags";
- std::string cmd="curl -sS --max-time 5 "+shell_quote(url)+" 2>/dev/null";
- FILE* p=popen(cmd.c_str(),"r");
- if(!p) return {};
- std::string body; char buf[4096];
- while(fgets(buf,sizeof(buf),p)) body+=buf;
- pclose(p);
+ auto http=coagentics::util::http_get(url, 5);
  std::vector<std::string> tags;
- auto root=coagentics::util::parse_json(body); if(!root||!root->is_object()) return tags;
+ if(!http.error.empty() || http.status!=200) return tags;
+ auto root=coagentics::util::parse_json(http.body); if(!root||!root->is_object()) return tags;
  auto models=root->get("models"); if(!models||!models->is_array()) return tags;
  for(const auto& model:models->as_array()){ if(!model.is_object()) continue; auto name=model.get("name"); if(name&&name->is_string()) tags.push_back(name->as_string()); }
  return tags;
@@ -162,13 +145,8 @@ OllamaPreflight preflight_ollama_live_catalog(const std::string& base_url){
  pf.catalog=dv026_ollama_live_catalog();
  pf.installed=ollama_installed_model_tags(base_url);
  pf.ollama_reachable=!pf.installed.empty() || [&]{
-  // empty tags list might mean no models OR unreachable — probe with empty body check
-  std::string url=base_url+"/api/tags";
-  std::string cmd="curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "+shell_quote(url)+" 2>/dev/null";
-  FILE* p=popen(cmd.c_str(),"r");
-  if(!p) return false;
-  char buf[16]{}; fgets(buf,sizeof(buf),p); pclose(p);
-  return std::string(buf)=="200";
+  auto http=coagentics::util::http_get(base_url+"/api/tags", 3);
+  return http.error.empty() && http.status==200;
  }();
  for(const auto& id:pf.catalog){
   auto resolved=resolve_installed_tag(id.model, pf.installed);
@@ -265,13 +243,9 @@ LiveCampaignReport run_ollama_layer_b_campaign(const LiveCampaignSpec& spec_in){
  rep.spec=spec_in;
  rep.live_llm=true;
 
- setenv("COAGENTICS_LLM_PROVIDER","ollama",1);
- if(std::getenv("COAGENTICS_LLM_BASE_URL")==nullptr)
-  setenv("COAGENTICS_LLM_BASE_URL","http://127.0.0.1:11434/v1",1);
-
- const std::string ollama_base= []{
-  const char* b=std::getenv("COAGENTICS_LLM_BASE_URL");
-  std::string v=(b&&*b)?std::string(b):"http://127.0.0.1:11434/v1";
+ const LiveTransportConfig ollama_cfg=default_ollama_transport_config();
+ const std::string ollama_base= [&]{
+  std::string v=ollama_cfg.base_url;
   if(v.size()>=3 && v.substr(v.size()-3)=="/v1") return v.substr(0,v.size()-3);
   return std::string("http://127.0.0.1:11434");
  }();
@@ -322,10 +296,9 @@ LiveCampaignReport run_ollama_layer_b_campaign(const LiveCampaignSpec& spec_in){
    LiveCampaignCell cell;
    cell.model=model;
    cell.seed=spec_in.base_seed+i;
-   setenv("COAGENTICS_LLM_MODEL", model.model.c_str(), 1);
    try{
     RunSpec run; run.seed=cell.seed; run.model=model;
-    run.transport=make_live_openai_compatible_transport(model);
+    run.transport=make_live_openai_compatible_transport(model, default_ollama_transport_config(model.model));
     run.run_id="ollama-campaign:"+model.model+":"+std::to_string(cell.seed);
     std::string leaf="cell_"+model.model+"_"+std::to_string(cell.seed)+".jsonl";
     for(char& ch:leaf) if(ch==':'||ch=='/') ch='_';
@@ -540,12 +513,8 @@ HeterogeneousPopulationReport run_heterogeneous_ollama_population(const Heteroge
   slot.inventory=buyer?0:1;
   if(live){
    slot.model=models[i];
-   // Each transport snapshots its model/provider configuration when constructed. This is
-   // essential in a heterogeneous market: later seats must not overwrite earlier seats.
-   setenv("COAGENTICS_LLM_PROVIDER","ollama",1);
-   setenv("COAGENTICS_LLM_BASE_URL","http://127.0.0.1:11434/v1",1);
-   setenv("COAGENTICS_LLM_MODEL", models[i].model.c_str(), 1);
-   slot.transport=make_live_openai_compatible_transport(models[i]);
+   // Each transport snapshots model/provider at construction — no process-global setenv.
+   slot.transport=make_live_openai_compatible_transport(models[i], default_ollama_transport_config(models[i].model));
   }else{
    slot.model={"mock","hetero-"+std::to_string(i),"v1"};
    const std::string action=buyer?"BUY":"SELL";

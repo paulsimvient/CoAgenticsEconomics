@@ -7,17 +7,7 @@
 #include <iomanip>
 #include <sstream>
 namespace coagentics::agents {
-static std::string esc(const std::string&s){
- std::string o; o.reserve(s.size()+8);
- for(unsigned char c:s){
-  switch(c){
-   case '"': o+="\\\""; break; case '\\': o+="\\\\"; break;
-   case '\n': o+="\\n"; break; case '\r': o+="\\r"; break; case '\t': o+="\\t"; break;
-   default: if(c<0x20){char b[8]; std::snprintf(b,sizeof(b),"\\u%04x",(unsigned)c); o+=b;} else o.push_back((char)c);
-  }
- }
- return o;
-}
+static std::string esc(const std::string&s){ return coagentics::util::json_escape(s); }
 static const char* side_name(coagentics::market::Side s){return s==coagentics::market::Side::Buy?"buy":"sell";}
 void ModelRegistry::add(ModelIdentity m){if(!contains(m.provider,m.model,m.version))models_.push_back(std::move(m));}
 bool ModelRegistry::contains(const std::string&p,const std::string&m,const std::string&v)const{return std::any_of(models_.begin(),models_.end(),[&](auto&x){return x.provider==p&&x.model==m&&x.version==v;});}
@@ -40,6 +30,22 @@ ModelResponse ScriptedTransport::invoke(const ModelRequest&q){
 ParseResult parse_market_action(const std::string& raw_output){
  ParseResult r; auto j=coagentics::util::parse_json(raw_output); if(!j){r.error="invalid_json";return r;} if(!j->is_object()){r.error="schema_root_not_object";return r;}
  LlmAction a; auto abstain=j->get("abstain"); if(abstain){if(!abstain->is_bool()){r.error="abstain_wrong_type";return r;}a.abstain=abstain->as_bool();} if(a.abstain){r.ok=true;r.action=a;return r;}
+ // Canonical experiment schema: {"action":"BUY|SELL|HOLD", ...}
+ if(auto act=j->get("action"); act && act->is_string()){
+  const std::string& as=act->as_string();
+  if(as=="HOLD"||as=="hold"||as=="Hold"){ a.abstain=true; r.ok=true; r.action=a; return r; }
+  if(as!="BUY"&&as!="SELL"&&as!="buy"&&as!="sell"&&as!="Buy"&&as!="Sell"){ r.error="invalid_action"; return r; }
+  a.side=(as=="SELL"||as=="sell"||as=="Sell")?coagentics::market::Side::Sell:coagentics::market::Side::Buy;
+  auto time=j->get("time"), asset=j->get("asset"), qty=j->get("quantity"), price=j->get("price");
+  if(!time){r.error="missing_time";return r;}if(!time->is_number()||time->as_number()<0||std::floor(time->as_number())!=time->as_number()){r.error="time_not_integer";return r;}
+  if(!asset||!asset->is_string()){r.error=asset?"asset_wrong_type":"missing_asset";return r;}
+  if(!qty||!qty->is_number()||std::floor(qty->as_number())!=qty->as_number()){r.error=qty?"quantity_not_integer":"missing_quantity";return r;}
+  if(!price||!(price->is_number()||price->is_null())){r.error=price?"price_wrong_type":"missing_price";return r;}
+  if(price->is_null()){ r.error="price_required_for_buy_sell"; return r; }
+  a.time=(std::uint64_t)time->as_number();a.asset=asset->as_string();a.quantity=(int)qty->as_number();a.price=price->as_number();
+  r.ok=true;r.action=a;return r;
+ }
+ // Legacy harness schema: {"side":"buy|sell", ...}
  auto time=j->get("time"), asset=j->get("asset"), qty=j->get("quantity"), price=j->get("price"), side=j->get("side");
  if(!time){r.error="missing_time";return r;}if(!time->is_number()||time->as_number()<0||std::floor(time->as_number())!=time->as_number()){r.error="time_not_integer";return r;}
  if(!asset||!asset->is_string()){r.error=asset?"asset_wrong_type":"missing_asset";return r;}if(!qty||!qty->is_number()||std::floor(qty->as_number())!=qty->as_number()){r.error=qty?"quantity_not_integer":"missing_quantity";return r;}

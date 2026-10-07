@@ -695,6 +695,7 @@ body{background:#06101a}.brandbar{display:none}.workflow-shell{grid-template-col
   </div>
 </div>
 
+<script src="/api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 
@@ -1047,18 +1048,8 @@ let chartMethods={}, analysisMethods={};
 let expectations={schema_version:'dv026-research-expectations-v1',status:'draft',expectations:[],sample_size:{planned_seeds:20,minimum_complete:18,stopping_rule:'fixed_number_of_seeds'}};
 let bidIndex=[], bidTurnsData=[], bidSelectedTurn=0, bidLoading=false, evidenceViewMode='table';
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-async function get(path, timeoutMs=10000){
-  const ctl=new AbortController(); const timer=setTimeout(()=>ctl.abort(),timeoutMs);
-  try{const r=await fetch(path,{cache:'no-store',signal:ctl.signal});const j=await r.json();if(!r.ok)throw Error(j.error||'Request failed');return j}
-  catch(e){if(e.name==='AbortError')throw Error(`Request timed out after ${Math.round(timeoutMs/1000)}s: ${path}`);throw e}
-  finally{clearTimeout(timer)}
-}
-async function post(path,data,timeoutMs=15000){
-  const ctl=new AbortController(); const timer=setTimeout(()=>ctl.abort(),timeoutMs);
-  try{const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:ctl.signal});const j=await r.json();if(!r.ok)throw Error(j.error||'Request failed');return j}
-  catch(e){if(e.name==='AbortError')throw Error(`Request timed out after ${Math.round(timeoutMs/1000)}s: ${path}`);throw e}
-  finally{clearTimeout(timer)}
-}
+const get=(path,timeoutMs)=>CoAgenticsApi.get(path,timeoutMs);
+const post=(path,data,timeoutMs)=>CoAgenticsApi.post(path,data,timeoutMs);
 
 function defaultHypothesis(id){return {
   id,priority:'primary',

@@ -289,7 +289,22 @@ private:
 
 bool live_llm_configured();
 bool live_uses_ollama();
-std::shared_ptr<agents::ModelTransport> make_live_openai_compatible_transport(const agents::ModelIdentity& identity);
+
+/** Explicit live endpoint config — prefer this over process-global setenv. */
+struct LiveTransportConfig {
+ std::string provider;   // e.g. "ollama"; empty → env COAGENTICS_LLM_PROVIDER
+ std::string base_url;   // e.g. "http://127.0.0.1:11434/v1"
+ std::string model;      // empty → identity.model then env COAGENTICS_LLM_MODEL
+ std::string api_key;    // empty → env / "ollama" for local
+ int timeout_s{0};       // 0 → 180 ollama / 60 otherwise
+};
+
+/** Defaults for local Ollama; model override optional. */
+LiveTransportConfig default_ollama_transport_config(const std::string& model={});
+
+std::shared_ptr<agents::ModelTransport> make_live_openai_compatible_transport(
+ const agents::ModelIdentity& identity,
+ const LiveTransportConfig& cfg={});
 
 RunResult run_llm_market_experiment(const ExperimentSpec& experiment, const RunSpec& run);
 }

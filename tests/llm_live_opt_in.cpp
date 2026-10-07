@@ -12,22 +12,21 @@ int main(){
   std::cout<<"SKIP llm_live_opt_in (set COAGENTICS_LIVE_LLM=1 to enable)\n";
   return 0;
  }
- // Default to Ollama when no cloud key is present.
- if(!live_llm_configured()){
-  setenv("COAGENTICS_LLM_PROVIDER","ollama",0);
-  setenv("COAGENTICS_LLM_BASE_URL","http://127.0.0.1:11434/v1",0);
+ LiveTransportConfig cfg;
+ const bool ollama=live_uses_ollama() || !live_llm_configured();
+ if(ollama){
+  cfg=default_ollama_transport_config();
+ }else{
+  cfg.provider="openai";
+  cfg.base_url="https://api.openai.com/v1";
+  if(const char* m=std::getenv("COAGENTICS_LLM_MODEL"); m&&*m) cfg.model=m;
+  else cfg.model="gpt-4o-mini";
  }
- if(!live_llm_configured()){
-  std::cerr<<"COAGENTICS_LIVE_LLM=1 but no API key and Ollama provider not set\n";
-  return 1;
- }
- const bool ollama=live_uses_ollama();
  agents::ModelIdentity model{
   ollama?"ollama":"openai",
-  ollama?"llama3.2":"gpt-4o-mini",
+  cfg.model.empty()?(ollama?"llama3.2":"gpt-4o-mini"):cfg.model,
   ollama?"local":"live",
   "chat-completions"};
- if(const char* m=std::getenv("COAGENTICS_LLM_MODEL"); m && *m) model.model=m;
 
  ExperimentSpec exp;
  exp.rounds=1;
@@ -36,7 +35,7 @@ int main(){
  RunSpec run;
  run.seed=424242;
  run.model=model;
- run.transport=make_live_openai_compatible_transport(model);
+ run.transport=make_live_openai_compatible_transport(model, cfg);
  run.adapter_version="coagentics-llm-adapter/0.1";
  run.log_path="llm_live_opt_in.jsonl";
 

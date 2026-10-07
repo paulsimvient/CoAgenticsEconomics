@@ -26,8 +26,8 @@ struct ModelResponse {
  std::uint64_t completion_tokens{};
  std::string inference_config; // opaque provider configuration snapshot (no secrets)
 };
-// Parse a model payload into MarketAction (= LlmAction). Does not validate economics.
-// Accepts a JSON object (optionally fenced). Does not invent missing required fields.
+// Parse a model payload into LlmAction. Accepts canonical {"action":"BUY|SELL|HOLD",...}
+// and legacy {"side":"buy|sell",...}. Does not validate economics.
 struct ParseResult { bool ok{false}; std::optional<LlmAction> action; std::string error; };
 ParseResult parse_market_action(const std::string& raw_output);
 struct HarnessRecord { ModelRequest request; ModelResponse response; };
