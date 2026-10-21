@@ -1,0 +1,14 @@
+{
+  "release": "V23",
+  "name": "Agent Trace",
+  "focus": "10-agent explanatory layer",
+  "flow": [
+    "private_value",
+    "decision",
+    "order",
+    "book",
+    "trade"
+  ],
+  "read_only": true,
+  "guide_updated": true
+}

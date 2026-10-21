@@ -248,10 +248,10 @@ class OriginalEightyFourCellsUntouched(unittest.TestCase):
     @unittest.skipUnless(ORIGINAL_RUN.is_dir(), "original interrupted run is not present")
     def test_original_run_still_has_cells_0_83(self):
         inv = recovery.inventory_run(ORIGINAL_RUN)
-        self.assertEqual(inv["completed"], 84)
-        self.assertEqual(inv["completed_indices"], list(range(84)))
-        self.assertEqual(inv["unfinished_count"], 36)
+        self.assertGreaterEqual(inv["completed"], 84)
+        self.assertTrue(set(range(84)).issubset(inv["completed_indices"]))
         self.assertTrue(inv["original_run"])
+        self.assertTrue(inv["protected_completed"])
 
     @unittest.skipUnless(ORIGINAL_RUN.is_dir() and BACKUP_SUMS.is_file(), "backup inventory missing")
     def test_original_completed_cells_match_backup_hashes(self):
@@ -270,30 +270,42 @@ class OriginalEightyFourCellsUntouched(unittest.TestCase):
     @unittest.skipUnless(ORIGINAL_RUN.is_dir(), "original interrupted run is not present")
     def test_reconcile_does_not_mutate_original_cells(self):
         before = recovery.snapshot_completed_hashes(ORIGINAL_RUN)
+        session_path = ORIGINAL_RUN / recovery.SESSION_NAME
+        session_before = session_path.read_bytes() if session_path.is_file() else None
         recovery.reconcile(ORIGINAL_RUN, persist=False)
         self.assertEqual(recovery.snapshot_completed_hashes(ORIGINAL_RUN), before)
-        self.assertFalse((ORIGINAL_RUN / recovery.SESSION_NAME).exists())
+        if session_before is None:
+            self.assertFalse(session_path.exists())
+        else:
+            self.assertEqual(session_path.read_bytes(), session_before)
 
     @unittest.skipUnless(ORIGINAL_RUN.is_dir(), "original interrupted run is not present")
     def test_lab_replay_is_read_only_and_evidence_backed(self):
         from live_server import lab_cell_by_index, lab_cells_index, lab_summary
         before = recovery.snapshot_completed_hashes(ORIGINAL_RUN)
         idx = lab_cells_index()
-        self.assertEqual(idx["n_completed"], 84)
-        self.assertEqual([c["index"] for c in idx["cells"]], list(range(84)))
+        self.assertGreaterEqual(idx["n_completed"], 84)
+        self.assertTrue(set(range(84)).issubset({c["index"] for c in idx["cells"]}))
         self.assertTrue(idx.get("read_only"))
         self.assertEqual(idx.get("layout"), "schematic_seating")
         cell = lab_cell_by_index(0)
         self.assertNotIn("error", cell)
         self.assertEqual(cell["layout"], "schematic_seating")
         self.assertTrue(cell.get("protected"))
+        self.assertTrue(cell.get("graphs_backed_by_observation"))
         self.assertTrue(cell.get("agents"))
         self.assertTrue(any((a.get("role") or "").lower() in ("buyer", "seller") for a in cell["agents"]))
         self.assertFalse(any("x" in a or "y" in a for a in cell["agents"]))
-        missing = lab_cell_by_index(84)
-        self.assertIn("error", missing)
+        later = ORIGINAL_RUN / "cell_evidence" / "cell_84.json"
+        cell84 = lab_cell_by_index(84)
+        if later.is_file():
+            self.assertNotIn("error", cell84)
+            self.assertTrue(cell84.get("observation_parse", {}).get("ok"))
+            self.assertFalse(cell84.get("observation_parse", {}).get("wrote_archive"))
+        else:
+            self.assertIn("error", cell84)
         summary = lab_summary()
-        self.assertEqual(summary["n_completed"], 84)
+        self.assertGreaterEqual(summary["n_completed"], 84)
         self.assertEqual(recovery.snapshot_completed_hashes(ORIGINAL_RUN), before)
 
 

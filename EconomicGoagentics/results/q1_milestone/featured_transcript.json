@@ -1,0 +1,248 @@
+{
+  "source": "read-only original archive",
+  "run_id": "run_1792582821581_6712",
+  "inference_label": "ollama",
+  "index": 6,
+  "seed": 424243,
+  "repeat": 0,
+  "design": "frozen_snapshot",
+  "agents": [
+    {
+      "agent_id": "LLM-SEAT-0",
+      "model": "llama2:latest",
+      "provider": "ollama",
+      "role": "buyer",
+      "private_value": 120,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-1",
+      "model": "llama3.2:3b",
+      "provider": "ollama",
+      "role": "seller",
+      "private_value": 82,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-2",
+      "model": "qwen3:8b",
+      "provider": "ollama",
+      "role": "buyer",
+      "private_value": 116,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-3",
+      "model": "qwen2.5-coder:7b",
+      "provider": "ollama",
+      "role": "seller",
+      "private_value": 86,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-4",
+      "model": "llama3.1:8b",
+      "provider": "ollama",
+      "role": "buyer",
+      "private_value": 112,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-5",
+      "model": "codellama:latest",
+      "provider": "ollama",
+      "role": "seller",
+      "private_value": 90,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-6",
+      "model": "mistral:latest",
+      "provider": "ollama",
+      "role": "buyer",
+      "private_value": 108,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-7",
+      "model": "gemma2:2b",
+      "provider": "ollama",
+      "role": "seller",
+      "private_value": 94,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-8",
+      "model": "phi3:mini",
+      "provider": "ollama",
+      "role": "buyer",
+      "private_value": 104,
+      "inference": "ollama"
+    },
+    {
+      "agent_id": "LLM-SEAT-9",
+      "model": "llama3:latest",
+      "provider": "ollama",
+      "role": "seller",
+      "private_value": 98,
+      "inference": "ollama"
+    }
+  ],
+  "transcript": [
+    {
+      "trade": {
+        "time": 0,
+        "price": 95,
+        "quantity": 1,
+        "buyer": "LLM-SEAT-2",
+        "seller": "LLM-SEAT-5",
+        "asset": "ASSET"
+      },
+      "buyer": {
+        "agent_id": "LLM-SEAT-2",
+        "model": "qwen3:8b",
+        "role": "buyer",
+        "private_value": 116,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":0,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":null,\"best_ask\":null,\"last_trade\":null},\"agent\":{\"agent_id\":\"LLM-SEAT-2\",\"role\":\"BUYER\",\"cash\":10000,\"inventory\":0,\"private_value\":116,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"constraints\":{\"allow_buy\":true,\"allow_sell\":false,\"allow_hold\":true}}}",
+        "raw_provider_response": "{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":100,\"time\":0}",
+        "provider": "ollama",
+        "request_id": "ollama:qwen3:8b:424243:0"
+      },
+      "seller": {
+        "agent_id": "LLM-SEAT-5",
+        "model": "codellama:latest",
+        "role": "seller",
+        "private_value": 90,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":0,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":null,\"best_ask\":null,\"last_trade\":null},\"agent\":{\"agent_id\":\"LLM-SEAT-5\",\"role\":\"SELLER\",\"cash\":10000,\"inventory\":1,\"private_value\":90,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"constraints\":{\"allow_buy\":false,\"allow_sell\":true,\"allow_hold\":true}}}",
+        "raw_provider_response": "\n{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}",
+        "provider": "ollama",
+        "request_id": "ollama:codellama:latest:424243:0"
+      }
+    },
+    {
+      "trade": {
+        "time": 0,
+        "price": 90,
+        "quantity": 1,
+        "buyer": "LLM-SEAT-0",
+        "seller": "LLM-SEAT-7",
+        "asset": "ASSET"
+      },
+      "buyer": {
+        "agent_id": "LLM-SEAT-0",
+        "model": "llama2:latest",
+        "role": "buyer",
+        "private_value": 120,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":0,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":null,\"best_ask\":null,\"last_trade\":null},\"agent\":{\"agent_id\":\"LLM-SEAT-0\",\"role\":\"BUYER\",\"cash\":10000,\"inventory\":0,\"private_value\":120,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"constraints\":{\"allow_buy\":true,\"allow_sell\":false,\"allow_hold\":true}}}",
+        "raw_provider_response": "\n{\"action\": \"BUY\", \"asset\": \"ASSET\", \"quantity\": 1, \"price\": 90, \"time\": 0}",
+        "provider": "ollama",
+        "request_id": "ollama:llama2:latest:424243:0"
+      },
+      "seller": {
+        "agent_id": "LLM-SEAT-7",
+        "model": "gemma2:2b",
+        "role": "seller",
+        "private_value": 94,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":0,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":null,\"best_ask\":null,\"last_trade\":null},\"agent\":{\"agent_id\":\"LLM-SEAT-7\",\"role\":\"SELLER\",\"cash\":10000,\"inventory\":1,\"private_value\":94,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"constraints\":{\"allow_buy\":false,\"allow_sell\":true,\"allow_hold\":true}}}",
+        "raw_provider_response": "```json\n{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}\n```",
+        "provider": "ollama",
+        "request_id": "ollama:gemma2:2b:424243:0"
+      }
+    },
+    {
+      "trade": {
+        "time": 1,
+        "price": 90,
+        "quantity": 1,
+        "buyer": "LLM-SEAT-6",
+        "seller": "LLM-SEAT-1",
+        "asset": "ASSET"
+      },
+      "buyer": {
+        "agent_id": "LLM-SEAT-6",
+        "model": "mistral:latest",
+        "role": "buyer",
+        "private_value": 108,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":1,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":90,\"best_ask\":null,\"last_trade\":90},\"agent\":{\"agent_id\":\"LLM-SEAT-6\",\"role\":\"BUYER\",\"cash\":10000,\"inventory\":0,\"private_value\":108,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"history\":[{\"time\":0,\"last_trade\":90,\"best_bid\":90,\"best_ask\":null}],\"constraints\":{\"allow_buy\":true,\"allow_sell\":false,\"allow_hold\":true}}}",
+        "raw_provider_response": " {\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+        "provider": "ollama",
+        "request_id": "ollama:mistral:latest:424243:1"
+      },
+      "seller": {
+        "agent_id": "LLM-SEAT-1",
+        "model": "llama3.2:3b",
+        "role": "seller",
+        "private_value": 82,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":1,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":90,\"best_ask\":null,\"last_trade\":90},\"agent\":{\"agent_id\":\"LLM-SEAT-1\",\"role\":\"SELLER\",\"cash\":10000,\"inventory\":1,\"private_value\":82,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"history\":[{\"time\":0,\"last_trade\":90,\"best_bid\":90,\"best_ask\":null}],\"constraints\":{\"allow_buy\":false,\"allow_sell\":true,\"allow_hold\":true}}}",
+        "raw_provider_response": "{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+        "provider": "ollama",
+        "request_id": "ollama:llama3.2:3b:424243:1"
+      }
+    },
+    {
+      "trade": {
+        "time": 1,
+        "price": 90,
+        "quantity": 1,
+        "buyer": "LLM-SEAT-8",
+        "seller": "LLM-SEAT-3",
+        "asset": "ASSET"
+      },
+      "buyer": {
+        "agent_id": "LLM-SEAT-8",
+        "model": "phi3:mini",
+        "role": "buyer",
+        "private_value": 104,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":1,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":90,\"best_ask\":null,\"last_trade\":90},\"agent\":{\"agent_id\":\"LLM-SEAT-8\",\"role\":\"BUYER\",\"cash\":10000,\"inventory\":0,\"private_value\":104,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"history\":[{\"time\":0,\"last_trade\":90,\"best_bid\":90,\"best_ask\":null}],\"constraints\":{\"allow_buy\":true,\"allow_sell\":false,\"allow_hold\":true}}}",
+        "raw_provider_response": "{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+        "provider": "ollama",
+        "request_id": "ollama:phi3:mini:424243:1"
+      },
+      "seller": {
+        "agent_id": "LLM-SEAT-3",
+        "model": "qwen2.5-coder:7b",
+        "role": "seller",
+        "private_value": 86,
+        "inference": "ollama",
+        "canonical_request": "{\"market\":{\"time\":1,\"asset\":\"ASSET\",\"fundamental\":100,\"public_signal\":0,\"best_bid\":90,\"best_ask\":null,\"last_trade\":90},\"agent\":{\"agent_id\":\"LLM-SEAT-3\",\"role\":\"SELLER\",\"cash\":10000,\"inventory\":1,\"private_value\":86,\"remaining_demand\":1,\"realized_payoff\":0},\"information\":{\"history\":[{\"time\":0,\"last_trade\":90,\"best_bid\":90,\"best_ask\":null}],\"constraints\":{\"allow_buy\":false,\"allow_sell\":true,\"allow_hold\":true}}}",
+        "raw_provider_response": "{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+        "provider": "ollama",
+        "request_id": "ollama:qwen2.5-coder:7b:424243:1"
+      }
+    }
+  ],
+  "llm_sides": {
+    "n_trades": 4,
+    "both_sides_ollama": 4,
+    "one_side_ollama": 0,
+    "neither_ollama": 0,
+    "mock_involved": 0
+  },
+  "surplus": {
+    "maximum_surplus": 110.0,
+    "realized_surplus": 96.0,
+    "allocative_efficiency": 87.27272727272727,
+    "efficient_quantity": 5,
+    "induced_units": 4,
+    "extra_units_excluded": 0,
+    "surplus_definition": "induced_value_first_unit_per_seat",
+    "trade_party_errors": []
+  },
+  "conservation": {
+    "initial_cash": 100000.0,
+    "final_cash": 100000.0,
+    "cash_conserved": true,
+    "initial_inventory": 5,
+    "final_inventory": 5,
+    "inventory_conserved": true
+  },
+  "reported_efficiency": 87.2727,
+  "claim_boundary": "Descriptive recomputation from archived files only. Mock transport is not Ollama inference. On-read JSON repair never rewrites archive bytes. Induced-value surplus counts only the first unit per seat, matching Market::metrics. Extra cash-financed units are recorded as trades but do not add redemption value. Paired frozen-vs-sequential differences are matched observations, not a causal ranking of models."
+}

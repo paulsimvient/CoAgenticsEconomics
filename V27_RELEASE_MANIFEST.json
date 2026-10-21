@@ -1,0 +1,15 @@
+{
+  "release": "V27",
+  "name": "Reactive Cell Architecture",
+  "canonical_state": "CoAgenticsCellState",
+  "events": [
+    "coagentics:cells-loaded",
+    "coagentics:cell-loading",
+    "coagentics:cell-selected",
+    "coagentics:cell-unavailable",
+    "coagentics:evidence-status"
+  ],
+  "authoritative_data": true,
+  "fail_closed": true,
+  "guide_updated": true
+}

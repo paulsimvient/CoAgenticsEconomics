@@ -53,7 +53,14 @@ std::string cell_evidence_json(std::size_t index, std::uint64_t seed, std::size_
   <<",\"design\":\""<<design_name(d)<<"\",\"worker_id\":0,\"elapsed_seconds\":"<<elapsed
   <<",\"observed_llm_turns\":"<<turns<<",\"agents\":"<<pop.agents.size()
   <<",\"status\":\"completed\",\"error\":\"\",\"efficiency\":"<<pop.metrics.allocative_efficiency
-  <<",\"trades\":"<<pop.trades.size()<<"}";
+  <<",\"trades\":"<<pop.trades.size()<<",\"assignment\":[";
+ for(std::size_t j=0;j<pop.spec.agents.size();++j){const auto&a=pop.spec.agents[j]; if(j)e<<",";
+  e<<"{\"seat\":\""<<esc(a.agent_id)<<"\",\"model\":\""<<esc(a.model.model)
+   <<"\",\"provider\":\""<<esc(a.model.provider)<<"\",\"version\":\""<<esc(a.model.version)
+   <<"\",\"role\":\""<<(a.side==market::Side::Buy?"buyer":"seller")
+   <<"\",\"private_value_or_cost\":"<<a.private_value_or_cost
+   <<"\",\"cash\":"<<a.cash<<",\"inventory\":"<<a.inventory<<"}";}
+ e<<"]}";
  return e.str();
 }
 std::string cell_observation_json(std::size_t index, std::uint64_t seed, std::size_t repeat, ActivationDesign d,
@@ -68,7 +75,7 @@ std::string cell_observation_json(std::size_t index, std::uint64_t seed, std::si
  for(std::size_t bi=0;bi<pop.bids.size();++bi){const auto&b=pop.bids[bi]; if(bi)e<<",";
   e<<"{\"time\":"<<b.time<<",\"agent_id\":\""<<esc(b.agent_id)<<"\",\"asset\":\""<<esc(b.asset)
    <<"\",\"quantity\":"<<b.quantity<<",\"price\":"<<b.price
-   <<"\",\"side\":\""<<(b.side==market::Side::Buy?"buy":"sell")<<"\"}";}
+   <<",\"side\":\""<<(b.side==market::Side::Buy?"buy":"sell")<<"\"}";}
  e<<"],\"agent_turns\":[";
  bool first=true;
  for(const auto&a:pop.agents) for(const auto&t:a.llm_turns){

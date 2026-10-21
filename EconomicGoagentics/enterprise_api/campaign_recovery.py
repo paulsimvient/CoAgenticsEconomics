@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import time
 import uuid
@@ -74,11 +75,43 @@ def append_audit(run_dir: Path, event: dict) -> None:
         f.flush()
         os.fsync(f.fileno())
 
-def _decode_json_bytes(raw: bytes):
+# Writer regression in later cells: `"price":90","side"` instead of `"price":90,"side"`.
+# Repair is read-only. Never write the repaired bytes back over an archive file.
+_PRICE_SIDE_QUOTE = re.compile(
+    r'("price"\s*:\s*-?(?:[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?))","side"'
+)
+
+
+def repair_archive_json_text(text: str) -> tuple[str, bool]:
+    repaired = _PRICE_SIDE_QUOTE.sub(r'\1,"side"', text)
+    return repaired, repaired != text
+
+
+def decode_json_document(raw: bytes) -> tuple[object, dict]:
     text = raw.strip()
+    trailing_escaped_newline = False
     if text.endswith(b"\\n"):
         text = text[:-2].rstrip()
-    return json.loads(text)
+        trailing_escaped_newline = True
+    s = text.decode("utf-8")
+    s, repaired = repair_archive_json_text(s)
+    decoder = json.JSONDecoder()
+    obj, idx = decoder.raw_decode(s)
+    rest = s[idx:].strip()
+    meta = {
+        "ok": True,
+        "repaired_on_read": repaired,
+        "trailing_escaped_newline_stripped": trailing_escaped_newline,
+        "extra_data_ignored": bool(rest),
+        "bytes": len(raw),
+        "wrote_archive": False,
+    }
+    return obj, meta
+
+
+def _decode_json_bytes(raw: bytes):
+    obj, _ = decode_json_document(raw)
+    return obj
 
 def _load_json(path: Path):
     if not path.is_file():

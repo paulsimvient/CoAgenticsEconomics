@@ -38,6 +38,9 @@ if(BUILD_TESTING)
   add_executable(market_smoke tests/market_smoke.cpp)
   target_link_libraries(market_smoke PRIVATE coagentics_lab)
   add_test(NAME market_smoke COMMAND market_smoke)
+  add_executable(market_conservation_smoke tests/market_conservation_smoke.cpp)
+  target_link_libraries(market_conservation_smoke PRIVATE coagentics_lab)
+  add_test(NAME market_conservation_smoke COMMAND market_conservation_smoke)
   add_executable(paired_intervention_smoke tests/paired_intervention_smoke.cpp)
   target_link_libraries(paired_intervention_smoke PRIVATE coagentics_lab)
   add_test(NAME paired_intervention_smoke COMMAND paired_intervention_smoke)
@@ -368,6 +371,10 @@ if(BUILD_TESTING)
  add_executable(ten_model_campaign_smoke tests/ten_model_campaign_smoke.cpp)
  target_link_libraries(ten_model_campaign_smoke PRIVATE coagentics_lab)
  add_test(NAME ten_model_campaign_smoke COMMAND ten_model_campaign_smoke)
+ add_executable(heterogeneous_five_five_mock tests/heterogeneous_five_five_mock.cpp)
+ target_link_libraries(heterogeneous_five_five_mock PRIVATE coagentics_lab)
+ add_test(NAME heterogeneous_five_five_mock COMMAND heterogeneous_five_five_mock)
+ set_tests_properties(heterogeneous_five_five_mock PROPERTIES LABELS "mock_inference")
 endif()
 
 # Section 1 — domain-neutral advanced architecture contracts.
@@ -452,3 +459,12 @@ add_executable(section16_memory_smoke
 target_include_directories(section16_memory_smoke PRIVATE include)
 target_compile_features(section16_memory_smoke PRIVATE cxx_std_17)
 add_test(NAME section16_memory_smoke COMMAND section16_memory_smoke)
+
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(BUILD_TESTING AND Python3_Interpreter_FOUND)
+  add_test(NAME test_q1_recovery COMMAND ${Python3_EXECUTABLE} -m unittest tests.test_q1_recovery)
+  add_test(NAME test_q1_multi_llm_qualification COMMAND ${Python3_EXECUTABLE} -m unittest tests.test_q1_multi_llm_qualification)
+  set_tests_properties(test_q1_recovery test_q1_multi_llm_qualification PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}")
+endif()

@@ -4,7 +4,9 @@ import hashlib, json, os, re, subprocess, threading, time, uuid, urllib.parse, u
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from enterprise_api import campaign_recovery as recovery
+from enterprise_api import q1_native_corpus as native_corpus
 ROOT=Path(__file__).resolve().parent
+NATIVE_ARCHIVE=native_corpus.corpus_root(ROOT)
 CAMPAIGN_DIR=ROOT/'results'/'dv026_ollama_campaign'
 HETERO_ROOT=ROOT/'results'/'dv026_heterogeneous_campaign'
 IMPLEMENTATION_REVISION='2026-10-04-pass3-step17-ux-refinement'
@@ -434,14 +436,53 @@ def _finish_campaign_session(status, error=None, run_dir=None):
   except Exception:
    pass
 
-def _read_json_file(path:Path):
- if not path or not path.is_file():
+def _native_manifest():
+ p=NATIVE_ARCHIVE/'manifest.json'
+ if not p.is_file():
   return None
  try:
-  d=recovery._decode_json_bytes(path.read_bytes())
+  d=json.loads(p.read_text())
   return d if isinstance(d,dict) else None
  except Exception:
   return None
+
+def _read_json_file_meta(path:Path):
+ if not path or not path.is_file():
+  return None, {'ok':False,'reason':'missing','wrote_archive':False}
+ raw=path.read_bytes()
+ strict=True
+ try:
+  json.loads(raw)
+ except Exception:
+  strict=False
+ if not strict:
+  run=_lab_run_dir()
+  man=_native_manifest()
+  peer=native_corpus.native_peer(path, run, NATIVE_ARCHIVE) if run and man else None
+  if peer and native_corpus.native_trusted(path, peer, man):
+   try:
+    d=json.loads(peer.read_bytes())
+    if isinstance(d,dict):
+     rel=str(peer.relative_to(ROOT)) if str(peer).startswith(str(ROOT)) else str(peer)
+     return d, {'ok':True,'native_corpus':True,'repaired_on_read':False,'wrote_archive':False,'source':rel}
+   except Exception:
+    pass
+ try:
+  d,meta=recovery.decode_json_document(raw)
+  meta=dict(meta)
+  meta['wrote_archive']=False
+  meta['native_corpus']=False
+  if not isinstance(d,dict):
+   meta['ok']=False
+   meta['reason']='not_object'
+   return None, meta
+  return d, meta
+ except Exception as e:
+  return None, {'ok':False,'reason':str(e),'wrote_archive':False}
+
+def _read_json_file(path:Path):
+ d,_=_read_json_file_meta(path)
+ return d
 
 def _hetero_model_label(design, repeat, index=None):
  design=str(design or 'cell')
@@ -747,6 +788,8 @@ def lab_cells_index():
    'turns':ev.get('observed_llm_turns'),
    'agents':ev.get('agents'),
    'status':ev.get('status'),
+   'evidence_file':str((run/'cell_evidence'/path.name).relative_to(ROOT)) if str(run).startswith(str(ROOT)) else path.name,
+   'efficiency_source':'cell_evidence',
   })
  cells.sort(key=lambda c:(c.get('index') is None, c.get('index') or 0))
  n=len(cells)
@@ -821,13 +864,16 @@ def lab_cell_by_index(index:int):
  except Exception:
   return {'error':'index must be an integer'}
  name=f'cell_{index}.json'
- ev=_read_json_file(run/'cell_evidence'/name)
+ ev,_ev_meta=_read_json_file_meta(run/'cell_evidence'/name)
  if not ev:
   return {'error':f'no archived completed cell {index}'}
  if str(ev.get('status') or '')!='completed':
   return {'error':f'cell {index} is not a completed observation','protected':True}
- obs=_read_json_file(run/'cell_observations'/name) or {}
- snap=_read_json_file(run/'cell_snapshots'/name) or {}
+ obs,obs_meta=_read_json_file_meta(run/'cell_observations'/name)
+ snap,snap_meta=_read_json_file_meta(run/'cell_snapshots'/name)
+ obs=obs or {}
+ snap=snap or {}
+ obs_ok=bool(obs_meta.get('ok') and (obs.get('trades') is not None or obs.get('agent_turns') is not None))
  turns=_hetero_turns(obs, ev)
  trades=obs.get('trades') if isinstance(obs.get('trades'),list) else []
  bids=obs.get('bids') if isinstance(obs.get('bids'),list) else []
@@ -901,6 +947,14 @@ def lab_cell_by_index(index:int):
   'protected':True,
   'run_id':run.name,
   'file':str((run/'cell_observations'/name).relative_to(ROOT)) if str(run).startswith(str(ROOT)) else name,
+  'evidence_file':str((run/'cell_evidence'/name).relative_to(ROOT)) if str(run).startswith(str(ROOT)) else name,
+  'observation_file':str((run/'cell_observations'/name).relative_to(ROOT)) if str(run).startswith(str(ROOT)) else name,
+  'efficiency_source':'cell_evidence',
+  'observation_parse':obs_meta,
+  'snapshot_parse':snap_meta,
+  'graphs_backed_by_observation':obs_ok,
+  'graphs_backed_by_evidence':True,
+  'note':'Floor and tape use cell_observations. Scatter and η use cell_evidence. On-read JSON repair never rewrites archive files.',
   'agents':agents,
   'events':events,
   'trades':trades,

@@ -1,0 +1,14 @@
+{
+  "release": "V25",
+  "name": "Synchronized Market Replay",
+  "focus": [
+    "agent",
+    "event",
+    "order_book",
+    "trade",
+    "evidence"
+  ],
+  "read_only": true,
+  "guide_updated": true,
+  "production_data_rule": "authoritative archived cell evidence"
+}

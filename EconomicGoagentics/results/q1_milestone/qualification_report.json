@@ -1,0 +1,61 @@
+{
+  "engineering_gate": "passed",
+  "scientific_gate": "not_passed",
+  "scientific_gate_reason": "Wilcoxon on these 60 pairs is post-hoc because descriptive means were inspected before the analysis plan was locked. Native JSON for cells 84\u2013119 is a derived corpus; original archive bytes are preserved.",
+  "analysis_plan_id": "q1-frozen-vs-sequential-eta-wilcoxon-v1",
+  "analysis_plan_sha256": "a42e1736d3dda16dcc0fdf0f02c76080b18f2309581c8c9d0baf7de7b9869ecf",
+  "inference": {
+    "n_pairs": 60,
+    "n_nonzero": 32,
+    "n_zero": 28,
+    "w_plus": 506.5,
+    "z": 4.540149933089486,
+    "p_two_sided": 5.621423949861198e-06,
+    "hodges_lehmann": 18.181800000000003,
+    "reject_h0_alpha_05": true,
+    "plan_id": "q1-frozen-vs-sequential-eta-wilcoxon-v1",
+    "plan_sha256": "a42e1736d3dda16dcc0fdf0f02c76080b18f2309581c8c9d0baf7de7b9869ecf"
+  },
+  "native_archive": {
+    "n_files": 360,
+    "n_repaired_price_side": 36,
+    "n_trailing_escaped_newline_stripped": 84,
+    "wrote_original_run": false
+  },
+  "unittest": {
+    "tests_run": 30,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "ok": true
+  },
+  "ctest": {
+    "ran": true,
+    "returncode": 0,
+    "ok": true,
+    "stdout_tail": "Test project /Users/paulcummings/iCloud Drive (Archive)/Documents/code/EconomicGoagentics/EconomicGoagentics/build-dv026\n    Start  2: market_conservation_smoke\n1/3 Test  #2: market_conservation_smoke ........   Passed    0.01 sec\n    Start 51: heterogeneous_campaign_smoke\n2/3 Test #51: heterogeneous_campaign_smoke .....   Passed    0.02 sec\n    Start 53: heterogeneous_five_five_mock\n3/3 Test #53: heterogeneous_five_five_mock .....   Passed    0.02 sec\n\n100% tests passed, 0 tests failed out of 3\n\nLabel Time Summary:\nmock_inference    =   0.02 sec*proc (1 test)\n\nTotal Test time (real) =   0.05 sec\n",
+    "stderr_tail": "",
+    "mode_note": "C++ smokes and five_five_mock use scripted mock transport unless a test explicitly opts into live Ollama."
+  },
+  "archive_summary": {
+    "n_completed_evidence": 120,
+    "n_observation_readable": 120,
+    "n_observation_repaired_on_read": 36,
+    "n_five_plus_five": 120,
+    "n_ollama_cells": 120,
+    "n_both_sides_ollama_all_trades": 120,
+    "n_matching_ok": 120,
+    "n_conservation_ok": 120,
+    "n_efficiency_match": 120,
+    "n_cells_with_extra_units": 20,
+    "engineering_gate": "passed",
+    "scientific_gate": "not_passed",
+    "scientific_gate_reason": "Wilcoxon on these 60 pairs is post-hoc because descriptive means were inspected before the analysis plan was locked. Native JSON for cells 84\u2013119 is a derived corpus; original archive bytes are preserved.",
+    "claim_boundary": "Descriptive recomputation from archived files only. Mock transport is not Ollama inference. On-read JSON repair never rewrites archive bytes. Induced-value surplus counts only the first unit per seat, matching Market::metrics. Extra cash-financed units are recorded as trades but do not add redemption value. Paired frozen-vs-sequential differences are matched observations, not a causal ranking of models."
+  },
+  "featured_index": 6,
+  "original_run_hashes_unchanged": true,
+  "wrote_original_run": false,
+  "derived_output_dir": "results/q1_milestone",
+  "claim_boundary": "Descriptive recomputation from archived files only. Mock transport is not Ollama inference. On-read JSON repair never rewrites archive bytes. Induced-value surplus counts only the first unit per seat, matching Market::metrics. Extra cash-financed units are recorded as trades but do not add redemption value. Paired frozen-vs-sequential differences are matched observations, not a causal ranking of models."
+}

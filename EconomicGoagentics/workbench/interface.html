@@ -316,7 +316,6 @@ html.light .live-ribbon{background:linear-gradient(90deg,rgba(8,120,232,.07),tra
 .lab-table-wrap{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px}
 #labCellsBody tr.lab-row-frozen td:first-child{box-shadow:inset 3px 0 0 #4aa3ff}
 #labCellsBody tr.lab-row-seq td:first-child{box-shadow:inset 3px 0 0 #ff8a2a}
-#labCellsBody tr.selected{outline:1px solid var(--accent);outline-offset:-1px}
 .lab-des{font:9px var(--mono);padding:1px 6px;border-radius:4px;border:1px solid var(--line);white-space:nowrap}
 .lab-des.frozen{color:#4aa3ff;border-color:rgba(74,163,255,.45);background:rgba(74,163,255,.12)}
 .lab-des.seq{color:#ff8a2a;border-color:rgba(255,138,42,.45);background:rgba(255,138,42,.12)}
@@ -520,7 +519,6 @@ html.lab-light .lab-table-wrap{max-height:240px;border:0;border-radius:0}
 html.lab-light .lab-table-wrap .table{font-size:12px}
 html.lab-light .lab-table-wrap .table th{font:10px var(--font);letter-spacing:.06em;color:var(--muted);background:var(--panel);padding:8px 8px;text-transform:none}
 html.lab-light .lab-table-wrap .table td{padding:8px;border-bottom:1px solid var(--line)}
-html.lab-light #labCellsBody tr.lab-in-bin{background:#f7f0e4}
 html.lab-light #labCellsBody tr.selected,html.lab-light #labCellsBody tr.selected:hover{background:var(--peach)!important}
 html.lab-light #labCellsBody tr.lab-remain td,html.lab-light #opResultsBody tr.lab-remain td{color:var(--muted);font-style:italic}
 html.lab-light .action.primary:disabled{opacity:.45;cursor:not-allowed}
@@ -796,7 +794,7 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
   <div class="v28-head">
     <div>
       <div class="v28-kicker">V28 · CAMPAIGN OVERVIEW</div>
-      <h2>84 markets, one experiment</h2>
+      <h2>Completed markets, one experiment</h2>
       <p>Explore independent market sessions by outcome. Select a cell to synchronize the research workspace.</p>
     </div>
     <div class="v28-head-actions">
@@ -991,7 +989,7 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
 <section id="view-dashboard" class="view">
 <div class="page-head">
   <h1>Overview</h1>
-  <p>The 84 finished markets are the archive. Resume remaining runs cells 84–119 in the same campaign and will not overwrite completed evidence.</p>
+  <p>Completed markets are the archive. Resume remaining starts only unfinished cells and will not overwrite completed evidence.</p>
 </div>
 <div class="how-banner" id="howBanner">
   <div>
@@ -1162,7 +1160,7 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
   <div class="v21-zoom"></div>
   <div class="lab-tabs">
     <button class="active" type="button" data-labtab="all" onclick="setLabTab('all')">Campaign + market</button>
-    <button type="button" data-labtab="campaign" onclick="setLabTab('campaign')">84 markets</button>
+    <button type="button" data-labtab="campaign" onclick="setLabTab('campaign')">Markets</button>
     <button type="button" data-labtab="market" onclick="setLabTab('market')">This market</button>
     <button type="button" data-labtab="evidence" onclick="setLabTab('evidence')">Evidence</button>
   </div>
@@ -1855,7 +1853,9 @@ function renderLabMeta(){
    ['Try', c.repeat==null?'—':(Number(c.repeat)+1)+' of 3'],
    ['Agents', c.agent_count],
    ['Events', (c.events||[]).length],
-   ['Source', 'archived observations']
+   ['Source', c.graphs_backed_by_observation?'archived observations':'cell_evidence only'],
+   ['η file', (c.evidence_file||'cell_evidence').split('/').pop()],
+   ['Parse', c.observation_parse?.repaired_on_read?'on-read repair':(c.graphs_backed_by_observation?'native JSON':'unreadable')]
   ].map(([k,v])=>`<span class="lab-chip">${esc(k)} <b>${esc(v)}</b></span>`).join('');
  }
  const book=c?labBookAt(c, lab.event||0):{rest:{},trades:[]};
@@ -2176,6 +2176,8 @@ function renderLabCharts(){
 function renderLabCampaign(){
  const cells=lab.cells||[];
  const n=cells.length;
+ const tab=document.querySelector('[data-labtab="campaign"]');
+ if(tab) tab.textContent=n?`${n} markets`:'Markets';
  const etaVals=cells.map(c=>labEtaPct(c.efficiency)).filter(v=>v!=null&&Number.isFinite(v));
  const totalTrades=cells.reduce((a,c)=>a+Number(c.trades??c.trade_count??0),0);
  const meanEta=etaVals.length?etaVals.reduce((a,v)=>a+v,0)/etaVals.length:null;
@@ -2258,12 +2260,11 @@ function renderLabCampaign(){
   const cur=lab.cell?.index;
   const planned=Number(lab.indexMeta?.n_planned||120);
   const doneMax=cells.length?Math.max(...cells.map(c=>Number(c.index)||0)):-1;
-  const selBin=labEtaBin(lab.cell&&lab.cell.efficiency);
   const archived=cells.map(c=>{
    const des=labDesignPlain(c.design);
    const eta=c.efficiency==null?'—':Number(c.efficiency).toFixed(1)+'%';
-   const inBin=selBin!=null&&labEtaBin(c.efficiency)===selBin;
-   return `<tr class="selectable ${c.index===cur?'selected':''}${inBin&&c.index!==cur?' lab-in-bin':''} ${des.kind?('lab-row-'+des.kind):''}" data-i="${c.index}" onclick="loadLabCell(${c.index})"><td>${c.index}</td><td><span class="lab-des ${esc(des.kind)}" title="${esc(c.design||'')}">${esc(des.short)}</span></td><td>${esc(c.seed)}</td><td class="lab-eta">${eta}</td><td>${esc(c.trades??'—')}</td><td>${esc(c.agents??'—')}</td><td>archived</td></tr>`;
+   const open=c.index===cur;
+   return `<tr class="selectable ${open?'selected':''} ${des.kind?('lab-row-'+des.kind):''}" data-i="${c.index}" onclick="loadLabCell(${c.index})"><td>${c.index}</td><td><span class="lab-des ${esc(des.kind)}" title="${esc(c.design||'')}">${esc(des.short)}</span></td><td>${esc(c.seed)}</td><td class="lab-eta">${eta}</td><td>${esc(c.trades??'—')}</td><td>${esc(c.agents??'—')}</td><td>${open?'open':'archived'}</td></tr>`;
   }).join('');
   const remainCount=Math.max(0,planned-doneMax-1);
   const remain=remainCount?[`<tr class="lab-remain"><td colspan="7">${remainCount} markets not yet run (markets ${doneMax+1}–${planned-1}). Resume remaining at the top of this page — finished markets stay saved.</td></tr>`]:[];
@@ -2335,8 +2336,8 @@ function renderLabCampaignScatter(){
   const fill=kind==='seq'?'#e07a2f':'#3d8f6a';
   const sel=c.index===cur;
   const same=selBin!=null&&labEtaBin(c.efficiency)===selBin;
-  const r=sel?5.2:(same?3.7:3.1);
-  return `<circle class="lab-mkt" data-i="${c.index}" cx="${xAt(c.index)}" cy="${yAt(eta)}" r="${r}" fill="${fill}" opacity="${sel||same?1:0.55}" stroke="${sel?'#1e1a16':(same?'#c4a574':'none')}" stroke-width="${sel?1.4:(same?1:0)}"/>`;
+  const r=sel?5.2:3.1;
+  return `<circle class="lab-mkt" data-i="${c.index}" cx="${xAt(c.index)}" cy="${yAt(eta)}" r="${r}" fill="${fill}" opacity="${sel?1:(same?0.78:0.5)}" stroke="${sel?'#1e1a16':(same?'#c4a574':'none')}" stroke-width="${sel?1.6:(same?0.7:0)}"/>`;
  }).join('');
  svg.innerHTML=`${remainBand}${selBand}${grid}${dots}${callout}<text x="${pL}" y="${H-8}" fill="#7a7368" font-size="9">0</text><text x="${pL+pw/2}" y="${H-8}" text-anchor="middle" fill="#7a7368" font-size="9">Market (cell)</text><text x="${pL+pw}" y="${H-8}" text-anchor="end" fill="#7a7368" font-size="9">${xmax}</text>`;
  svg.querySelectorAll('.lab-mkt').forEach(el=>{
@@ -2352,7 +2353,7 @@ function showLabCampaignTip(ev, index){
  const tip=$('labCampaignTip'); if(!tip) return;
  const c=(lab.cells||[]).find(x=>x.index===index); if(!c) return;
  const eta=c.efficiency==null?'—':Number(c.efficiency).toFixed(1)+'%';
- tip.innerHTML=`<b>Cell ${c.index}</b>η = ${eta}<br>trades = ${esc(c.trades??0)}`;
+ tip.innerHTML=`<b>Cell ${c.index}</b>η = ${eta}<br>trades = ${esc(c.trades??0)}<br>source ${esc((c.evidence_file||'cell_evidence').split('/').pop())}`;
  tip.classList.add('show');
  const plot=tip.parentElement.getBoundingClientRect();
  let x=ev.clientX-plot.left+10, y=ev.clientY-plot.top-8;
@@ -2370,7 +2371,9 @@ function renderLabEvidence(){
  if(!turn && ev && (ev.buyer||ev.seller)) turn=turns.find(t=>t.agent_id===ev.buyer||t.agent_id===ev.seller);
  setText('labAsked', turn?.canonical_request || (ev?JSON.stringify(ev,null,2):'Select an agent, trade, or event.'));
  setText('labReplied', turn?.raw_provider_response || (ev?.kind==='trade'?'Trade record has no LLM reply — counterparties and price are in the observation file.':'—'));
- setText('labEvidenceNote', turn?`Archived turn for ${turn.agent_id} at t=${turn.time} · ${turn.model||''}.`:'Click an agent, trade line, or replay event to inspect the stored observation.');
+ const parse=c?.observation_parse||{};
+ const src=c?.graphs_backed_by_observation?(parse.repaired_on_read?'Observation loaded with on-read JSON repair; archive file unchanged.':'Native archived observation.'):'Observation file unreadable; floor/tape show no invented events. η still comes from cell_evidence.';
+ setText('labEvidenceNote', turn?`Archived turn for ${turn.agent_id} at t=${turn.time} · ${turn.model||''}. ${src}`:(ev?src:'Click an agent, trade line, or replay event to inspect the stored observation.'));
 }
 function selectLabAgent(id){
  lab.selectedAgent=id;
@@ -3042,47 +3045,6 @@ trouble:['Troubleshooting',`<h3>Graph is empty</h3><p>Confirm the experiment has
  list.addEventListener('click',e=>{const b=e.target.closest('.v23-agent');if(b)select(b.dataset.id)});
  document.getElementById('v23-clear')?.addEventListener('click',()=>{document.querySelectorAll('.v23-agent').forEach(x=>x.classList.remove('active'));['v23-value','v23-decision','v23-order','v23-book','v23-trade'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('v23-explanation-text').textContent='Select a trader. The explanation will distinguish recorded action from interpretation.'});
  init();
-})();
-</script>
-
-<script>
-(function(){
- const events=[
-  {turn:0,agent:2,role:'BUYER',decision:'BUY',order:'$91',outcome:'TRADE @ $91',bid:['$91','Agent 2'],ask:['$98','Agent 5'],event:'BUY order crosses resting ask'},
-  {turn:1,agent:3,role:'SELLER',decision:'SELL',order:'$89',outcome:'TRADE @ $89',bid:['$89','Agent 6'],ask:['$89','Agent 3'],event:'SELL order crosses bid'},
-  {turn:2,agent:6,role:'BUYER',decision:'BUY',order:'$90',outcome:'TRADE @ $90',bid:['$90','Agent 6'],ask:['$90','Agent 5'],event:'BUY order matches ask'},
-  {turn:3,agent:8,role:'BUYER',decision:'BUY',order:'$88',outcome:'RESTING',bid:['$88','Agent 8'],ask:['$—','—'],event:'BUY order rests on book'},
-  {turn:4,agent:1,role:'SELLER',decision:'SELL',order:'$84',outcome:'RESTING',bid:['$—','—'],ask:['$84','Agent 1'],event:'SELL order rests on book'},
-  {turn:5,agent:0,role:'BUYER',decision:'HOLD',order:'—',outcome:'NO ORDER',bid:['$—','—'],ask:['$—','—'],event:'Agent holds'}
- ];
- let idx=0, timer=null;
- const $=id=>document.getElementById(id);
- function render(){
-   const e=events[idx]; $('v25-turn').textContent='TURN '+e.turn; $('v25-event').textContent=e.event;
-   $('v25-count').textContent=(idx+1)+' / '+events.length; $('v25-book-state').textContent=e.outcome;
-   $('v25-asks').innerHTML='<div class="v25-level '+(e.outcome.includes('TRADE')?'active':'')+'"><span>'+e.ask[1]+'</span><b>'+e.ask[0]+'</b></div>';
-   $('v25-bids').innerHTML='<div class="v25-level '+(e.outcome.includes('TRADE')?'active':'')+'"><span>'+e.bid[1]+'</span><b>'+e.bid[0]+'</b></div>';
-   $('v25-trade-line').innerHTML=e.outcome.includes('TRADE')?'<div class="v25-trade"></div>':'';
-   $('v25-focus-role').textContent=e.role;
-   $('v25-agent-focus').innerHTML='<div class="v25-focus-name">Agent '+e.agent+'</div><div class="v25-focus-meta">'+e.role+' · private value recorded in session evidence</div>';
-   $('v25-decision').textContent=e.decision; $('v25-order').textContent=e.order; $('v25-outcome').textContent=e.outcome;
-   $('v25-evidence-copy').textContent='Selected event: '+e.event+'. The replay is a visual projection of recorded session state; it does not create or alter observations.';
-   $('v25-slider').value=idx;
-   document.querySelectorAll('.v25-event-row').forEach((x,i)=>x.classList.toggle('active',i===idx));
- }
- function buildTape(){
-   $('v25-tape-list').innerHTML=events.map((e,i)=>'<div class="v25-event-row" data-i="'+i+'"><span>TURN '+e.turn+'</span><b>Agent '+e.agent+' · '+e.decision+'</b><em>'+e.outcome+'</em></div>').join('');
- }
- function set(i){idx=Math.max(0,Math.min(events.length-1,i));render()}
- $('v25-prev').onclick=()=>set(idx-1); $('v25-next').onclick=()=>set(idx+1);
- $('v25-slider').oninput=e=>set(Number(e.target.value));
- $('v25-tape-list').onclick=e=>{const r=e.target.closest('.v25-event-row');if(r)set(Number(r.dataset.i))};
- $('v25-play').onclick=()=>{
-   if(timer){clearInterval(timer);timer=null;$('v25-play').textContent='▶ Replay';return}
-   $('v25-play').textContent='Ⅱ Pause'; set(idx);
-   timer=setInterval(()=>{if(idx>=events.length-1){clearInterval(timer);timer=null;$('v25-play').textContent='▶ Replay';return}set(idx+1)},900);
- };
- buildTape();render();
 })();
 </script>
 

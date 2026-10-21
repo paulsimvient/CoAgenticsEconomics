@@ -1,0 +1,9 @@
+{
+  "release": "V28",
+  "name": "Campaign Overview",
+  "independent_markets": true,
+  "canonical_selection": "CoAgenticsCellState.select(index)",
+  "authoritative_endpoint": "/api/dv026/lab/cells",
+  "synthetic_campaign_data": false,
+  "guide_updated": true
+}

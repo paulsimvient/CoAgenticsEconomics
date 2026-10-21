@@ -1,0 +1,7 @@
+{
+  "release": "V26",
+  "name": "Evidence-Driven Replay",
+  "hard_coded_replay_removed": true,
+  "fail_closed": true,
+  "guide_updated": true
+}
