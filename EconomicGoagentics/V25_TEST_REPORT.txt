@@ -1,0 +1,76 @@
+Internal ctest changing into directory: /mnt/data/v25work/build
+Test project /mnt/data/v25work/build
+      Start  1: market_smoke
+ 1/35 Test  #1: market_smoke ..........................   Passed    0.00 sec
+      Start  2: paired_intervention_smoke
+ 2/35 Test  #2: paired_intervention_smoke .............   Passed    0.00 sec
+      Start  3: private_value_efficiency
+ 3/35 Test  #3: private_value_efficiency ..............   Passed    0.00 sec
+      Start  4: information_timeline_smoke
+ 4/35 Test  #4: information_timeline_smoke ............   Passed    0.00 sec
+      Start  5: behavior_features_smoke
+ 5/35 Test  #5: behavior_features_smoke ...............   Passed    0.00 sec
+      Start  6: reference_agents_smoke
+ 6/35 Test  #6: reference_agents_smoke ................   Passed    0.01 sec
+      Start  7: paired_news_experiment
+ 7/35 Test  #7: paired_news_experiment ................   Passed    0.02 sec
+      Start  8: agent_response_experiment
+ 8/35 Test  #8: agent_response_experiment .............   Passed    0.00 sec
+      Start  9: null_response_experiment
+ 9/35 Test  #9: null_response_experiment ..............   Passed    0.00 sec
+      Start 10: recovery_metric_smoke
+10/35 Test #10: recovery_metric_smoke .................   Passed    0.00 sec
+      Start 11: transient_information_smoke
+11/35 Test #11: transient_information_smoke ...........   Passed    0.00 sec
+      Start 12: hypothesis_discrimination_smoke
+12/35 Test #12: hypothesis_discrimination_smoke .......   Passed    0.00 sec
+      Start 13: competing_hypotheses_smoke
+13/35 Test #13: competing_hypotheses_smoke ............   Passed    0.00 sec
+      Start 14: evidence_store_smoke
+14/35 Test #14: evidence_store_smoke ..................   Passed    0.00 sec
+      Start 15: campaign_runner_smoke
+15/35 Test #15: campaign_runner_smoke .................   Passed    0.00 sec
+      Start 16: benchmark_battery_smoke
+16/35 Test #16: benchmark_battery_smoke ...............   Passed    0.00 sec
+      Start 17: darpa_compliance_core
+17/35 Test #17: darpa_compliance_core .................   Passed    0.00 sec
+      Start 18: llm_harness_smoke
+18/35 Test #18: llm_harness_smoke .....................   Passed    0.00 sec
+      Start 19: cross_model_human_reference_smoke
+19/35 Test #19: cross_model_human_reference_smoke .....   Passed    0.00 sec
+      Start 20: v10_qualification_smoke
+20/35 Test #20: v10_qualification_smoke ...............   Passed    0.00 sec
+      Start 21: v11_market_fidelity_smoke
+21/35 Test #21: v11_market_fidelity_smoke .............   Passed    0.02 sec
+      Start 22: v12_market_fidelity_smoke
+22/35 Test #22: v12_market_fidelity_smoke .............   Passed    0.02 sec
+      Start 23: v13_institutional_attribution_smoke
+23/35 Test #23: v13_institutional_attribution_smoke ...   Passed    0.02 sec
+      Start 24: v14_behavioral_phenotyping_smoke
+24/35 Test #24: v14_behavioral_phenotyping_smoke ......   Passed    0.00 sec
+      Start 25: v15_scientist_smoke
+25/35 Test #25: v15_scientist_smoke ...................   Passed    0.00 sec
+      Start 26: v16_market_scientist_smoke
+26/35 Test #26: v16_market_scientist_smoke ............   Passed    0.00 sec
+      Start 27: v17_scientist_calibration_smoke
+27/35 Test #27: v17_scientist_calibration_smoke .......   Passed    0.06 sec
+      Start 28: v18_temporal_validation_smoke
+28/35 Test #28: v18_temporal_validation_smoke .........   Passed    0.00 sec
+      Start 29: v19_market_temporal_smoke
+29/35 Test #29: v19_market_temporal_smoke .............   Passed    0.05 sec
+      Start 30: v20_decision_trace_smoke
+30/35 Test #30: v20_decision_trace_smoke ..............   Passed    0.02 sec
+      Start 31: v21_black_box_smoke
+31/35 Test #31: v21_black_box_smoke ...................   Passed    0.00 sec
+      Start 32: v22_robustness_smoke
+32/35 Test #32: v22_robustness_smoke ..................   Passed    0.00 sec
+      Start 33: v23_human_comparison_smoke
+33/35 Test #33: v23_human_comparison_smoke ............   Passed    0.00 sec
+      Start 34: v24_v25_influence_network_smoke
+34/35 Test #34: v24_v25_influence_network_smoke .......   Passed    0.00 sec
+      Start 35: v25_network_market_smoke
+35/35 Test #35: v25_network_market_smoke ..............   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 35
+
+Total Test time (real) =   0.29 sec

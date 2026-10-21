@@ -1,0 +1,176 @@
+[  1%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Agents.cpp.o
+[  1%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Market.cpp.o
+[  2%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Hypothesis.cpp.o
+[  3%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Intervention.cpp.o
+[  4%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Experiment.cpp.o
+[  5%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Behavior.cpp.o
+[  6%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Runner.cpp.o
+[  6%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Evidence.cpp.o
+[  7%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Campaign.cpp.o
+[  8%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Benchmark.cpp.o
+[  8%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Mechanism.cpp.o
+[  9%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Classifier.cpp.o
+[ 10%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Discrimination.cpp.o
+[ 11%] Building CXX object CMakeFiles/coagentics_lab.dir/src/LlmHarness.cpp.o
+[ 12%] Building CXX object CMakeFiles/coagentics_lab.dir/src/HumanReference.cpp.o
+[ 12%] Building CXX object CMakeFiles/coagentics_lab.dir/src/CrossModelCampaign.cpp.o
+[ 13%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Qualification.cpp.o
+[ 14%] Building CXX object CMakeFiles/coagentics_lab.dir/src/MarketFidelity.cpp.o
+[ 15%] Building CXX object CMakeFiles/coagentics_lab.dir/src/InstitutionalAttribution.cpp.o
+[ 16%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Phenotype.cpp.o
+[ 16%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Scientist.cpp.o
+[ 17%] Building CXX object CMakeFiles/coagentics_lab.dir/src/MarketScientist.cpp.o
+[ 18%] Building CXX object CMakeFiles/coagentics_lab.dir/src/ScientistCalibration.cpp.o
+[ 19%] Building CXX object CMakeFiles/coagentics_lab.dir/src/TemporalValidation.cpp.o
+[ 19%] Building CXX object CMakeFiles/coagentics_lab.dir/src/MarketTemporalValidation.cpp.o
+[ 20%] Building CXX object CMakeFiles/coagentics_lab.dir/src/DecisionTraceValidation.cpp.o
+[ 21%] Building CXX object CMakeFiles/coagentics_lab.dir/src/BlackBox.cpp.o
+[ 22%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Robustness.cpp.o
+[ 23%] Building CXX object CMakeFiles/coagentics_lab.dir/src/HumanComparison.cpp.o
+[ 23%] Building CXX object CMakeFiles/coagentics_lab.dir/src/Influence.cpp.o
+[ 24%] Linking CXX static library libcoagentics_lab.a
+[ 24%] Built target coagentics_lab
+[ 25%] Building CXX object CMakeFiles/market_smoke.dir/tests/market_smoke.cpp.o
+[ 25%] Building CXX object CMakeFiles/dv026-demo.dir/src/main.cpp.o
+[ 25%] Building CXX object CMakeFiles/private_value_efficiency.dir/tests/private_value_efficiency.cpp.o
+[ 26%] Building CXX object CMakeFiles/behavior_features_smoke.dir/tests/behavior_features_smoke.cpp.o
+[ 27%] Building CXX object CMakeFiles/information_timeline_smoke.dir/tests/information_timeline_smoke.cpp.o
+[ 28%] Building CXX object CMakeFiles/paired_intervention_smoke.dir/tests/paired_intervention_smoke.cpp.o
+[ 28%] Building CXX object CMakeFiles/reference_agents_smoke.dir/tests/reference_agents_smoke.cpp.o
+[ 29%] Building CXX object CMakeFiles/paired_news_experiment.dir/tests/paired_news_experiment.cpp.o
+[ 30%] Linking CXX executable paired_intervention_smoke
+[ 31%] Linking CXX executable information_timeline_smoke
+[ 31%] Built target information_timeline_smoke
+[ 31%] Built target paired_intervention_smoke
+[ 31%] Building CXX object CMakeFiles/agent_response_experiment.dir/tests/agent_response_experiment.cpp.o
+[ 32%] Building CXX object CMakeFiles/null_response_experiment.dir/tests/null_response_experiment.cpp.o
+[ 32%] Linking CXX executable reference_agents_smoke
+[ 32%] Built target reference_agents_smoke
+[ 33%] Building CXX object CMakeFiles/recovery_metric_smoke.dir/tests/recovery_metric_smoke.cpp.o
+[ 34%] Linking CXX executable private_value_efficiency
+[ 34%] Built target private_value_efficiency
+[ 35%] Building CXX object CMakeFiles/transient_information_smoke.dir/tests/transient_information_smoke.cpp.o
+[ 36%] Linking CXX executable null_response_experiment
+[ 36%] Built target null_response_experiment
+[ 36%] Building CXX object CMakeFiles/hypothesis_discrimination_smoke.dir/tests/hypothesis_discrimination_smoke.cpp.o
+[ 37%] Linking CXX executable behavior_features_smoke
+[ 38%] Linking CXX executable market_smoke
+[ 39%] Linking CXX executable paired_news_experiment
+[ 39%] Built target behavior_features_smoke
+[ 39%] Built target market_smoke
+[ 40%] Building CXX object CMakeFiles/competing_hypotheses_smoke.dir/tests/competing_hypotheses_smoke.cpp.o
+[ 41%] Linking CXX executable dv026-demo
+[ 41%] Built target paired_news_experiment
+[ 42%] Building CXX object CMakeFiles/evidence_store_smoke.dir/tests/evidence_store_smoke.cpp.o
+[ 43%] Linking CXX executable transient_information_smoke
+[ 44%] Building CXX object CMakeFiles/dv026-campaign.dir/src/campaign_main.cpp.o
+[ 44%] Built target dv026-demo
+[ 45%] Linking CXX executable hypothesis_discrimination_smoke
+[ 46%] Building CXX object CMakeFiles/campaign_runner_smoke.dir/tests/campaign_runner_smoke.cpp.o
+[ 46%] Built target transient_information_smoke
+[ 46%] Building CXX object CMakeFiles/benchmark_battery_smoke.dir/tests/benchmark_battery_smoke.cpp.o
+[ 46%] Built target hypothesis_discrimination_smoke
+[ 47%] Building CXX object CMakeFiles/darpa_compliance_core.dir/tests/darpa_compliance_core.cpp.o
+[ 48%] Linking CXX executable competing_hypotheses_smoke
+[ 49%] Linking CXX executable agent_response_experiment
+[ 50%] Linking CXX executable recovery_metric_smoke
+[ 50%] Built target recovery_metric_smoke
+[ 51%] Building CXX object CMakeFiles/llm_harness_smoke.dir/tests/llm_harness_smoke.cpp.o
+[ 51%] Built target competing_hypotheses_smoke
+[ 51%] Built target agent_response_experiment
+[ 52%] Linking CXX executable evidence_store_smoke
+[ 53%] Building CXX object CMakeFiles/cross_model_human_reference_smoke.dir/tests/cross_model_human_reference_smoke.cpp.o
+[ 54%] Building CXX object CMakeFiles/v10_qualification_smoke.dir/tests/v10_qualification_smoke.cpp.o
+[ 54%] Built target evidence_store_smoke
+[ 54%] Building CXX object CMakeFiles/v11_market_fidelity_smoke.dir/tests/v11_market_fidelity_smoke.cpp.o
+[ 55%] Linking CXX executable campaign_runner_smoke
+[ 56%] Linking CXX executable benchmark_battery_smoke
+[ 56%] Built target benchmark_battery_smoke
+[ 57%] Building CXX object CMakeFiles/v12_market_fidelity_smoke.dir/tests/v12_market_fidelity_smoke.cpp.o
+[ 57%] Built target campaign_runner_smoke
+[ 58%] Building CXX object CMakeFiles/v13_institutional_attribution_smoke.dir/tests/v13_institutional_attribution_smoke.cpp.o
+[ 59%] Linking CXX executable v12_market_fidelity_smoke
+[ 59%] Built target v12_market_fidelity_smoke
+[ 59%] Building CXX object CMakeFiles/v13-attribution.dir/src/v13_attribution_main.cpp.o
+[ 59%] Linking CXX executable cross_model_human_reference_smoke
+[ 60%] Linking CXX executable dv026-campaign
+[ 61%] Linking CXX executable v11_market_fidelity_smoke
+[ 61%] Built target dv026-campaign
+[ 62%] Building CXX object CMakeFiles/v14_behavioral_phenotyping_smoke.dir/tests/v14_behavioral_phenotyping_smoke.cpp.o
+[ 62%] Built target cross_model_human_reference_smoke
+[ 63%] Linking CXX executable v13-attribution
+[ 63%] Built target v11_market_fidelity_smoke
+[ 64%] Building CXX object CMakeFiles/v14-phenotype.dir/src/v14_phenotype_main.cpp.o
+[ 65%] Building CXX object CMakeFiles/v15-scientist.dir/src/v15_scientist_main.cpp.o
+[ 65%] Built target v13-attribution
+[ 66%] Linking CXX executable v10_qualification_smoke
+[ 66%] Building CXX object CMakeFiles/v15_scientist_smoke.dir/tests/v15_scientist_smoke.cpp.o
+[ 67%] Linking CXX executable darpa_compliance_core
+[ 67%] Built target v10_qualification_smoke
+[ 68%] Building CXX object CMakeFiles/v16-market-scientist.dir/src/v16_market_scientist_main.cpp.o
+[ 68%] Built target darpa_compliance_core
+[ 69%] Building CXX object CMakeFiles/v16_market_scientist_smoke.dir/tests/v16_market_scientist_smoke.cpp.o
+[ 70%] Linking CXX executable v13_institutional_attribution_smoke
+[ 70%] Built target v13_institutional_attribution_smoke
+[ 71%] Building CXX object CMakeFiles/v17-calibration.dir/src/v17_calibration_main.cpp.o
+[ 72%] Linking CXX executable v15-scientist
+[ 72%] Linking CXX executable v16_market_scientist_smoke
+[ 72%] Built target v15-scientist
+[ 73%] Building CXX object CMakeFiles/v17_scientist_calibration_smoke.dir/tests/v17_scientist_calibration_smoke.cpp.o
+[ 73%] Built target v16_market_scientist_smoke
+[ 73%] Linking CXX executable llm_harness_smoke
+[ 74%] Building CXX object CMakeFiles/v18-temporal.dir/src/v18_temporal_main.cpp.o
+[ 75%] Linking CXX executable v17-calibration
+[ 75%] Built target llm_harness_smoke
+[ 76%] Building CXX object CMakeFiles/v18_temporal_validation_smoke.dir/tests/v18_temporal_validation_smoke.cpp.o
+[ 76%] Built target v17-calibration
+[ 76%] Building CXX object CMakeFiles/v19-market-temporal.dir/src/v19_market_temporal_main.cpp.o
+[ 77%] Linking CXX executable v16-market-scientist
+[ 78%] Linking CXX executable v14_behavioral_phenotyping_smoke
+[ 78%] Built target v16-market-scientist
+[ 79%] Linking CXX executable v15_scientist_smoke
+[ 80%] Building CXX object CMakeFiles/v19_market_temporal_smoke.dir/tests/v19_market_temporal_smoke.cpp.o
+[ 80%] Built target v14_behavioral_phenotyping_smoke
+[ 81%] Building CXX object CMakeFiles/v20-decision-trace.dir/src/v20_decision_trace_main.cpp.o
+[ 81%] Built target v15_scientist_smoke
+[ 81%] Linking CXX executable v17_scientist_calibration_smoke
+[ 82%] Building CXX object CMakeFiles/v20_decision_trace_smoke.dir/tests/v20_decision_trace_smoke.cpp.o
+[ 83%] Linking CXX executable v18_temporal_validation_smoke
+[ 84%] Linking CXX executable v19-market-temporal
+[ 84%] Built target v17_scientist_calibration_smoke
+[ 84%] Built target v18_temporal_validation_smoke
+[ 85%] Building CXX object CMakeFiles/v20-trace-export.dir/src/v20_trace_export_main.cpp.o
+[ 85%] Built target v19-market-temporal
+[ 85%] Linking CXX executable v14-phenotype
+[ 86%] Building CXX object CMakeFiles/v21_black_box_smoke.dir/tests/v21_black_box_smoke.cpp.o
+[ 87%] Building CXX object CMakeFiles/v21-black-box.dir/src/v21_black_box_main.cpp.o
+[ 88%] Linking CXX executable v19_market_temporal_smoke
+[ 88%] Built target v14-phenotype
+[ 89%] Linking CXX executable v18-temporal
+[ 89%] Building CXX object CMakeFiles/v22-robustness.dir/src/v22_robustness_main.cpp.o
+[ 89%] Built target v19_market_temporal_smoke
+[ 90%] Building CXX object CMakeFiles/v22_robustness_smoke.dir/tests/v22_robustness_smoke.cpp.o
+[ 90%] Linking CXX executable v20-decision-trace
+[ 90%] Built target v18-temporal
+[ 91%] Building CXX object CMakeFiles/v23-human-comparison.dir/src/v23_human_main.cpp.o
+[ 91%] Built target v20-decision-trace
+[ 92%] Building CXX object CMakeFiles/v23_human_comparison_smoke.dir/tests/v23_human_comparison_smoke.cpp.o
+[ 93%] Linking CXX executable v20-trace-export
+[ 94%] Linking CXX executable v21-black-box
+[ 94%] Built target v20-trace-export
+[ 94%] Built target v21-black-box
+[ 95%] Building CXX object CMakeFiles/v24_v25_influence_network_smoke.dir/tests/v24_v25_influence_network_smoke.cpp.o
+[ 96%] Linking CXX executable v21_black_box_smoke
+[ 96%] Linking CXX executable v20_decision_trace_smoke
+[ 97%] Linking CXX executable v22_robustness_smoke
+[ 97%] Linking CXX executable v23-human-comparison
+[ 97%] Built target v21_black_box_smoke
+[ 97%] Built target v20_decision_trace_smoke
+[ 97%] Built target v23-human-comparison
+[ 97%] Built target v22_robustness_smoke
+[ 98%] Linking CXX executable v22-robustness
+[ 98%] Built target v22-robustness
+[ 99%] Linking CXX executable v23_human_comparison_smoke
+[100%] Linking CXX executable v24_v25_influence_network_smoke
+[100%] Built target v23_human_comparison_smoke
+[100%] Built target v24_v25_influence_network_smoke

@@ -1,0 +1,6 @@
+{"timestamp": "2026-10-17T13:17:03Z", "action": "experiment.lifecycle.transition", "detail": "DRAFT → DESIGN_REVIEW · Test design review", "workspace": "DV026 Economic Behavior", "actor": "Researcher"}
+{"timestamp": "2026-10-19T12:32:37Z", "action": "research-object.upsert", "detail": "experiments exp_59a3729e42da", "workspace": "unknown", "actor": "Researcher"}
+{"timestamp": "2026-10-21T14:46:54Z", "action": "experiment.lifecycle.transition", "detail": "DRAFT → DESIGN_REVIEW · Expectations frozen; design review required.", "workspace": "DV026 Economic Behavior", "actor": "Researcher"}
+{"timestamp": "2026-10-21T14:46:55Z", "action": "experiment.lifecycle.transition", "detail": "DESIGN_REVIEW → REGISTERED · Registered frozen experiment design.", "workspace": "DV026 Economic Behavior", "actor": "Researcher"}
+{"timestamp": "2026-10-21T14:46:55Z", "action": "experiment.lifecycle.transition", "detail": "REGISTERED → FROZEN · Experiment manifest frozen before execution.", "workspace": "DV026 Economic Behavior", "actor": "Researcher"}
+{"timestamp": "2026-10-21T14:46:55Z", "action": "experiment.lifecycle.transition", "detail": "FROZEN → RUNNING · Campaign execution started.", "workspace": "DV026 Economic Behavior", "actor": "Researcher"}

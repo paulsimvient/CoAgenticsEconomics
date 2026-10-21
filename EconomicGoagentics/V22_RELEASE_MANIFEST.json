@@ -1,0 +1,15 @@
+{
+  "release": "V22",
+  "name": "Market Microstructure",
+  "source": "V21 refined",
+  "features": [
+    "persistent_agents",
+    "order_book_center",
+    "best_ask",
+    "spread",
+    "fundamental",
+    "best_bid",
+    "trade_tape"
+  ],
+  "data_rule": "archived_observations_only"
+}

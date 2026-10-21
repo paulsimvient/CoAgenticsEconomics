@@ -1,0 +1,27 @@
+{
+  "release": "V18",
+  "theme": "CoAgentics Communication Protocol",
+  "principle": "Simple path, deep system",
+  "llm_provider": "Ollama",
+  "role": "communications_and_navigation_layer",
+  "source_of_truth": "authoritative_research_objects_and_evidence",
+  "required_docs": [
+    "docs/COAGENTICS_COMMUNICATION_PROTOCOL_V18.md",
+    "docs/LLM_QUALIFICATION_V18.md",
+    "USER_GUIDE.md",
+    "ENTERPRISE_APP_SPEC_V6.md"
+  ],
+  "action_policy": {
+    "read": "no_confirmation",
+    "propose": "no_state_mutation",
+    "mutate": "explicit_confirmation_and_server_authorization",
+    "consequential": "explicit_confirmation_server_authorization_and_audit"
+  },
+  "release_gate": [
+    "design_updated",
+    "user_guide_updated",
+    "qualification_suite_run",
+    "critical_safety_tests_pass",
+    "audit_behavior_verified"
+  ]
+}

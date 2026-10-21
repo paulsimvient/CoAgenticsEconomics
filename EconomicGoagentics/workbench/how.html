@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How this works — CoAgentics</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap');
+:root{
+  --bg:#f3efe6; --panel:#fffcf7; --panel2:#f7f3ea; --line:#e4ddd0;
+  --text:#1e1a16; --muted:#7a7368; --accent:#3d8f6a; --ok:#2f7d5b; --bad:#b33b3b; --warn:#c27b2a;
+  --font:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --display:"Source Serif 4",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--font)}
+a{color:#2f7d5b}
+.wrap{max-width:760px;margin:0 auto;padding:28px 22px 80px}
+.kicker{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-size:34px;line-height:1.15;margin:8px 0 14px}
+h2{font-family:var(--display);font-size:22px;margin:32px 0 10px}
+h3{font-size:14px;margin:18px 0 6px}
+p,li{color:var(--muted)}
+.lead{font-size:18px;color:var(--text)}
+.now{border:1px solid #cfe3c4;background:#e7efe4;border-radius:14px;padding:14px 16px;margin:18px 0}
+.now b{color:var(--ok)}
+.warn{border:1px solid #efd2a8;background:#f8e4c8;border-radius:14px;padding:14px 16px;margin:18px 0;color:#7a4a12}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}
+.steps{display:grid;gap:10px;margin:14px 0}
+.step{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.n{width:36px;height:36px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;font:13px var(--mono);color:var(--accent)}
+code,kbd{font:13px var(--mono);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+pre{background:#fffdf8;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto;font:13px/1.5 var(--mono);color:var(--text)}
+.card,.step{box-shadow:0 8px 24px rgba(60,48,30,.06)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+.back{display:inline-block;margin-bottom:18px;font:12px var(--mono)}
+.foot{margin-top:36px;color:var(--muted);font:12px var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/" target="_parent">← Back to Overview (Run / Process / Results)</a>
+  <div class="kicker">CoAgentics · operator how-to</div>
+  <h1>What is going on</h1>
+  <p class="lead">This lab asks local language models (via Ollama) to trade in a small market. Each finished market is a <b>cell</b>. A <b>campaign</b> is a batch of those cells. The only page you need is Overview: Run, then Process, then Results.</p>
+
+  <div class="now">
+    <b>If Process says RUNNING n/120</b> — a campaign is already going. Watch it. Do not click Start smoke or Start full. Cells show up under Results as they finish.
+  </div>
+  <div class="warn">
+    <b>If Process says INTERRUPTED 84/120</b> — the runner is not alive. The 84 finished cells are still on disk and cannot be reconstructed. Inspect / Verify / Resume remaining / Export. Resume skips completed cells and will not overwrite them. If resume is blocked, keep those cells and run a new experiment.
+  </div>
+
+  <h2>The only URL</h2>
+  <p>Open this, from a running workbench, in a browser:</p>
+  <pre>http://127.0.0.1:8787/</pre>
+  <p>Not a file on disk. Not <code>/live.html</code>. If the address bar starts with <code>file://</code>, the page cannot talk to the lab and you will see <code>Failed to fetch</code>.</p>
+  <p>To start the workbench from the project folder:</p>
+  <pre>bash start-workbench.sh 8787</pre>
+  <p>Use <code>bash</code>. iCloud often strips execute permission, so <code>./start-workbench.sh</code> can fail.</p>
+
+  <h2>The three blocks on Overview</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="n">1</div>
+      <div>
+        <h3>Run — start (or refuse to start)</h3>
+        <p><b>Start smoke</b> is the first-run button: 2 models × 2 seeds. It skips Freeze and Layer A. Use it when nothing is running and Ollama is up.</p>
+        <p><b>Start full</b> is the long catalog run. It stays disabled until Freeze H01 and Layer A have both succeeded, and while anything is already running.</p>
+        <p><b>Freeze H01 defaults</b> locks the registered hypothesis so a full run has something frozen to test against. <b>Run Layer A</b> checks the market engine itself (not the LLMs).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="n">2</div>
+      <div>
+        <h3>Process — the live campaign</h3>
+        <p>This is the Ollama / hetero runner. <code>RUNNING 76/120</code> means 76 cells are done, 120 is the plan, and one cell is in flight. The line under the bar is the current design, seed, and ETA.</p>
+        <p>Idle copy is <b>Idle — no campaign</b>. That is different from Stopped (you cancelled, some cells may already be saved) and from <b>INTERRUPTED</b> (the process died; finished cells remain).</p>
+        <p>Stop only appears while a campaign is running. Do not start a second campaign to “fix” a slow bar. RUNNING is true only when the C++ process identity is live — not because a file is new.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="n">3</div>
+      <div>
+        <h3>Results — finished cells</h3>
+        <p>Each row is one finished market (design × seed). Click a row: <b>Asked</b> is what the model was sent; <b>Replied</b> is what it returned (often JSON like HOLD / BUY / SELL).</p>
+        <p>An empty table while Process is RUNNING only means no cell has finished yet — not that the campaign failed.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>Words on the page</h2>
+  <table>
+    <thead><tr><th>You see</th><th>It means</th></tr></thead>
+    <tbody>
+      <tr><td>Ollama · N models</td><td>The local LLM server at <code>http://127.0.0.1:11434</code> is reachable and has N models loaded.</td></tr>
+      <tr><td>H01 frozen</td><td>The default hypothesis is locked. Needed for a full run, not for smoke.</td></tr>
+      <tr><td>Layer A passed</td><td>The C++ market engine passed a qualification gate. Needed for a full run, not for smoke.</td></tr>
+      <tr><td>Campaign running</td><td>One campaign is in progress. Start buttons stay off on purpose.</td></tr>
+      <tr><td>INTERRUPTED n/120</td><td>The runner is not alive. Finished cells are the archive. Verify, then Resume remaining starts only unfinished cells and will not overwrite 0–n-1.</td></tr>
+      <tr><td>Archive</td><td>Completed cell_evidence on disk. Visualize is a read-only replay of those markets. Remaining cells are labeled not yet run until they actually finish.</td></tr>
+      <tr><td>Cell</td><td>One finished market run. Hetero cells are design × repeat × seed, not “one model.”</td></tr>
+      <tr><td>η</td><td>Allocative efficiency for that cell, if the runner recorded it. It is not a live price chart.</td></tr>
+      <tr><td>Visualize &amp; Analyze</td><td>Read-only replay of completed cells. Agents sit in a schematic by recorded role. Click an agent or trade to see the archived prompt and reply.</td></tr>
+      <tr><td>hetero-campaign</td><td>The current 120-cell runner (population designs × repeats × seeds against Ollama).</td></tr>
+      <tr><td>Not this experiment</td><td>The old C++ live-market chart. Idle. Folded away. Ignore it.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>There are two runners. Only one is yours.</h2>
+  <div class="card">
+    <p><b>The experiment:</b> Ollama models step through a market. Progress is Process + Results. Files land under <code>results/dv026_heterogeneous_campaign/</code>.</p>
+    <p><b>Not the experiment:</b> a paced C++ toy market used by older UI. Empty chart, “C++ LIVE MARKET,” order book with no trades. It can be idle while the real campaign is at 76/120.</p>
+  </div>
+
+  <h2>What you should do</h2>
+  <ol>
+    <li>Stay on <a href="/">http://127.0.0.1:8787/</a>.</li>
+    <li>If Process says RUNNING, wait. Click Results rows if you want to see a prompt and a reply.</li>
+    <li>If Process says INTERRUPTED, do not start a second campaign to replace it. The finished cells are the observations. Verify, then resume remaining cells, or export and keep them.</li>
+    <li>When it hits complete, read the table. Do not treat completion as a scientific claim — that is a later, gated step.</li>
+    <li>Next time, from a cold start: confirm Ollama is up, click <b>Start smoke</b>, watch Process, then consider Freeze + Layer A + Start full.</li>
+  </ol>
+
+  <div class="warn">
+    <b>Do not</b> start smoke or full while one campaign is running. Do not open <code>interface.html</code> from Finder. Do not use <code>/live.html</code> as the watch surface (that page is an advanced console). Do not kill the workbench hoping it will restart the campaign — the campaign is a separate C++ process; the page only reports it.
+  </div>
+
+  <h2>If it looks broken</h2>
+  <table>
+    <thead><tr><th>Symptom</th><th>Cause</th></tr></thead>
+    <tbody>
+      <tr><td><code>Failed to fetch</code></td><td>Browser never reached the workbench. Wrong URL, or <code>live_server.py</code> is not running on 8787.</td></tr>
+      <tr><td>Empty C++ chart plus RUNNING in a corner</td><td>You scrolled into leftover dashboard chrome. Refresh Overview; the campaign is Process, not the chart.</td></tr>
+      <tr><td>Start full says Freeze H01 first</td><td>Full runs require a frozen hypothesis. Smoke does not.</td></tr>
+      <tr><td>Ollama offline</td><td>Start Ollama locally, then refresh. The lab will not invent models.</td></tr>
+      <tr><td>INTERRUPTED after reboot</td><td>Expected. File clocks are not a live process. Finished cells stay; resume only after Verify passes.</td></tr>
+      <tr><td>404 on <code>/live</code></td><td>The path is <code>/live.html</code>, and you do not need it.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Visualize &amp; Analyze</h2>
+  <p>This is a two-level explorer. The top plot is the <b>archive of completed markets</b> (each completed cell is one CDA session), plus a cream band for cells not yet run. Click a completed point to open <b>that market</b>: 10 agents around a recorded order book. Grey dashed lines are resting archived bids; orange is a recorded trade. η is the session outcome from <code>cell_evidence</code>. Replay does not invent motion and does not resume the campaign.</p>
+  <p>Overview is the continuation console: Inspect the archive, Verify, then <b>Resume remaining</b>. That starts only unfinished cells (84–119 on the current run) and refuses to overwrite the archive.</p>
+
+  <h2>Sidebar pages</h2>
+  <p>Overview is the operator path. Visualize &amp; Analyze is the read-only market lab. Experiment Builder, Evidence, Validation, Portfolio, Ask, and the Research Console at <a href="/live.html">/live.html</a> are extra surfaces. They do not replace Run / Process / Results, and several of them still show older chrome. If you get lost, come back here, then click Overview.</p>
+
+  <p class="foot">This page is the operator how-to. It describes the current workbench, not the DARPA proposal stack or the enterprise overlays.</p>
+</div>
+</body>
+</html>

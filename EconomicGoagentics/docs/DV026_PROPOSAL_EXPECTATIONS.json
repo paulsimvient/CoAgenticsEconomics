@@ -1,0 +1,63 @@
+{
+  "source": "INVIA_DV026_White_Paper_FINAL_MULTI_AGENT_MULTI_LLM_REVISED_FEEDBACK_FIXED.docx",
+  "topic": "DARPA DPA26BZ06-DV026 Phase I — Influence Benchmarks for AI Systems",
+  "scope_note": "Statuses reflect local executable evidence only (Layer A + Ollama campaign). local_ollama_poc is not a commercial 10-provider matrix. Phase I classifier accuracy (FAQ 31) and Phase II constructs remain unclaimed.",
+  "expectations": [
+    {
+      "id": "M2-mech",
+      "milestone": "M2",
+      "title": "Market mechanics",
+      "gate": "layer_a_present",
+      "text": "Qualify the CoAgentics economic Domain: verify CDA and sealed-bid rules, private values/costs, payouts, consumer utility, welfare optimum, efficiency definitions, and timestamped news controls."
+    },
+    {
+      "id": "M2-eff",
+      "milestone": "M2",
+      "title": "Above-90% efficiency",
+      "gate": "layer_a_qualified",
+      "text": "Documented >90% allocative-efficiency demonstration under Phase I proof-of-concept conditions (every required Layer A trial exceeds 90% on CDA and sealed-bid)."
+    },
+    {
+      "id": "M6-schema",
+      "milestone": "M6",
+      "title": "Action schema",
+      "gate": "interface_health",
+      "text": "Establish the standard market action schema (time, asset, quantity, price) with validation, failure handling, and retained parse/validity evidence for live agent submissions."
+    },
+    {
+      "id": "M9-10llm",
+      "milestone": "M9",
+      "title": "Ten live LLM agents",
+      "gate": "ten_models_covered",
+      "text": "Demonstrate ≥10 distinct underlying LLM stock agents actually exercised in-market, with retained model/configuration, observation, response, validated action, outcome, and failures."
+    },
+    {
+      "id": "M12-eff",
+      "milestone": "M12",
+      "title": "PoC efficiency replay",
+      "gate": "layer_a_qualified",
+      "text": "Qualify the dynamic-market proof of concept by reproducing >90% allocative efficiency under documented qualification conditions with bidding/allocation comparison data."
+    },
+    {
+      "id": "M12-human",
+      "milestone": "M12",
+      "title": "Human-market reference",
+      "gate": "human_ref",
+      "text": "Where protocol-compatible, provide economics/computational-social-science-led human-market reference comparison (DESCRIPTIVE archival/literature reference; not new human-subject collection)."
+    },
+    {
+      "id": "Evidence",
+      "milestone": "cross-cutting",
+      "title": "Evidence chain",
+      "gate": "provenance",
+      "text": "Retain an evidence chain for each trial: observation → provider response → parsed/validated action → market result → replay/provenance so a model or efficiency result counts only after executable evidence is retained."
+    },
+    {
+      "id": "Boundary",
+      "milestone": "cross-cutting",
+      "title": "Claim boundary",
+      "gate": "claim_boundary",
+      "text": "Keep synthetic/software fixtures distinct from empirical live-LLM evidence; do not claim Phase II construct validation or Phase I classifier accuracy metrics."
+    }
+  ]
+}

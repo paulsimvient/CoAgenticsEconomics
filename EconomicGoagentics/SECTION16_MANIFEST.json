@@ -1,0 +1,14 @@
+{
+  "section": 16,
+  "title": "Persistent and Longitudinal Agents",
+  "base": "CoAgentics Advanced Build Section 15",
+  "status": "memory subsystem plus explicit population-runner integration boundary",
+  "added": [
+    "include/coagentics/agents/PersistentMemory.hpp",
+    "src/PersistentMemory.cpp",
+    "tests/persistent_memory_smoke.cpp",
+    "include/coagentics/agents/PersistentMemoryAgent.hpp",
+    "src_PersistentMemoryAgent.cpp",
+    "tests/persistent_memory_agent_smoke.cpp"
+  ]
+}

@@ -1,0 +1,7 @@
+# v21 — Black-box qualification boundary
+
+This version adds a generic observation-only inference API (`extract_black_box_features`, `infer_black_box`) that consumes existing v8 `HarnessRecord` data. Its input contains only observable request/response fields; the control label and mechanism are held separately by the validation caller. The probe plan is preregistered (baseline, news, withdrawal, reversal, peer), with 12 repeats per stage. Stage is encoded in the public observation timestamp. Model/provider/version and raw output strings are deliberately excluded from the classifier; a metadata-tampering test checks that they cannot change predictions.
+
+The qualification transport generates four scripted response signatures to exercise the entire v8 model-provider path. It is **not** a live LLM provider. These synthetic controls are intentionally clean and deterministic; 100% control recovery is a software qualification result, not a generalization or scientific claim. Four signatures do not cover risk sensitivity, arbitrary adaptation, nonlinear market confounds or unknown behavior. The classifier must abstain on insufficient or unreliable observations.
+
+Next steps: attach a user-authorized live provider transport, add response-format parsing and timeout handling, collect matched market-level traces on untouched runs, calibrate predictive uncertainty and test out-of-distribution abstention. No credentials are bundled.

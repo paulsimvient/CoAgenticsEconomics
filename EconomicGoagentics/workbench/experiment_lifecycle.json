@@ -1,0 +1,36 @@
+{
+  "schema_version": "coagentics-experiment-lifecycle-v1",
+  "experiment_id": "DV026",
+  "state": "RUNNING",
+  "version": 5,
+  "history": [
+    {
+      "timestamp": "2026-10-21T14:46:54Z",
+      "from": "DRAFT",
+      "to": "DESIGN_REVIEW",
+      "actor": "Researcher",
+      "reason": "Expectations frozen; design review required."
+    },
+    {
+      "timestamp": "2026-10-21T14:46:55Z",
+      "from": "DESIGN_REVIEW",
+      "to": "REGISTERED",
+      "actor": "Researcher",
+      "reason": "Registered frozen experiment design."
+    },
+    {
+      "timestamp": "2026-10-21T14:46:55Z",
+      "from": "REGISTERED",
+      "to": "FROZEN",
+      "actor": "Researcher",
+      "reason": "Experiment manifest frozen before execution."
+    },
+    {
+      "timestamp": "2026-10-21T14:46:55Z",
+      "from": "FROZEN",
+      "to": "RUNNING",
+      "actor": "Researcher",
+      "reason": "Campaign execution started."
+    }
+  ]
+}

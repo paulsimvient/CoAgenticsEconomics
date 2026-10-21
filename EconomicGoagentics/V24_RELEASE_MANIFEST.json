@@ -1,0 +1,11 @@
+{
+  "release": "V24",
+  "name": "Evidence-Backed Agent Trace",
+  "source_endpoints": [
+    "/api/dv026/lab/cells",
+    "/api/dv026/lab/cell"
+  ],
+  "read_only": true,
+  "fails_closed": true,
+  "guide_updated": true
+}

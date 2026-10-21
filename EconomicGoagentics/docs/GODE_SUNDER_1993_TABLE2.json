@@ -1,0 +1,10 @@
+{
+  "kind": "archival_literature",
+  "citation": "Gode & Sunder (1993), Journal of Political Economy 101(1):119-137, Table 2",
+  "doi": "doi:10.1086/261868",
+  "source": "Gode & Sunder 1993 Table 2 human double-auction market mean allocative efficiencies (archival DESCRIPTIVE)",
+  "population": "human laboratory traders",
+  "condition": "five double-auction markets reported in Table 2",
+  "means": [99.7, 99.1, 100.0, 99.1, 90.2],
+  "note": "Published archival reference values only. Not live LLM evidence. Not a universal human norm."
+}

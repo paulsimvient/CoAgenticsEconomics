@@ -1,0 +1,10 @@
+CoAgentics DV026 v10
+20/20 tests passed
+
+New in v10:
+- empirical literature reference catalog
+- Gode & Sunder (1993) Table 2 human double-auction mean efficiencies
+- empirical percentile + standardized comparison metadata
+- formal qualification gate separating software PASS from empirical/DARPA claims
+- >90% DARPA milestone remains NOT_CLAIMED
+- 10-live-LLM suite remains NOT_CLAIMED

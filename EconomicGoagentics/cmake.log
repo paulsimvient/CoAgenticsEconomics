@@ -1,0 +1,10 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found CURL: /usr/local/lib/libcurl.a (found version "8.10.1")
+-- Configuring done (0.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: /mnt/data/sec8build/build

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "coagentics.epistemics.v1/rival-hypothesis-set",
+  "title": "CoAgentics Rival Hypothesis Set v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "question", "hypothesis_ids", "null_or_mundane_hypothesis_id", "selection_rule", "registered_at_utc", "provenance"],
+  "properties": {
+    "schema_version": {"const": "coagentics.epistemics.v1"},
+    "id": {"type": "string", "minLength": 1},
+    "question": {"type": "string", "minLength": 1},
+    "hypothesis_ids": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "null_or_mundane_hypothesis_id": {"type": "string", "minLength": 1},
+    "selection_rule": {"type": "string", "minLength": 1},
+    "registered_at_utc": {"type": "string", "format": "date-time"},
+    "provenance": {"type": "object"}
+  }
+}

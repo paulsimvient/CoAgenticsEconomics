@@ -1,0 +1,8 @@
+Localhost end-to-end test: PASS
+- Start real C++ v27 runner via localhost Python controller
+- Pause stops C++ engine advancement (allow one in-flight event)
+- Change message impulse and edge topology while paused
+- Resume; all 80 decision records streamed from C++ execution
+- Complete paired control/treatment outcomes
+- Re-run 80 decisions with saved event-indexed intervention: exact submitted-price and peer-exposure replay PASS
+This is a controlled simulation, not live LLM execution.

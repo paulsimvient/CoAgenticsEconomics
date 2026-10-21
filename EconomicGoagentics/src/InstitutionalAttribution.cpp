@@ -1,0 +1,29 @@
+#include "coagentics/analysis/InstitutionalAttribution.hpp"
+#include <algorithm>
+#include <cmath>
+#include <iomanip>
+#include <numeric>
+#include <optional>
+#include <random>
+#include <sstream>
+namespace coagentics::analysis {
+namespace {
+struct Trader { bool buyer{}; std::vector<double> marginal; size_t next{}; TraderPolicy policy{}; };
+struct Quote { int trader{}; double price{}; std::uint64_t seq{}; };
+std::vector<Trader> schedule(TraderPolicy p){std::vector<Trader>x;for(int i=0;i<6;++i){double v=196-10*i;x.push_back({true,{v,v-18,v-36,v-54},0,p});}for(int i=0;i<6;++i){double c=20+10*i;x.push_back({false,{c,c+18,c+36,c+54},0,p});}return x;}
+struct Chamber {
+ std::vector<Trader> t; std::optional<Quote> bid,ask; std::mt19937_64& rng; std::uint64_t seq{}; double realized{},last_trade{100.0}; double signal{};
+ bool active(int i)const{return t[i].next<t[i].marginal.size();} double rv(int i)const{return t[i].marginal[t[i].next];}
+ double optimum()const{std::vector<double>b,s;for(auto&x:t)(x.buyer?b:s).insert((x.buyer?b:s).end(),x.marginal.begin(),x.marginal.end());std::sort(b.begin(),b.end(),std::greater<>());std::sort(s.begin(),s.end());double z=0;for(size_t i=0;i<std::min(b.size(),s.size())&&b[i]>s[i];++i)z+=b[i]-s[i];return z;}
+ double choose(int i,double lo,double hi){auto&x=t[i];double r=rv(i);if(x.policy==TraderPolicy::ZIC){std::uniform_real_distribution<double>d(lo,hi);return d(rng);}if(x.policy==TraderPolicy::ValueShading){double target=x.buyer?r*.94:r*1.06;return std::clamp(target,lo,hi);}if(x.policy==TraderPolicy::SignalBiased){double target=(x.buyer?r*.94:r*1.06)+signal;return std::clamp(target,lo,hi);}double target=.65*last_trade+.35*(x.buyer?r*.94:r*1.06);return std::clamp(target,lo,hi);}
+ void step(int i){if(!active(i))return;auto&tr=t[i];double r=rv(i);if(tr.buyer){double lo=bid?bid->price:0.;if(lo>=r)return;Quote q{i,choose(i,lo,r),++seq};if(ask&&q.price>=ask->price){double p=ask->seq<q.seq?ask->price:q.price;int s=ask->trader;realized+=r-rv(s);last_trade=p;++tr.next;++t[s].next;bid.reset();ask.reset();}else if(!bid||q.price>bid->price)bid=q;}else{double hi=ask?ask->price:200.;if(hi<=r)return;Quote q{i,choose(i,r,hi),++seq};if(bid&&bid->price>=q.price){double p=bid->seq<q.seq?bid->price:q.price;int b=bid->trader;realized+=rv(b)-r;last_trade=p;++tr.next;++t[b].next;bid.reset();ask.reset();}else if(!ask||q.price<ask->price)ask=q;}}
+};
+double period(std::mt19937_64&r,TraderPolicy p,double signal){Chamber c{schedule(p),{}, {},r};c.signal=signal;double opt=c.optimum();std::uniform_int_distribution<int>d(0,11);for(int k=0;k<3000;++k)c.step(d(r));return 100.*std::clamp(c.realized/opt,0.,1.);}
+double mean(std::uint64_t seed,TraderPolicy p,double signal,int n){std::mt19937_64 r(seed);double s=0;for(int i=0;i<n;++i)s+=period(r,p,signal);return s/n;}
+const char* name(TraderPolicy p){switch(p){case TraderPolicy::ZIC:return"ZI-C";case TraderPolicy::ValueShading:return"value-shading";case TraderPolicy::SignalBiased:return"signal-biased";case TraderPolicy::PeerAnchored:return"peer-anchored";}return"unknown";}
+std::string esc(std::string s){std::string o;for(char c:s){if(c=='"')o+="\\\"";else if(c=='\n')o+="\\n";else o+=c;}return o;}
+}
+AttributionReport run_institutional_attribution(std::uint64_t seed,int periods){AttributionReport r;r.seed=seed;r.periods=periods;r.institution_floor=mean(seed,TraderPolicy::ZIC,0,periods);std::vector<TraderPolicy> ps{TraderPolicy::ZIC,TraderPolicy::ValueShading,TraderPolicy::SignalBiased,TraderPolicy::PeerAnchored};for(int m=0;m<10;++m){auto p=ps[m%ps.size()];double control=mean(seed+1000*m,p,0,periods),treated=mean(seed+1000*m,p,8,periods);r.cells.push_back({"model-"+std::to_string(m+1),name(p),"control",control,r.institution_floor,control-r.institution_floor,0,periods});r.cells.push_back({"model-"+std::to_string(m+1),name(p),"public-signal",treated,r.institution_floor,treated-r.institution_floor,treated-control,periods});}r.interpretation="The ZI-C chamber is the institutional floor. Agent delta is descriptive: policy efficiency minus the matched institutional baseline. Intervention delta is treated minus control. The ten model IDs are qualification identities using controlled mechanisms, not ten live LLM calls; live-model claims require provider executions through the v8 harness.";return r;}
+std::string institutional_attribution_markdown(const AttributionReport&r){std::ostringstream o;o<<"# V13 Institution-vs-Agent Attribution\n\n**Live LLMs used:** NO — controlled mechanism profiles exercise the 10-model campaign path.\n\nInstitutional ZI-C floor: **"<<std::fixed<<std::setprecision(2)<<r.institution_floor<<"%**\n\n| Model | Mechanism | Condition | Efficiency | Agent delta | Intervention delta |\n|---|---|---|---:|---:|---:|\n";for(auto&c:r.cells)o<<"| "<<c.model_id<<" | "<<c.policy<<" | "<<c.condition<<" | "<<c.mean_efficiency<<"% | "<<c.agent_delta<<" pp | "<<c.intervention_delta<<" pp |\n";o<<"\n## Interpretation boundary\n"<<r.interpretation<<"\n\nHigh efficiency alone is not attributed to model intelligence. The ZI-C floor estimates what the institution can generate without learning or strategic reasoning; departures are then tested under matched interventions.\n";return o.str();}
+std::string institutional_attribution_json(const AttributionReport&r){std::ostringstream o;o<<"{\"version\":\"v13\",\"seed\":"<<r.seed<<",\"periods\":"<<r.periods<<",\"live_llms_used\":false,\"institution_floor\":"<<r.institution_floor<<",\"interpretation\":\""<<esc(r.interpretation)<<"\",\"cells\":[";for(size_t i=0;i<r.cells.size();++i){if(i)o<<",";auto&c=r.cells[i];o<<"{\"model_id\":\""<<c.model_id<<"\",\"policy\":\""<<c.policy<<"\",\"condition\":\""<<c.condition<<"\",\"mean_efficiency\":"<<c.mean_efficiency<<",\"institution_baseline\":"<<c.institution_baseline<<",\"agent_delta\":"<<c.agent_delta<<",\"intervention_delta\":"<<c.intervention_delta<<"}";}o<<"]}";return o.str();}
+}
