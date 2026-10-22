@@ -447,6 +447,11 @@ html.lab-light .enterprise-workspace{background:#fff;border-radius:8px}
 html.lab-light .enterprise-search button{background:#fff;border-radius:999px}
 html.lab-light .enterprise-user{background:#fff;border-radius:999px}
 html.lab-light .enterprise-nav{background:#f7f3ea!important;border-right:1px solid var(--line)!important}
+#enterpriseNav .enterprise-section,
+#enterpriseNav .nav-divider,
+#enterpriseNav [data-view]:not([data-view="lab"]),
+#enterpriseNav #auditBtn,
+#enterpriseNav #settingsBtn{display:none!important}
 html.lab-light .enterprise-nav button.active{background:#e7efe4!important;border-color:transparent!important;color:var(--text)!important;box-shadow:none!important;font-weight:600}
 html.lab-light .enterprise-nav .nav-icon{color:var(--muted)!important}
 html.lab-light .enterprise-nav button.active .nav-icon{color:var(--accent)!important}
@@ -456,6 +461,7 @@ html.lab-light .lifecycle-card,html.lab-light .live-ribbon,html.lab-light .instr
 html.lab-light .enterprise-launch,html.lab-light .v15-guide-button,html.lab-light .v17-launch,html.lab-light .v20-launch,
 html.lab-light .lab-tabs,html.lab-light .v21-zoom,html.lab-light .lab-banner,html.lab-light .lab-meta,html.lab-light #labDesignTable,
 html.lab-light #labEvidencePanel,html.lab-light #labWhy,html.lab-light .lab-why,html.lab-light #labPriceSvg,html.lab-light #labPriceCap,
+html.lab-light #labSciencePanel .lab-plot,html.lab-light #labEventBox,html.lab-light #labSciencePanel .lab-metrics,
 html.lab-light .lab-canvas,html.lab-light .v22-book-strip,html.lab-light .v22-tape,html.lab-light .lab-legend,html.lab-light .lab-controls,
 html.lab-light .v23-panel,html.lab-light #v23-agent-trace,html.lab-light #v24-cell-select{display:none!important}
 html.lab-light .enterprise-main .main{padding:8px 22px 40px!important;background:transparent}
@@ -463,7 +469,7 @@ html.lab-light .panel{background:var(--panel)!important;border:1px solid var(--l
 html.lab-light #labMarketPanel{box-shadow:var(--shadow)!important}
 html.lab-light .market-head{align-items:center;flex-wrap:wrap}
 html.lab-light .legend{font-size:11px;gap:12px;flex-wrap:wrap;white-space:nowrap}
-html.lab-light #labReplayList{position:relative;max-height:360px;overflow:auto}
+html.lab-light #labReplayList{position:relative;max-height:360px;overflow:auto;min-height:0;flex:none}
 html.lab-light .mc-event.hold{opacity:.58}
 html.lab-light .mc-event.hold .n{background:#efe8dc;color:var(--muted)}
 html.lab-light .panel h2{font-family:var(--font)!important;font-size:11px!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:var(--muted)!important;font-weight:700!important;white-space:normal}
@@ -472,8 +478,27 @@ html.lab-light .lab-hist-card h2{text-transform:none!important;letter-spacing:.0
 html.lab-light #view-lab .lab-head{align-items:flex-start;margin:4px 0 14px}
 html.lab-light #view-lab .lab-head h1{font-family:var(--display);font-size:34px;margin:0 0 4px;letter-spacing:-.03em;color:var(--text);text-transform:none}
 html.lab-light #view-lab .lab-head .op-kicker{display:block;margin:0 0 2px}
-html.lab-light #view-lab .op-note{max-width:520px;font-size:13px;line-height:1.45;color:var(--muted);margin:0}
+html.lab-light #view-lab .op-note{max-width:560px;font-size:13px;line-height:1.45;color:var(--muted);margin:0}
 html.lab-light #view-lab #labContinueActions{display:none!important}
+html.lab-light #labDemoActions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+html.lab-light #labDemoActions .action.primary{background:#1e1a16!important;color:#fff!important}
+html.lab-light #labDemoActions.recording #labRecordBtn{background:var(--seq)!important;color:#fff!important;border-color:var(--seq)!important}
+#labDemoCursor{position:fixed;left:0;top:0;z-index:12000;pointer-events:none;opacity:0;transform:translate(-40px,-40px)}
+#labDemoCursor.show{opacity:1}
+#labDemoCursor .ptr{width:0;height:0;border-left:12px solid #1e1a16;border-top:7px solid transparent;border-bottom:16px solid transparent;filter:drop-shadow(1px 2px 2px rgba(30,26,22,.28))}
+#labDemoCursor.tap .ptr{transform:translate(1px,2px) scale(.9)}
+html.lab-film .lab-kpis,
+html.lab-film #labArchiveBar,
+html.lab-film #labResumeBtn,
+html.lab-film #labStopBtn,
+html.lab-film #labDemoActions{display:none!important}
+#labDemoPop{position:fixed;z-index:12001;width:min(380px,calc(100vw - 170px));padding:22px 24px 20px;background:#fffef9;border:1px solid #e4ddd0;border-radius:18px;box-shadow:0 22px 54px rgba(60,48,30,.22);color:#1e1a16;display:none;left:24px;top:88px;pointer-events:none;opacity:0}
+#labDemoPop.show{display:block;opacity:1;transition:opacity .18s ease,left .32s ease,top .32s ease}
+#labDemoPop small{display:block;font:11px var(--font);letter-spacing:.08em;text-transform:uppercase;color:#7a7368;margin-bottom:8px}
+#labDemoPop b{display:block;font:26px/1.15 var(--display);letter-spacing:-.03em;margin:0 0 10px}
+#labDemoPop p{margin:0;font:17px/1.5 var(--font);color:#3a342c}
+#labDemoDock{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:12002;display:flex;flex-direction:column;gap:8px}
+#labDemoDockBtn{min-width:92px;padding:18px 16px;border:0;border-radius:12px;background:#1e1a16;color:#fff;font:16px var(--font);cursor:pointer;box-shadow:0 12px 28px rgba(30,26,22,.2)}
 html.lab-light .lab-archive{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0 0 12px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 html.lab-light .lab-archive.live{background:#e7efe4;border-color:#cfe3c4}
 html.lab-light .lab-archive-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
@@ -506,16 +531,16 @@ html.lab-light .lab-kpis .spark{grid-column:2;grid-row:1 / span 2;width:76px;hei
 html.lab-light .lab-kpis .spark svg{width:76px;height:32px;display:block}
 html.lab-light .lab-progress{height:6px;border-radius:99px;background:#e8e2d6;overflow:hidden;margin-top:8px;grid-column:1/-1}
 html.lab-light .lab-progress i{display:block;height:100%;background:#cfe3c4;width:0}
-html.lab-light .lab-overview{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(240px,.55fr);gap:10px;margin-bottom:10px;align-items:stretch}
+html.lab-light .lab-overview{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;align-items:stretch}
 html.lab-light .lab-overview>*{min-width:0}
 html.lab-light .lab-campaign-plot{height:228px;background:transparent;border:0;border-radius:0}
 html.lab-light .lab-campaign-plot svg{height:210px}
 html.lab-light .lab-campaign-plot .cap{display:none}
-html.lab-light .lab-hist-card .lab-plot{height:210px;border:0;background:transparent}
-html.lab-light .lab-hist-card svg{height:186px}
+html.lab-light .lab-hist-card .lab-plot{height:168px;border:0;background:transparent}
+html.lab-light .lab-hist-card svg{height:148px}
 html.lab-light .lab-hist-card .cap{display:none}
-html.lab-light .lab-sessions{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(240px,.55fr);gap:10px;margin-bottom:10px}
-html.lab-light .lab-table-wrap{max-height:240px;border:0;border-radius:0}
+html.lab-light .lab-sessions{display:grid;grid-template-columns:minmax(160px,.7fr) minmax(0,1.5fr) minmax(180px,.55fr);gap:10px;margin:0;align-items:stretch;min-width:0}
+html.lab-light .lab-table-wrap{max-height:188px;border:0;border-radius:0}
 html.lab-light .lab-table-wrap .table{font-size:12px}
 html.lab-light .lab-table-wrap .table th{font:10px var(--font);letter-spacing:.06em;color:var(--muted);background:var(--panel);padding:8px 8px;text-transform:none}
 html.lab-light .lab-table-wrap .table td{padding:8px;border-bottom:1px solid var(--line)}
@@ -537,7 +562,9 @@ html.lab-light .lab-outcome .stats span{display:block;font-size:10px;color:var(-
 html.lab-light .lab-outcome .stats b{font:16px var(--mono);font-weight:600}
 html.lab-light .lab-outcome .meta{text-align:left;font:12px var(--font);color:var(--muted)}
 html.lab-light .lab-micro{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(280px,.48fr);gap:10px;align-items:start}
-html.lab-light .lab-micro > .panel{min-width:0}
+html.lab-light .lab-left{display:flex;flex-direction:column;gap:10px;min-width:0}
+html.lab-light .lab-micro > .panel,html.lab-light .lab-left > .panel,html.lab-light .lab-sessions{min-width:0}
+html.lab-light .lab-micro.campaign-only{grid-template-columns:1fr}
 html.lab-light .mc-stage{position:relative;overflow:visible}
 html.lab-light .mc-cols{display:grid;grid-template-columns:minmax(140px,.75fr) minmax(200px,1.2fr) minmax(140px,.75fr);gap:14px;align-items:start;min-width:0}
 html.lab-light #labLinkSvg{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
@@ -600,8 +627,8 @@ html.lab-light #labQPop p{margin:0 0 10px;font-size:13px;line-height:1.45;color:
 html.lab-light #labQPop p:last-child{margin:0}
 html.lab-light #labQPop .lab-q-k{display:block;font:700 10px var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 3px}
 html.lab-light #labQPop .lab-q-close{position:absolute;top:8px;right:8px;width:24px;height:24px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1}
-@media(max-width:1100px){html.lab-light .lab-micro{grid-template-columns:1fr}}
-@media(max-width:820px){html.lab-light .lab-overview,html.lab-light .lab-sessions,html.lab-light .mc-cols{grid-template-columns:1fr}}
+@media(max-width:1100px){html.lab-light .lab-micro{grid-template-columns:1fr}html.lab-light .lab-left{display:contents}html.lab-light #labMarketPanel{order:1}html.lab-light #labSciencePanel{order:2}html.lab-light .lab-sessions{order:3}html.lab-light .lab-sessions{grid-template-columns:1fr 1fr}html.lab-light .lab-sessions .lab-hist-card{grid-column:1/-1}}
+@media(max-width:820px){html.lab-light .lab-overview,html.lab-light .lab-sessions,html.lab-light .mc-cols{grid-template-columns:1fr}html.lab-light .lab-sessions .lab-hist-card{grid-column:auto}}
 
 /* Cream look on every section, not only Visualize */
 html.lab-light .page-head{margin:4px 0 16px}
@@ -944,35 +971,13 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
   </div>
 </header>
 <div class="enterprise-shell"><div class="enterprise-nav" id="enterpriseNav">
-  <div class="enterprise-section">Research</div>
   <button class="active" data-view="lab"><span class="nav-icon">◈</span>Visualize & Analyze</button>
-  <button data-view="design"><span class="nav-icon">◇</span>Experiment Builder</button>
-  <button data-view="replay"><span class="nav-icon">▶</span>Run & Replay</button>
-  <button data-view="agents"><span class="nav-icon">●</span>Agents & Traces</button>
-  <button data-view="explain"><span class="nav-icon">⌘</span>Explanations</button>
-  <button data-view="memory"><span class="nav-icon">◌</span>Memory</button>
-  <button data-view="compare"><span class="nav-icon">⇄</span>Compare</button>
-  <div class="enterprise-section">Assurance</div>
-  <button data-view="evidence"><span class="nav-icon">⌁</span>Evidence</button>
-  <button data-view="validate"><span class="nav-icon">✓</span>Validation & Claims</button>
-  <div class="nav-divider"></div>
-  <div class="enterprise-section">Platform</div>
-  <button id="auditBtn"><span class="nav-icon">▤</span>Audit Log <span class="nav-meta">LIVE</span></button>
-  <button id="settingsBtn" onclick="openV13Manager()"><span class="nav-icon">⚙</span>Research Objects / Settings</button>
   <button id="mobileClose" class="mobile-menu"><span class="nav-icon">×</span>Close Navigation</button>
 </div><div class="enterprise-main"><div class="enterprise-context"><span>Workspace</span><span class="sep">/</span><b>DV026 Economic Behavior</b><span class="sep">/</span><span id="contextExperiment">No experiment selected</span><span class="spacer"></span><span class="enterprise-badge">ROLE · RESEARCH OWNER</span><span class="enterprise-badge live" id="contextStatus">READY</span></div>
 <div class="app">
 <aside class="side"><div class="brand">CoAgentics</div><div class="sub">ECONOMIC INTELLIGENCE LAB</div>
 <nav class="nav" id="nav">
 <button class="active" data-view="lab">Visualize & Analyze</button>
-<button data-view="design">Experiment Builder</button>
-<button data-view="agents">Agents / Trace</button>
-<button data-view="explain">Explanation Graph</button>
-<button data-view="replay">Replay</button>
-<button data-view="memory">Memory</button>
-<button data-view="compare">Compare</button>
-<button data-view="evidence">Evidence</button>
-<button data-view="validate">Validate / Claim</button>
 </nav>
 <div class="exp"><span class="mini">CURRENT CAMPAIGN</span><b id="expId">—</b><span id="expLabel">No campaign running</span><div class="mini" id="expRound" style="margin:9px 0 5px">0 / 0 cells</div><div class="track"><i id="expProgress"></i></div><button id="runStop" class="action" style="width:100%;margin:12px 0 0">Run Experiment</button></div></aside>
 <main class="main">
@@ -1103,15 +1108,18 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
 <section id="view-lab" class="view active">
   <div class="lab-head">
     <div>
-      <div class="op-kicker">Archive · read-only</div>
+      <div class="op-kicker">CoAgentics</div>
       <h1>Market campaign <button type="button" class="lab-q" data-labq="page" aria-label="What is this page?">?</button></h1>
-      <p class="op-note" id="labNote">Archive of completed markets from the interrupted campaign. Remaining cells are not drawn until they are actually run.</p>
+      <p class="op-note" id="labNote">What happens when language models bid against one another in a continuous double auction.</p>
     </div>
     <div class="op-actions" id="labContinueActions">
       <select id="labCellSelect" onchange="loadLabCell(this.value)"></select>
       <button class="action" type="button" onclick="labStep(-1)">◀</button>
       <button class="action primary" type="button" id="labPlay" onclick="toggleLabPlay()">▶ Replay</button>
       <button class="action" type="button" onclick="labStep(1)">▶</button>
+    </div>
+    <div class="op-actions" id="labDemoActions">
+      <button class="action" type="button" id="labRecordBtn" onclick="labDemoRecord()">Record</button>
     </div>
   </div>
   <div class="lab-archive" id="labArchiveBar">
@@ -1182,42 +1190,9 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
       </div>
       <div id="labDesignTable"></div>
     </section>
-    <section class="panel lab-hist-card">
-      <h2>η distribution</h2>
-      <div class="lab-plot lab-plot-tip">
-        <svg id="labHistSvg" viewBox="0 0 280 200" preserveAspectRatio="none" aria-label="Completed-cell efficiency histogram"></svg>
-        <div class="lab-tip" id="labHistTip" role="tooltip"></div>
-        <div class="cap" id="labHistCap"></div>
-      </div>
-    </section>
-  </div>
-  <div class="lab-sessions">
-    <section class="panel">
-      <h2><span id="labSessionsHead">Market sessions</span> <button type="button" class="lab-q" data-labq="sessions" aria-label="What is this list?">?</button></h2>
-      <div class="lab-table-wrap"><table class="table"><thead><tr>
-        <th>Market</th>
-        <th>Setup</th>
-        <th>Seed</th>
-        <th>η</th>
-        <th>Trades</th>
-        <th>Agents</th>
-        <th>Source</th>
-      </tr></thead><tbody id="labCellsBody"></tbody></table></div>
-    </section>
-    <section class="panel lab-outcome">
-      <div class="kicker">Session outcome</div>
-      <div class="eta" id="labEta">—</div>
-      <div class="lab-alloc-bar"><i id="labAllocBar"></i></div>
-      <div class="stats">
-        <div><span>Trades</span><b id="labTrades">—</b></div>
-        <div><span>Agents</span><b id="labAgentN">—</b></div>
-        <div><span>Turns</span><b id="labTurns">—</b></div>
-        <div><span>Events</span><b id="labEventN">—</b></div>
-      </div>
-      <div class="meta" id="labAllocMeta">Select a completed market.</div>
-    </section>
   </div>
   <div class="lab-micro" id="labMainGrid">
+    <div class="lab-left">
     <section class="panel" id="labMarketPanel">
       <div class="market-head">
         <div>
@@ -1259,6 +1234,41 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
       <div class="lab-controls"><input id="labScrubHidden" type="range" min="0" max="0" value="0"><span class="mini" id="labReadout">event 0 / 0</span></div>
       <div class="lab-legend" id="labLegend"></div>
     </section>
+  <div class="lab-sessions">
+    <section class="panel lab-hist-card">
+      <h2>η distribution</h2>
+      <div class="lab-plot lab-plot-tip">
+        <svg id="labHistSvg" viewBox="0 0 280 200" preserveAspectRatio="none" aria-label="Completed-cell efficiency histogram"></svg>
+        <div class="lab-tip" id="labHistTip" role="tooltip"></div>
+        <div class="cap" id="labHistCap"></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2><span id="labSessionsHead">Market sessions</span> <button type="button" class="lab-q" data-labq="sessions" aria-label="What is this list?">?</button></h2>
+      <div class="lab-table-wrap"><table class="table"><thead><tr>
+        <th>Market</th>
+        <th>Setup</th>
+        <th>Seed</th>
+        <th>η</th>
+        <th>Trades</th>
+        <th>Agents</th>
+        <th>Source</th>
+      </tr></thead><tbody id="labCellsBody"></tbody></table></div>
+    </section>
+    <section class="panel lab-outcome">
+      <div class="kicker">Session outcome</div>
+      <div class="eta" id="labEta">—</div>
+      <div class="lab-alloc-bar"><i id="labAllocBar"></i></div>
+      <div class="stats">
+        <div><span>Trades</span><b id="labTrades">—</b></div>
+        <div><span>Agents</span><b id="labAgentN">—</b></div>
+        <div><span>Turns</span><b id="labTurns">—</b></div>
+        <div><span>Events</span><b id="labEventN">—</b></div>
+      </div>
+      <div class="meta" id="labAllocMeta">Select a completed market.</div>
+    </section>
+  </div>
+    </div>
     <section class="panel" id="labSciencePanel">
       <div class="mc-replay-head">
         <h2 style="margin:0;flex:1"><span id="labReplayTitle">Event replay</span></h2>
@@ -1287,6 +1297,15 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
       <div><div class="mini">Replied</div><pre id="labReplied">—</pre></div>
     </div>
   </section>
+  <div id="labDemoCursor" aria-hidden="true"><div class="ptr"></div></div>
+  <div id="labDemoPop" role="status" hidden>
+    <small id="labDemoPopKicker"></small>
+    <b id="labDemoPopTitle"></b>
+    <p id="labDemoPopBody"></p>
+  </div>
+  <div id="labDemoDock">
+    <button type="button" id="labDemoDockBtn" onclick="labDemoDockClick()">Start</button>
+  </div>
   <div id="labQPop" hidden>
     <button type="button" class="lab-q-close" onclick="closeLabQ()" aria-label="Close">×</button>
     <b id="labQTitle"></b>
@@ -1463,7 +1482,7 @@ function defaultHypothesis(id){
   rationale:'DV026 Phase I readiness requires demonstrable economic execution (not HOLD-only) with provenance; archival human Table 2 is DESCRIPTIVE reference only.'
  };
 }
-function go(view){state.view=view;document.documentElement.classList.add('lab-light');document.documentElement.dataset.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const labels={dashboard:['Observe','What do we know?'],explain:['Classify','Explanations'],design:['Design','Controlled test'],replay:['Run','Watch it happen'],compare:['Compare','Models / conditions'],validate:['Validate','Hold-out / robustness'],evidence:['Claim','Evidence boundary'],agents:['Agents','Decision traces'],memory:['Memory','Persisted only'],lab:['Visualize','Archived replay']};const crumbs={dashboard:'Overview',lab:'Market Campaign',design:'Experiment Builder',replay:'Run & Replay',agents:'Agents & Traces',explain:'Explanations',memory:'Memory',compare:'Compare',evidence:'Evidence',validate:'Validation & Claims'};const L=labels[view]||['Lab',view];const pn=$('phaseNow');if(pn)pn.innerHTML='<span>'+esc(L[0])+'</span><small>'+esc(L[1])+'</small>';const ctx=$('contextExperiment');if(ctx)ctx.textContent=crumbs[view]||L[1];if(view==='design')renderDesign();if(view==='explain')renderExplanation();if(view==='compare')renderCompare();if(view==='validate')renderValidate();if(view==='evidence')renderEvidence();if(view==='memory')renderMemory();if(view==='replay')renderReplay();if(view==='lab')renderLabOnEnter();}
+function go(view){if(view!=='lab') view='lab';state.view=view;document.documentElement.classList.add('lab-light');document.documentElement.dataset.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const labels={dashboard:['Observe','What do we know?'],explain:['Classify','Explanations'],design:['Design','Controlled test'],replay:['Run','Watch it happen'],compare:['Compare','Models / conditions'],validate:['Validate','Hold-out / robustness'],evidence:['Claim','Evidence boundary'],agents:['Agents','Decision traces'],memory:['Memory','Persisted only'],lab:['Visualize','Archived replay']};const crumbs={dashboard:'Overview',lab:'Market Campaign',design:'Experiment Builder',replay:'Run & Replay',agents:'Agents & Traces',explain:'Explanations',memory:'Memory',compare:'Compare',evidence:'Evidence',validate:'Validation & Claims'};const L=labels[view]||['Lab',view];const pn=$('phaseNow');if(pn)pn.innerHTML='<span>'+esc(L[0])+'</span><small>'+esc(L[1])+'</small>';const ctx=$('contextExperiment');if(ctx)ctx.textContent=crumbs[view]||L[1];if(view==='design')renderDesign();if(view==='explain')renderExplanation();if(view==='compare')renderCompare();if(view==='validate')renderValidate();if(view==='evidence')renderEvidence();if(view==='memory')renderMemory();if(view==='replay')renderReplay();if(view==='lab')renderLabOnEnter();}
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));
 function status(){const s=state.campaign||{};const mode=campaignMode(s);const run=mode==='running'; setHtml('status',`<span style="color:${run?'#2f8f5b':(mode==='interrupted'?'#b8862d':(mode==='complete'?'#2f8f5b':'#8a9bab'))}">●</span> ${mode==='running'?'Experiment running':mode==='interrupted'?'Experiment interrupted':mode==='complete'?'Experiment complete':mode==='stopped'?'Experiment stopped':'Idle — no campaign'}`);setText('expId',s.command||s.scope||'DV026 campaign');setText('expLabel',mode==='running'?'Campaign running':mode==='interrupted'?'Campaign interrupted':mode==='complete'?'Campaign complete':mode==='stopped'?'Campaign stopped':'Idle — no campaign');const done=Number(s.done||0),total=Number(s.total||0);setText('expRound',`${done} / ${total} cells`);const prog=$('expProgress');if(prog)prog.style.width=(total?done/total*100:0)+'%';const btn=$('runStop');if(btn){btn.textContent=run?'Stop Experiment':'Go to Run';btn.onclick=run?stop:()=>document.getElementById('opRun')?.scrollIntoView({behavior:'smooth'});}}
 function renderCharts(c){state.charts=c||{};const p=c.pipeline||{},h=c.human_ref||{};setText('mEfficiency',h.live_mean_efficiency==null?'—':pct(h.live_mean_efficiency));setText('mCells',p.attempted||0);setText('mAccepted',p.market_accepted==null?'—':p.market_accepted);setText('mCda',c.layer_a_mean_efficiency_cda==null?'—':pct(c.layer_a_mean_efficiency_cda));setText('mModels',(c.by_model||[]).length);const cells=state.cells||[];const vals=[];const labels=[];if(cells.length){cells.forEach(cell=>{const v=cell.treatment_efficiency;if(v==null||Number.isNaN(Number(v)))return;const n=Number(v);vals.push(Math.abs(n)<=1.0000001?n*100:n);labels.push(String(cell.model||'?')+' · '+String(cell.seed??''));});}if(!vals.length){const raw=(state.analysis?.overall?.efficiency?.values||[]).filter(v=>v!=null).map(Number);raw.forEach((v,i)=>{vals.push(Math.abs(v)<=1.0000001?v*100:v);labels.push('cell '+(i+1));});}const svg=$('chartSvg'),cap=$('chartCap');if(svg){if(!vals.length){svg.innerHTML='<text x="36" y="90" fill="#7a7368" font-size="11">No persisted cell efficiencies yet</text>';if(cap)cap.textContent='n=0 cell efficiencies';}else{const W=720,H=178,padL=42,padR=16,padT=16,padB=36,plotW=W-padL-padR,plotH=H-padT-padB;const yAt=v=>padT+plotH*(1-Math.max(0,Math.min(100,v))/100);const xAt=i=>padL+(vals.length===1?plotW/2:plotW*(i/Math.max(1,vals.length-1)));const pts=vals.map((v,i)=>xAt(i)+','+yAt(v)).join(' ');const dots=vals.map((v,i)=>'<circle cx="'+xAt(i)+'" cy="'+yAt(v)+'" r="4" fill="#3d8f6a"/><text x="'+xAt(i)+'" y="'+(H-10)+'" text-anchor="middle" fill="#7a7368" font-size="8">'+esc(String(labels[i]||'').split(' · ')[0].slice(0,14))+'</text>').join('');svg.innerHTML='<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(padT+plotH)+'" stroke="#e4ddd0"/><line x1="'+padL+'" y1="'+(padT+plotH)+'" x2="'+(padL+plotW)+'" y2="'+(padT+plotH)+'" stroke="#e4ddd0"/><text x="8" y="'+(padT+4)+'" fill="#7a7368" font-size="9">100</text><text x="14" y="'+(padT+plotH/2)+'" fill="#7a7368" font-size="9">50</text><text x="20" y="'+(padT+plotH)+'" fill="#7a7368" font-size="9">0</text><polyline fill="none" stroke="#3d8f6a" stroke-width="2" points="'+pts+'"/>'+dots;if(cap)cap.textContent='n='+vals.length+' cell efficiencies (points, not a time series) · Y = η %';}}setText('observedSummary',vals.length?vals.length+' persisted cell η values · mean from campaign charts (not invented).':'Facts come from persisted campaign records only.');}
@@ -2402,6 +2421,293 @@ function toggleLabPlay(){
   lab.event=(lab.event||0)+1; lab.selectedEvent=lab.event; renderLabMarket(); renderLabEvidence();
  }, 550);
 }
+const LAB_DEMO_KEY='coagentics-lab-demo';
+const labDemo={recording:false,playing:false,token:0,steps:[],pos:{x:80,y:120},next:null,usedRecord:false};
+function labDemoWait(ms){return new Promise(r=>setTimeout(r,ms));}
+function labDemoAlive(tok){return labDemo.playing&&labDemo.token===tok;}
+function labDemoGoNext(){
+ const n=labDemo.next; labDemo.next=null; if(n) n();
+}
+function labDemoDockClick(){
+ if(!labDemo.playing) labDemoPlay();
+ else labDemoGoNext();
+}
+function labDemoHold(tok, last){
+ labDemoButtons(last);
+ return new Promise(resolve=>{
+  if(!labDemoAlive(tok)){ resolve(); return; }
+  labDemo.next=()=>{ labDemo.next=null; resolve(); };
+ });
+}
+function labDemoPopHide(){
+ const pop=$('labDemoPop'); if(!pop) return;
+ pop.hidden=true; pop.classList.remove('show');
+ pop.style.visibility='';
+ pop.style.transition='';
+ labDemo.next=null;
+}
+function labDemoFilm(on){
+ document.documentElement.classList.toggle('lab-film', !!on);
+}
+function labDemoPlacePop(instant){
+ const pop=$('labDemoPop'); if(!pop) return;
+ const w=pop.offsetWidth||380, h=pop.offsetHeight||180;
+ const vw=window.innerWidth, vh=window.innerHeight;
+ const dock=150, gap=28, topMin=72;
+ const mx=labDemo.pos.x, my=labDemo.pos.y;
+ const maxX=Math.max(12, vw-dock-w);
+ const maxY=Math.max(topMin, vh-h-16);
+ const right=mx+gap, left=mx-gap-w, below=my+gap, above=my-h-gap;
+ const yNudge=Math.max(topMin, Math.min(my-24, maxY));
+ let x, y;
+ if(right<=maxX) x=right;
+ else if(left>=12) x=left;
+ else x=maxX;
+ if(yNudge>=topMin && yNudge<=maxY) y=yNudge;
+ else if(below<=maxY) y=below;
+ else if(above>=topMin) y=above;
+ else y=maxY;
+ x=Math.max(12, Math.min(x, maxX));
+ y=Math.max(topMin, Math.min(y, maxY));
+ if(mx>=x && mx<=x+w && my>=y && my<=y+h){
+  if(left>=12) x=left;
+  else if(above>=topMin) y=above;
+ }
+ x=Math.max(12, Math.min(x, maxX));
+ y=Math.max(topMin, Math.min(y, maxY));
+ if(instant) pop.style.transition='none';
+ pop.style.left=x+'px'; pop.style.top=y+'px'; pop.style.right='auto';
+ if(instant){ void pop.offsetHeight; pop.style.transition=''; }
+}
+function labDemoPopShow(title, body, kicker, instant){
+ const pop=$('labDemoPop'); if(!pop) return;
+ setText('labDemoPopKicker', kicker==null?'':kicker);
+ setText('labDemoPopTitle', title||'');
+ setText('labDemoPopBody', body||'');
+ const first=pop.hidden||!pop.classList.contains('show');
+ pop.hidden=false;
+ if(first){
+  pop.style.visibility='hidden';
+  pop.classList.add('show');
+  void pop.offsetHeight;
+  labDemoPlacePop(true);
+  pop.style.visibility='';
+ }else{
+  labDemoPlacePop(!!instant);
+ }
+}
+function labDemoCursorShow(on){
+ const el=$('labDemoCursor'); if(!el) return;
+ el.classList.toggle('show', !!on);
+ if(on) el.style.transform=`translate(${labDemo.pos.x}px, ${labDemo.pos.y}px)`;
+}
+async function labDemoMoveTo(x,y,ms){
+ const el=$('labDemoCursor'); if(!el) return;
+ labDemoCursorShow(true);
+ const from={...labDemo.pos}, dur=ms==null?650:ms;
+ if(dur<=0){ labDemo.pos={x,y}; el.style.transform=`translate(${x}px, ${y}px)`; return; }
+ await new Promise(done=>{
+  const t0=performance.now();
+  const tick=now=>{
+   const u=Math.min(1,(now-t0)/dur);
+   const e=1-Math.pow(1-u,3);
+   labDemo.pos={x:from.x+(x-from.x)*e, y:from.y+(y-from.y)*e};
+   el.style.transform=`translate(${labDemo.pos.x}px, ${labDemo.pos.y}px)`;
+   if(u<1) requestAnimationFrame(tick); else done();
+  };
+  requestAnimationFrame(tick);
+ });
+}
+function labDemoPoint(el){
+ if(!el||!el.getBoundingClientRect) return null;
+ const r=el.getBoundingClientRect();
+ if(r.width<2&&r.height<2) return null;
+ return {x:r.left+Math.min(r.width*0.35, 22), y:r.top+Math.min(r.height*0.5, 16), el};
+}
+function labDemoInView(el){
+ const r=el.getBoundingClientRect();
+ return r.bottom>88 && r.top<window.innerHeight-24 && r.right>12 && r.left<window.innerWidth-12;
+}
+async function labDemoTap(el, tok){
+ const pt=labDemoPoint(el); if(!pt||!labDemoAlive(tok)) return false;
+ if(!labDemoInView(el)){
+  el.scrollIntoView({block:'nearest', inline:'nearest', behavior:'auto'});
+  await labDemoWait(80);
+ }
+ const p=labDemoPoint(el)||pt;
+ await labDemoMoveTo(p.x, p.y);
+ labDemoPlacePop();
+ const cur=$('labDemoCursor'); if(cur){ cur.classList.add('tap'); setTimeout(()=>cur.classList.remove('tap'), 160); }
+ return true;
+}
+function labDemoCellLine(c, extra){
+ if(!c) return extra||'';
+ const des=labDesignPlain(c.design);
+ const eta=c.efficiency==null?'—':Number(c.efficiency).toFixed(1)+'%';
+ const core=`Market ${c.index} · ${des.long} · η ${eta}`;
+ return extra?`${extra} ${core}.`:core;
+}
+function labDemoSave(){
+ try{ sessionStorage.setItem(LAB_DEMO_KEY, JSON.stringify(labDemo.steps)); }catch(e){}
+}
+function labDemoLoad(){
+ try{ const raw=sessionStorage.getItem(LAB_DEMO_KEY); const d=raw?JSON.parse(raw):null; if(Array.isArray(d)) labDemo.steps=d; }catch(e){}
+}
+function labDemoExplain(step){
+ if(!step) return {title:'', body:''};
+ if(step.title||step.body) return {title:step.title||'', body:step.body||step.say||''};
+ if(step.kind==='cell'||step.kind==='scatter') return {title:'This market', body:'One archived session. The floor, the tape, and η follow it.'};
+ if(step.kind==='hist') return {title:'Efficiency', body:'Each bar is how many finished markets landed in that η range.'};
+ if(step.kind==='agent') return {title:'This trader', body:'A seat, a private value, and the bid it sent.'};
+ if(step.kind==='event'||step.kind==='events') return {title:'The tape', body:'Who traded, at what price, in this session.'};
+ return {title:'', body:step.say||''};
+}
+function labDemoDefaultSteps(){
+ const cells=lab.cells||[];
+ const seq=cells.filter(c=>labDesignKind(c.design)==='seq'&&c.efficiency!=null).sort((a,b)=>Number(b.efficiency)-Number(a.efficiency))[0];
+ const fro=cells.filter(c=>labDesignKind(c.design)==='frozen'&&c.efficiency!=null).sort((a,b)=>Number(b.efficiency)-Number(a.efficiency))[0];
+ const featured=cells.find(c=>c.index===6)||seq||fro||cells[0];
+ const match=featured?cells.find(c=>c!==featured&&c.seed===featured.seed&&c.repeat===featured.repeat&&labDesignKind(c.design)!==labDesignKind(featured.design)):null;
+ const pair='Two matched markets. Same models, same agents, same private values. One shows everyone the same snapshot. The other lets traders take turns.';
+ const steps=[];
+ steps.push({kind:'intro', sel:'#labCampaignSvg', title:'LLMs in a market', body:'What happens when you put several language models into a continuous double auction and let them bid against one another.'});
+ if(featured) steps.push({kind:'agent', i:featured.index, title:'This trader', body:'A role, a private value, the order book, and the bid it sent.'});
+ steps.push({kind:'event', title:'A trade', body:'When two orders cross, the book matches them. Who traded, the price, and the payoff stay on the tape.'});
+ if(match) steps.push({kind:'cell', i:match.index, title:'The experiment', body:pair});
+ else if(fro && seq && fro.index!==(featured&&featured.index)) steps.push({kind:'cell', i:fro.index, title:'The experiment', body:pair});
+ steps.push({kind:'hist', title:'Efficiency', body:'Each bar is how many finished markets landed in that η range.'});
+ return steps;
+}
+function labDemoButtons(last){
+ const rec=$('labRecordBtn'), box=$('labDemoActions'), dock=$('labDemoDockBtn');
+ if(box) box.classList.toggle('recording', labDemo.recording);
+ if(rec) rec.textContent=labDemo.recording?'Stop record':'Record';
+ if(dock) dock.textContent=labDemo.playing?(last?'Done':'Next'):'Start';
+}
+function labDemoStop(){
+ labDemo.playing=false; labDemo.token++;
+ labPlayStop();
+ labDemoPopHide();
+ labDemoCursorShow(false);
+ labDemoFilm(false);
+ labDemoButtons();
+}
+function labDemoRecord(){
+ if(labDemo.playing) labDemoStop();
+ if(labDemo.recording){
+  labDemo.recording=false;
+  labDemoSave();
+  labDemoButtons();
+  return;
+ }
+ labDemo.recording=true;
+ labDemo.usedRecord=true;
+ labDemo.steps=[];
+ labDemoButtons();
+}
+function labDemoCapture(ev){
+ if(!labDemo.recording) return;
+ if(ev.target.closest('#labDemoActions,#labResumeBtn,#labStopBtn,.lab-q,#labQPop,#labDemoPop,#labDemoDock')) return;
+ const row=ev.target.closest('#labCellsBody tr[data-i]');
+ if(row){ labDemo.steps.push({kind:'cell', i:Number(row.dataset.i)}); return; }
+ const dot=ev.target.closest('#labCampaignSvg .lab-mkt');
+ if(dot){ labDemo.steps.push({kind:'scatter', i:Number(dot.dataset.i)}); return; }
+ const bar=ev.target.closest('#labHistSvg [data-bin]');
+ if(bar){ labDemo.steps.push({kind:'hist', bin:Number(bar.dataset.bin)}); return; }
+ const tape=ev.target.closest('#labReplayList .mc-event[data-i]');
+ if(tape){ labDemo.steps.push({kind:'event', i:Number(tape.dataset.i)}); return; }
+ const agent=ev.target.closest('.mc-agent[data-id]');
+ if(agent){ labDemo.steps.push({kind:'agent', id:agent.dataset.id}); return; }
+}
+async function labDemoOpenCell(index, tok){
+ await loadLabCell(index);
+ const t0=Date.now();
+ while(labDemoAlive(tok)&&Date.now()-t0<8000){
+  if(lab.cell&&lab.cell.index===index&&!lab.loading) return true;
+  await labDemoWait(40);
+ }
+ return false;
+}
+async function labDemoRunStep(step, tok, idx, total){
+ if(!labDemoAlive(tok)||!step) return;
+ const info=labDemoExplain(step);
+ const last=idx===total-1;
+ const kick=(idx!=null&&total)?`${idx+1} / ${total}`:'';
+ labDemoPopShow(info.title, info.body, kick);
+ if(step.kind==='intro'){
+  const el=document.querySelector(step.sel||'#labCampaignSvg');
+  const p=el&&labDemoPoint(el);
+  if(p){ await labDemoMoveTo(p.x, p.y, 420); labDemoPlacePop(); }
+ }
+ else if(step.kind==='look'){
+  const el=document.querySelector(step.sel||'#labCampaignSvg');
+  if(el) await labDemoTap(el, tok);
+ }
+ else if(step.kind==='cell'||step.kind==='scatter'){
+  const sel=step.kind==='scatter'?`#labCampaignSvg .lab-mkt[data-i="${step.i}"]`:`#labCellsBody tr[data-i="${step.i}"]`;
+  let el=document.querySelector(sel);
+  if(!el && step.kind==='scatter') el=document.querySelector(`#labCellsBody tr[data-i="${step.i}"]`);
+  if(el) await labDemoTap(el, tok);
+  if(step.i!=null) await labDemoOpenCell(step.i, tok);
+  labDemoPlacePop();
+ }
+ else if(step.kind==='hist'){
+  const bin=step.bin!=null?step.bin:labEtaBin(lab.cell&&lab.cell.efficiency);
+  const el=document.querySelector(`#labHistSvg [data-bin="${bin}"]`)||document.querySelector('#labHistSvg [data-bin]');
+  if(el){ await labDemoTap(el, tok); el.dispatchEvent(new MouseEvent('click',{bubbles:true})); }
+ }
+ else if(step.kind==='agent'){
+  if(step.i!=null) await labDemoOpenCell(step.i, tok);
+  const el=document.querySelector(step.id?`.mc-agent[data-id="${CSS.escape(step.id)}"]`:'.mc-agent');
+  if(el){ await labDemoTap(el, tok); el.click(); }
+ }
+ else if(step.kind==='event'){
+  let i=step.i;
+  if(i==null){
+   const events=lab.cell&&lab.cell.events||[];
+   const t=events.findIndex(e=>e&&e.kind==='trade');
+   i=t>=0?t:0;
+  }
+  if(lab.cell) selectLabEvent(i);
+  await labDemoWait(40);
+  const el=document.querySelector(`#labReplayList .mc-event.trade[data-i="${i}"]`)
+   || document.querySelector(`#labReplayList .mc-event[data-i="${i}"]`)
+   || document.querySelector('#labReplayList .mc-event.trade');
+  if(el){
+   const box=$('labReplayList');
+   if(box) box.scrollTop=Math.max(0, el.offsetTop-(box.clientHeight-el.offsetHeight)/2);
+   await labDemoWait(40);
+   await labDemoTap(el, tok);
+  }
+ }
+ if(!labDemoAlive(tok)) return;
+ labDemoPlacePop();
+ await labDemoHold(tok, last);
+}
+async function labDemoPlay(){
+ if(labDemo.playing){ labDemoStop(); return; }
+ if(labDemo.recording) labDemoRecord();
+ go('lab');
+ if(!(lab.cells||[]).length && typeof renderLabOnEnter==='function') await renderLabOnEnter();
+ const steps=(labDemo.usedRecord&&labDemo.steps&&labDemo.steps.length)?labDemo.steps:labDemoDefaultSteps();
+ if(!steps.length) return;
+ labDemo.playing=true; labDemo.token++; const tok=labDemo.token;
+ labDemoFilm(true);
+ await labDemoWait(40);
+ labDemo.pos={x:Math.max(40, window.innerWidth*0.18), y:120};
+ labDemoCursorShow(true);
+ labDemoButtons();
+ for(let i=0;i<steps.length;i++){
+  if(!labDemoAlive(tok)) return;
+  await labDemoRunStep(steps[i], tok, i, steps.length);
+ }
+ if(labDemo.token===tok) labDemoStop();
+}
+document.addEventListener('click', labDemoCapture, true);
+document.addEventListener('keydown', e=>{
+ if(labDemo.playing && (e.key==='ArrowRight'||e.key==='Enter'||e.key===' ')){ e.preventDefault(); labDemoGoNext(); return; }
+ if(e.key==='Escape'&&(labDemo.playing||labDemo.recording)){ e.preventDefault(); if(labDemo.recording) labDemoRecord(); else labDemoStop(); }
+});
 function setLabTab(tab, keep){
  lab.tab=tab;
  document.querySelectorAll('[data-labtab]').forEach(b=>b.classList.toggle('active', b.dataset.labtab===tab));
@@ -2413,7 +2719,10 @@ function setLabTab(tab, keep){
  if(market) market.style.display=showM?'':'none';
  if(science) science.style.display=showM?'':'none';
  if(ev) ev.style.display=showE?'':'none';
- if(grid) grid.style.display=showM?'grid':'none';
+ if(grid){
+  grid.style.display=(showM||showC)?'grid':'none';
+  grid.classList.toggle('campaign-only', showC && !showM);
+ }
 }
 
 function labQFacts(){
@@ -2446,10 +2755,10 @@ function labQCopy(id){
  const etaGuess=f.s.eta_sec==null?'no estimate yet':('about '+fmtDuration(f.s.eta_sec)+' if this pace holds');
  const map={
   page:{title:'What this page is', now:live, body:[
-   ['The experiment', f.rq||'This campaign asks whether AI traders behave differently when everyone sees the same still picture of the market versus when they take turns.'],
-   ['The plan', `${f.total} short market sessions: 20 random starting points × 2 setups × 3 tries. Each session has 10 AI traders buying and selling one asset.`],
-   ['The two setups', 'Green = everyone sees the same snapshot. Orange = traders take turns and can see earlier moves. Finished sessions stay saved. Unfinished ones are not drawn as if they happened.'],
-   ['What to click', 'The other four [?] buttons explain the live bar, the charts, the list, and the open market. Click a dot or a table row to inspect one finished session.']
+   ['Not a quiz', 'Most AI evaluations ask a model what it would say. Here, several language models sit in a continuous double auction, receive a role and a private value, see an order book, and submit real bids.'],
+   ['The experiment', f.rq||'Two matched setups keep models, agents, and values the same. Green = everyone sees the same snapshot. Orange = traders take turns. That is how we test whether information structure changes bids, prices, and efficiency.'],
+   ['The plan', `${f.total} short market sessions: 20 random starting points × 2 setups × 3 tries. Each session has 10 AI traders buying and selling one asset. Finished sessions stay saved.`],
+   ['Play', 'Record a path, or press Play. The cursor walks the archive so you can film the result: markets, traders, trades, and η. It does not start another campaign.']
   ]},
   run:{title:'Live status and numbers', now:live, body:[
    ['Resume remaining', `Starts only the ${f.remaining} unfinished markets. The ${f.done} already on disk are not overwritten. Click once and stay on this page.`],
@@ -2561,8 +2870,6 @@ function renderLabRunStrip(){
  const clock=$('labClock'); if(clock) clock.style.display=running?'grid':'none';
  const resume=$('labResumeBtn'); if(resume) resume.style.display=(!running && remaining>0)?'':'none';
  const stop=$('labStopBtn'); if(stop) stop.style.display=running?'':'none';
- const kick=document.querySelector('#view-lab .lab-head .op-kicker');
- if(kick) kick.textContent=running?'Live campaign':'Archive · read-only';
  if(running){
   const now=labNowPlain(s);
   setText('labArchiveTitle', `RUNNING ${done} / ${total}`);
@@ -2573,12 +2880,10 @@ function renderLabRunStrip(){
   const nowBox=$('labNowBox'); if(nowBox) nowBox.title=now.title;
   setText('labRemainLive', String(remaining));
   setText('labEtaLive', s.eta_sec==null?'—':fmtDuration(s.eta_sec));
-  setText('labNote', `Live campaign on this page. Finished markets stay archived. Remaining markets appear here as they finish.`);
  }else{
   const runId=lab.indexMeta?.run_id||s.command||'archived run';
   setText('labArchiveTitle', remaining?`Archive · ${done} / ${total}`:`Archive complete · ${done} / ${total}`);
   setText('labArchiveMeta', remaining?`${runId} · cells 0–${Math.max(0,done-1)} kept. ${remaining} not yet run. Resume remaining starts them here and will not overwrite the archive.`:`${runId} · all planned cells are on disk.`);
-  setText('labNote', remaining?`Archive of ${runId} · ${done} completed markets · ${remaining} remaining.`:`Archive complete.`);
  }
  refreshLabQ();
 }
