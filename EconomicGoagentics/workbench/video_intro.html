@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<title>LLMs in a market — CoAgentics</title>
+<style>
+:root{--ink:#102f4c;--paper:#f7f2e8;--gold:#a57b23;--muted:#5c6873;--line:rgba(16,47,76,.22);--buy:#3d8f6a;--sell:#e07a2f}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#0a1824;overflow:hidden}
+body{font-family:Georgia,'Times New Roman',serif;color:var(--ink)}
+#film{position:relative;width:100vw;height:100vh;aspect-ratio:16/9;background:var(--paper);overflow:hidden;isolation:isolate}
+#film:before{content:"";position:absolute;inset:0;z-index:30;pointer-events:none;opacity:.18;background-image:radial-gradient(circle at 20% 10%,rgba(255,255,255,.9),transparent 32%),repeating-linear-gradient(0deg,rgba(20,20,20,.015) 0 1px,transparent 1px 4px)}
+.scene{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity 1.15s ease;display:grid;place-items:center;padding:5.5vh 6vw;background:var(--paper)}
+.scene.active{opacity:1;visibility:visible}
+.scene .eyebrow{font-family:Arial,Helvetica,sans-serif;letter-spacing:.18em;text-transform:uppercase;font-size:clamp(11px,1.15vw,19px);color:var(--gold);font-weight:700;margin-bottom:1.2rem}
+h1,h2,p{margin:0}
+h1{font-size:clamp(50px,7.7vw,128px);line-height:.91;font-weight:500;letter-spacing:-.045em}
+h2{font-size:clamp(36px,4.8vw,78px);line-height:1.02;font-weight:500;letter-spacing:-.025em}
+.lede{font-size:clamp(19px,2vw,34px);line-height:1.38;max-width:48ch;color:#263d52}
+.rule{width:82px;height:2px;background:var(--gold);margin:1.4rem 0 1.8rem}
+.grid2{width:100%;height:100%;display:grid;grid-template-columns:1fr 1.15fr;gap:5vw;align-items:center}
+.copy{max-width:720px;z-index:4}
+.progress{position:absolute;z-index:40;left:0;right:0;bottom:0;height:4px;background:rgba(16,47,76,.12)}
+.progress>i{display:block;height:100%;width:0;background:var(--gold)}
+.brand{position:absolute;z-index:40;top:2.2vh;left:2.5vw;font-family:Arial,Helvetica,sans-serif;font-size:clamp(10px,.9vw,16px);letter-spacing:.08em;font-weight:700;color:rgba(16,47,76,.68)}
+.counter{position:absolute;z-index:40;top:2.2vh;right:2.5vw;font-family:Arial,Helvetica,sans-serif;font-size:clamp(10px,.8vw,14px);color:rgba(16,47,76,.5);letter-spacing:.08em}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2vw;margin-top:2rem;max-width:1000px}
+.step{padding:1.1rem;border-top:2px solid var(--gold);font-family:Arial,Helvetica,sans-serif}
+.step b{display:block;font-size:clamp(14px,1.4vw,23px);color:var(--ink);margin-bottom:.4rem}
+.step span{font-size:clamp(11px,.95vw,16px);color:var(--muted);line-height:1.35}
+.endmark{font-family:Arial,Helvetica,sans-serif;font-size:clamp(13px,1.1vw,18px);letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin-top:2rem;font-weight:700}
+.titleScene{background:var(--paper)}
+.heroGrid{width:100%;height:100%;display:grid;grid-template-columns:1.02fr .98fr;gap:4vw;align-items:center}
+.titleCopy{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;max-width:42rem;margin:0 auto 0 0}
+.titleCopy .rule{margin-left:0!important;margin-right:0!important}
+.titleScene h1{margin-bottom:.35rem}
+.titleScene .lede{max-width:34ch}
+.visual,.injectedVisual{position:relative;display:grid;place-items:center;height:76vh;overflow:visible}
+.visualCard{position:relative;width:min(40vw,560px);padding:1rem;background:rgba(255,255,255,.72);border:1px solid rgba(16,47,76,.14);box-shadow:0 24px 60px rgba(16,47,76,.18);border-radius:22px;backdrop-filter:blur(4px)}
+.figureSvg{display:block;width:100%;height:auto;max-height:62vh;border-radius:14px;background:#fbf8f1}
+.miniCap{font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:.02em;color:#5d6a76;margin-top:.65rem;line-height:1.35}
+.fig-label{font-family:Arial,Helvetica,sans-serif}
+@media (max-width: 980px){
+  .heroGrid,.grid2{grid-template-columns:1fr;gap:2.2rem}
+  .injectedVisual,.visual{height:auto}
+  .visualCard{width:min(86vw,560px)}
+  .scene{padding:4vh 5vw}
+  .titleCopy,.copy{max-width:none}
+  .steps{grid-template-columns:1fr 1fr!important}
+}
+@media(prefers-reduced-motion:reduce){.scene{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="film">
+  <div class="brand">THINKING TOGETHER · COAGENTICS</div>
+  <div class="counter" id="counter">01 / 02</div>
+
+  <section class="scene titleScene active scene1" data-duration="7500">
+    <div class="heroGrid">
+      <div class="titleCopy">
+        <div class="eyebrow">Introducing CoAgentics</div>
+        <h1>LLMs in a market</h1>
+        <div class="rule"></div>
+        <p class="lede">What happens when you put several language models into a continuous double auction and let them bid against one another.</p>
+        <div class="endmark">Paul Cummings, Ph.D.</div>
+      </div>
+      <div class="visual injectedVisual">
+        <div class="visualCard">
+          <svg class="figureSvg" viewBox="0 0 560 420" role="img" aria-label="Ten traders around a continuous double auction">
+            <rect x="0" y="0" width="560" height="420" fill="#fbf8f1"/>
+            <text class="fig-label" x="40" y="42" fill="#a57b23" font-size="12" font-weight="700" letter-spacing="2.2">CONTINUOUS DOUBLE AUCTION</text>
+            <rect x="168" y="92" width="224" height="236" rx="16" fill="#fff" stroke="rgba(16,47,76,.18)"/>
+            <text class="fig-label" x="280" y="122" text-anchor="middle" fill="#5c6873" font-size="11" font-weight="700" letter-spacing="1.6">ORDER BOOK</text>
+            <rect x="196" y="142" width="88" height="28" rx="6" fill="#e7efe4"/>
+            <rect x="276" y="142" width="88" height="28" rx="6" fill="#f8e4c8"/>
+            <text class="fig-label" x="240" y="161" text-anchor="middle" fill="#3d8f6a" font-size="11" font-weight="700">BUY</text>
+            <text class="fig-label" x="320" y="161" text-anchor="middle" fill="#e07a2f" font-size="11" font-weight="700">SELL</text>
+            <text class="fig-label" x="240" y="198" text-anchor="middle" fill="#102f4c" font-size="18" font-weight="700">90</text>
+            <text class="fig-label" x="320" y="198" text-anchor="middle" fill="#102f4c" font-size="18" font-weight="700">95</text>
+            <text class="fig-label" x="240" y="226" text-anchor="middle" fill="#5c6873" font-size="12">88</text>
+            <text class="fig-label" x="320" y="226" text-anchor="middle" fill="#5c6873" font-size="12">98</text>
+            <line x1="196" y1="248" x2="364" y2="248" stroke="rgba(16,47,76,.14)"/>
+            <text class="fig-label" x="280" y="278" text-anchor="middle" fill="#102f4c" font-size="13">last trade $95</text>
+            <text class="fig-label" x="280" y="300" text-anchor="middle" fill="#5c6873" font-size="11">Agent 2 ↔ Agent 5</text>
+            <circle cx="86" cy="128" r="22" fill="#3d8f6a"/><text class="fig-label" x="86" y="133" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">0</text>
+            <circle cx="86" cy="196" r="22" fill="#e07a2f"/><text class="fig-label" x="86" y="201" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">1</text>
+            <circle cx="86" cy="264" r="22" fill="#3d8f6a"/><text class="fig-label" x="86" y="269" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">2</text>
+            <circle cx="86" cy="332" r="22" fill="#e07a2f"/><text class="fig-label" x="86" y="337" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">3</text>
+            <circle cx="474" cy="128" r="22" fill="#3d8f6a"/><text class="fig-label" x="474" y="133" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">4</text>
+            <circle cx="474" cy="196" r="22" fill="#e07a2f"/><text class="fig-label" x="474" y="201" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">5</text>
+            <circle cx="474" cy="264" r="22" fill="#3d8f6a"/><text class="fig-label" x="474" y="269" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">6</text>
+            <circle cx="474" cy="332" r="22" fill="#e07a2f"/><text class="fig-label" x="474" y="337" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">7</text>
+            <circle cx="210" cy="372" r="18" fill="#3d8f6a"/><text class="fig-label" x="210" y="377" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">8</text>
+            <circle cx="350" cy="372" r="18" fill="#e07a2f"/><text class="fig-label" x="350" y="377" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">9</text>
+          </svg>
+          <div class="miniCap">Ten seats. A private value. The book. A bid.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene scene2" data-duration="9000">
+    <div class="grid2">
+      <div class="copy">
+        <div class="eyebrow">The next minute</div>
+        <h2>A trader, a trade, a matched pair, η.</h2>
+        <div class="rule"></div>
+        <p class="lede">Same models, same agents, same private values. One market shows everyone the same snapshot. The other lets traders take turns.</p>
+        <div class="steps">
+          <div class="step"><b>This trader</b><span>A role, a value, a bid.</span></div>
+          <div class="step"><b>A trade</b><span>Orders cross on the tape.</span></div>
+          <div class="step"><b>The experiment</b><span>Two matched markets.</span></div>
+          <div class="step"><b>Efficiency</b><span>Where η landed.</span></div>
+        </div>
+      </div>
+      <div class="visual">
+        <div class="visualCard">
+          <svg class="figureSvg" viewBox="0 0 560 420" role="img" aria-label="Matched markets and efficiency">
+            <rect x="0" y="0" width="560" height="420" fill="#fbf8f1"/>
+            <text class="fig-label" x="40" y="42" fill="#a57b23" font-size="12" font-weight="700" letter-spacing="2.2">MATCHED MARKETS</text>
+            <rect x="36" y="68" width="236" height="168" rx="16" fill="#fff" stroke="rgba(16,47,76,.18)"/>
+            <rect x="288" y="68" width="236" height="168" rx="16" fill="#fff" stroke="rgba(16,47,76,.18)"/>
+            <text class="fig-label" x="154" y="98" text-anchor="middle" fill="#3d8f6a" font-size="12" font-weight="700" letter-spacing="1.2">SNAPSHOT</text>
+            <text class="fig-label" x="406" y="98" text-anchor="middle" fill="#e07a2f" font-size="12" font-weight="700" letter-spacing="1.2">TAKING TURNS</text>
+            <text class="fig-label" x="154" y="148" text-anchor="middle" fill="#102f4c" font-size="28">η 86</text>
+            <text class="fig-label" x="406" y="148" text-anchor="middle" fill="#102f4c" font-size="28">η 91</text>
+            <text class="fig-label" x="154" y="186" text-anchor="middle" fill="#5c6873" font-size="13">same seed · same values</text>
+            <text class="fig-label" x="406" y="186" text-anchor="middle" fill="#5c6873" font-size="13">same seed · same values</text>
+            <text class="fig-label" x="40" y="278" fill="#a57b23" font-size="12" font-weight="700" letter-spacing="2.2">EFFICIENCY</text>
+            <rect x="40" y="300" width="28" height="72" rx="4" fill="#d9c9a8"/>
+            <rect x="84" y="268" width="28" height="104" rx="4" fill="#cbb68a"/>
+            <rect x="128" y="236" width="28" height="136" rx="4" fill="#a57b23"/>
+            <rect x="172" y="252" width="28" height="120" rx="4" fill="#cbb68a"/>
+            <rect x="216" y="284" width="28" height="88" rx="4" fill="#d9c9a8"/>
+            <rect x="260" y="308" width="28" height="64" rx="4" fill="#e4d8bf"/>
+            <rect x="304" y="324" width="28" height="48" rx="4" fill="#eee6d6"/>
+            <rect x="348" y="336" width="28" height="36" rx="4" fill="#eee6d6"/>
+            <text class="fig-label" x="54" y="396" text-anchor="middle" fill="#5c6873" font-size="11">60</text>
+            <text class="fig-label" x="186" y="396" text-anchor="middle" fill="#5c6873" font-size="11">80</text>
+            <text class="fig-label" x="318" y="396" text-anchor="middle" fill="#5c6873" font-size="11">100</text>
+            <text class="fig-label" x="480" y="348" text-anchor="middle" fill="#102f4c" font-size="18">η</text>
+            <text class="fig-label" x="480" y="372" text-anchor="middle" fill="#5c6873" font-size="12">how much surplus</text>
+            <text class="fig-label" x="480" y="390" text-anchor="middle" fill="#5c6873" font-size="12">the market kept</text>
+          </svg>
+          <div class="miniCap">Hold the world still. Change only how they see it.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene scene3" data-duration="9000">
+    <div class="grid2">
+      <div class="copy">
+        <div class="eyebrow">Q1</div>
+        <h2>Real models. Real bids. An archive.</h2>
+        <div class="rule"></div>
+        <p class="lede">Ten agents in one continuous double auction. Five buy, five sell. Every order from a local model. A trade counts when both sides leave a trace.</p>
+        <div class="steps">
+          <div class="step"><b>Inference</b><span>The raw model reply.</span></div>
+          <div class="step"><b>Order</b><span>BUY, SELL, or HOLD.</span></div>
+          <div class="step"><b>Match</b><span>Price, quantity, seats.</span></div>
+          <div class="step"><b>Surplus</b><span>η from the record.</span></div>
+        </div>
+      </div>
+      <div class="visual">
+        <div class="visualCard">
+          <svg class="figureSvg" viewBox="0 0 560 420" role="img" aria-label="From model reply to archived trade">
+            <rect x="0" y="0" width="560" height="420" fill="#fbf8f1"/>
+            <text class="fig-label" x="40" y="42" fill="#a57b23" font-size="12" font-weight="700" letter-spacing="2.2">LLM TO LLM</text>
+            <rect x="36" y="72" width="232" height="132" rx="16" fill="#fff" stroke="rgba(16,47,76,.18)"/>
+            <rect x="292" y="72" width="232" height="132" rx="16" fill="#fff" stroke="rgba(16,47,76,.18)"/>
+            <text class="fig-label" x="152" y="104" text-anchor="middle" fill="#3d8f6a" font-size="12" font-weight="700" letter-spacing="1.2">BUYER</text>
+            <text class="fig-label" x="408" y="104" text-anchor="middle" fill="#e07a2f" font-size="12" font-weight="700" letter-spacing="1.2">SELLER</text>
+            <text class="fig-label" x="152" y="140" text-anchor="middle" fill="#102f4c" font-size="20">qwen3:8b</text>
+            <text class="fig-label" x="408" y="140" text-anchor="middle" fill="#102f4c" font-size="20">codellama</text>
+            <text class="fig-label" x="152" y="172" text-anchor="middle" fill="#5c6873" font-size="13">private value · BUY</text>
+            <text class="fig-label" x="408" y="172" text-anchor="middle" fill="#5c6873" font-size="13">private cost · SELL</text>
+            <path d="M152 214 L152 248 L280 248" fill="none" stroke="#a57b23" stroke-width="2"/>
+            <path d="M408 214 L408 248 L280 248" fill="none" stroke="#a57b23" stroke-width="2"/>
+            <rect x="168" y="248" width="224" height="108" rx="16" fill="#fff" stroke="rgba(16,47,76,.18)"/>
+            <text class="fig-label" x="280" y="282" text-anchor="middle" fill="#5c6873" font-size="11" font-weight="700" letter-spacing="1.6">ONE BOOK</text>
+            <text class="fig-label" x="280" y="314" text-anchor="middle" fill="#102f4c" font-size="18">trade · tape · surplus</text>
+            <text class="fig-label" x="280" y="338" text-anchor="middle" fill="#5c6873" font-size="13">both sides on the archive</text>
+            <text class="fig-label" x="280" y="392" text-anchor="middle" fill="#5c6873" font-size="12">If either side is missing, it does not count.</text>
+          </svg>
+          <div class="miniCap">Ten seats. Two local models. One shared book.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="progress"><i id="bar"></i></div>
+</div>
+<script>
+(()=>{
+  const scenes=[...document.querySelectorAll('.scene')];
+  const bar=document.getElementById('bar'); const counter=document.getElementById('counter');
+  let idx=0,t0=performance.now(),duration=+scenes[0].dataset.duration, held=false;
+  function activate(n,now){
+    const next=((n%scenes.length)+scenes.length)%scenes.length;
+    scenes[idx].classList.remove('active');
+    idx=next;
+    scenes[idx].classList.add('active');
+    duration=+scenes[idx].dataset.duration||9000;
+    t0=now||performance.now();
+    held=idx===scenes.length-1;
+    counter.textContent=String(idx+1).padStart(2,'0')+' / '+String(scenes.length).padStart(2,'0');
+    bar.style.width=held?'100%':'0';
+  }
+  function tick(now){
+    if(held){ bar.style.width='100%'; requestAnimationFrame(tick); return; }
+    let p=Math.min(1,(now-t0)/duration);
+    bar.style.width=(p*100)+'%';
+    if(p>=1){
+      if(idx<scenes.length-1) activate(idx+1,now);
+      else held=true;
+    }
+    requestAnimationFrame(tick);
+  }
+  function go(delta){ held=false; activate(idx+delta, performance.now()); }
+  document.addEventListener('click',()=>go(1));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='Enter'){ e.preventDefault(); go(1); }
+    if(e.key==='ArrowLeft'){ e.preventDefault(); go(-1); }
+  });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)t0=performance.now();});
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
