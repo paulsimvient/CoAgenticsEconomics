@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<title>Q1 results — CoAgentics</title>
+<style>
+:root{--ink:#102f4c;--paper:#f7f2e8;--gold:#a57b23;--muted:#5c6873;--line:rgba(16,47,76,.22);--buy:#3d8f6a;--sell:#e07a2f}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#0a1824;overflow:hidden}
+body{font-family:Georgia,'Times New Roman',serif;color:var(--ink)}
+#film{position:relative;width:100vw;height:100vh;aspect-ratio:16/9;background:var(--paper);overflow:hidden;isolation:isolate}
+#film:before{content:"";position:absolute;inset:0;z-index:30;pointer-events:none;opacity:.18;background-image:radial-gradient(circle at 20% 10%,rgba(255,255,255,.9),transparent 32%),repeating-linear-gradient(0deg,rgba(20,20,20,.015) 0 1px,transparent 1px 4px)}
+.scene{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .85s ease;display:grid;align-items:center;align-content:center;padding:8vh 7vw 8vh;background:var(--paper);overflow:auto}
+.scene.active{opacity:1;visibility:visible}
+.scene .eyebrow{font-family:Arial,Helvetica,sans-serif;letter-spacing:.18em;text-transform:uppercase;font-size:clamp(11px,1.15vw,19px);color:var(--gold);font-weight:700;margin-bottom:1.1rem}
+h1,h2,p{margin:0}
+h1{font-size:clamp(36px,5.4vw,84px);line-height:.94;font-weight:500;letter-spacing:-.045em;max-width:12ch}
+h2{font-size:clamp(30px,3.8vw,62px);line-height:1.06;font-weight:500;letter-spacing:-.025em;max-width:16ch}
+.lede{font-size:clamp(18px,1.85vw,30px);line-height:1.38;max-width:38ch;color:#263d52}
+.note{font-family:Arial,Helvetica,sans-serif;font-size:clamp(11px,.95vw,15px);color:var(--muted);line-height:1.4;max-width:52ch;margin-top:1.1rem}
+.rule{width:82px;height:2px;background:var(--gold);margin:1.25rem 0 1.5rem}
+.grid2{width:100%;max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:1.6rem;align-items:start;justify-items:start}
+.copy{max-width:860px;z-index:4;min-width:0;width:100%}
+.progress{position:absolute;z-index:40;left:0;right:0;bottom:0;height:4px;background:rgba(16,47,76,.12)}
+.progress>i{display:block;height:100%;width:0;background:var(--gold)}
+.brand{position:absolute;z-index:40;top:2.2vh;left:2.5vw;font-family:Arial,Helvetica,sans-serif;font-size:clamp(10px,.9vw,16px);letter-spacing:.08em;font-weight:700;color:rgba(16,47,76,.68);text-decoration:none}
+.counter{position:absolute;z-index:40;top:2.2vh;right:2.5vw;font-family:Arial,Helvetica,sans-serif;font-size:clamp(10px,.8vw,14px);color:rgba(16,47,76,.5);letter-spacing:.08em}
+.hint{position:absolute;z-index:40;bottom:2.4vh;right:2.5vw;font-family:Arial,Helvetica,sans-serif;font-size:clamp(10px,.85vw,13px);letter-spacing:.12em;text-transform:uppercase;color:rgba(16,47,76,.45)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1vw;margin-top:1.8rem;max-width:640px}
+.kpi{padding:1rem 0 .2rem;border-top:2px solid var(--gold);font-family:Arial,Helvetica,sans-serif}
+.kpi b{display:block;font-size:clamp(28px,3.4vw,52px);line-height:1;color:var(--ink);letter-spacing:-.04em;margin:.35rem 0 .35rem}
+.kpi span{font-size:clamp(11px,.95vw,15px);color:var(--muted);line-height:1.3}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.9rem;align-items:stretch;width:100%}
+.card{background:rgba(255,255,255,.78);border:1px solid rgba(16,47,76,.14);border-radius:18px;padding:1.15rem 1.2rem 1.25rem;box-shadow:0 18px 44px rgba(16,47,76,.12);min-width:0;width:100%}
+.card .who{font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:.45rem}
+.card.buy .who{color:var(--buy)}
+.card.sell .who{color:var(--sell)}
+.card h3{font-size:clamp(18px,1.8vw,28px);font-weight:500;letter-spacing:-.03em;margin:0 0 .55rem;overflow-wrap:anywhere}
+.card .pv{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--muted);margin-bottom:1rem}
+.card .act{font-family:Arial,Helvetica,sans-serif;font-size:clamp(16px,1.5vw,22px);font-weight:700;padding:.7rem .8rem;border-radius:10px}
+.card.buy .act{background:#e7efe4;color:var(--buy)}
+.card.sell .act{background:#f8e4c8;color:var(--sell)}
+.totals{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1rem;width:100%}
+.totals div{background:rgba(255,255,255,.78);border:1px solid rgba(16,47,76,.14);border-radius:14px;padding:.85rem 1rem}
+.totals b{display:block;font-size:clamp(22px,2.2vw,32px);letter-spacing:-.03em}
+.totals span{font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.eta{width:100%;max-width:620px}
+.etaBar{height:18px;background:rgba(16,47,76,.1);border-radius:999px;overflow:hidden;margin:.8rem 0 1.2rem}
+.etaBar>i{display:block;height:100%;width:0;background:var(--buy)}
+.scene.active .etaBar>i{animation:fillBar 1.15s .45s ease forwards}
+.etaMeta{display:flex;justify-content:space-between;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--muted)}
+.fix{display:grid;gap:.7rem;margin-top:.2rem;width:100%}
+.fix div{padding:.85rem 0;border-top:1px solid var(--line);font-family:Arial,Helvetica,sans-serif}
+.fix b{display:block;font-size:clamp(14px,1.25vw,18px);color:var(--ink);margin-bottom:.25rem}
+.fix span{font-size:clamp(12px,1.05vw,16px);color:var(--muted);line-height:1.4}
+table{width:100%;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:clamp(12px,1.15vw,17px)}
+th,td{text-align:left;padding:.7rem .4rem;border-bottom:1px solid var(--line)}
+th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.visual{position:relative;display:grid;justify-items:stretch;width:100%;height:auto}
+.pair,.totals,.eta{width:100%;max-width:620px}
+
+.rise{opacity:0;transform:translateY(22px)}
+.scene.active .rise{animation:rise .7s ease forwards}
+.scene.active .d1{animation-delay:.08s}
+.scene.active .d2{animation-delay:.16s}
+.scene.active .d3{animation-delay:.24s}
+.scene.active .d4{animation-delay:.34s}
+.scene.active .d5{animation-delay:.44s}
+.scene.active .d6{animation-delay:.54s}
+@keyframes rise{to{opacity:1;transform:none}}
+@keyframes fillBar{to{width:45.45%}}
+
+@media (max-width: 700px){
+  .pair,.totals{grid-template-columns:1fr}
+  .scene{padding:7vh 5vw 5vh}
+}
+@media(prefers-reduced-motion:reduce){
+  .scene{transition:none!important}
+  .rise,.scene.active .rise{opacity:1;transform:none;animation:none!important}
+  .scene.active .etaBar>i{width:45.45%;animation:none}
+}
+</style>
+</head>
+<body>
+<div id="film">
+  <a class="brand" href="/">COAGENTICS · Q1 RESULTS</a>
+  <div class="counter" id="counter">01 / 05</div>
+  <div class="hint">Click or →</div>
+
+  <section class="scene active" data-duration="8000">
+    <div class="copy">
+      <div class="eyebrow rise">A recorded experiment</div>
+      <h1 class="rise d1">Ten models sat in one market.</h1>
+      <div class="rule rise d2"></div>
+      <p class="lede rise d3">Each one is a local language model. It can buy, sell, or wait. When a buy meets a sell, the market writes down a trade.</p>
+      <div class="kpis">
+        <div class="kpi rise d4"><span>Models in the market</span><b data-count="10">0</b></div>
+        <div class="kpi rise d5"><span>Replies from those models</span><b data-count="14">0</b></div>
+        <div class="kpi rise d6"><span>Trades between models</span><b data-count="3">0</b></div>
+      </div>
+      <p class="note rise d6">From a local check of the archived run, not a second independent replay. Details: Q1_REAL_LLM_TRADING_VALIDATION.md</p>
+    </div>
+  </section>
+
+  <section class="scene" data-duration="9000">
+    <div class="grid2">
+      <div class="copy">
+        <div class="eyebrow rise">One trade, step by step</div>
+        <h2 class="rise d1">One model bought. Another sold.</h2>
+        <div class="rule rise d2"></div>
+        <p class="lede rise d3">The buyer’s private value was 116. The seller’s cost was 86. They met at 90. The buyer gained 26. The seller gained 4.</p>
+        <p class="note rise d4">Each side is a separate recorded model reply.</p>
+      </div>
+      <div class="visual">
+        <div class="pair">
+          <div class="card buy rise d4">
+            <div class="who">Buyer</div>
+            <h3>llama3.2:3b</h3>
+            <div class="pv">Would pay up to 116</div>
+            <div class="act">BUY 1 @ 90</div>
+          </div>
+          <div class="card sell rise d5">
+            <div class="who">Seller</div>
+            <h3>qwen3:8b</h3>
+            <div class="pv">Cost to sell: 86</div>
+            <div class="act">SELL 1 @ 90</div>
+          </div>
+        </div>
+        <div class="totals">
+          <div class="rise d6"><span>They traded at</span><b>90</b></div>
+          <div class="rise d6"><span>Gains from this trade</span><b>+30</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" data-duration="8500">
+    <div class="grid2">
+      <div class="copy">
+        <div class="eyebrow rise">After three trades</div>
+        <h2 class="rise d1">The market kept 45% of the possible gains.</h2>
+        <div class="rule rise d2"></div>
+        <p class="lede rise d3">Three trades happened. Together they created 50 in surplus. The most this market could have created is 110.</p>
+        <p class="note rise d4">Two sellers sold below their cost. That is in the record. It is worth a closer look later.</p>
+      </div>
+      <div class="visual">
+        <div class="eta rise d4">
+          <div class="etaMeta"><span>Kept 50</span><span>Possible 110</span></div>
+          <div class="etaBar" aria-label="Market kept 45 percent of possible gains"><i></i></div>
+          <div class="card rise d5">
+            <div class="who">Share of possible gains</div>
+            <h3>45.45%</h3>
+            <p class="pv">Checked again from the archive. It matches.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" data-duration="9000">
+    <div class="grid2">
+      <div class="copy">
+        <div class="eyebrow rise">A small follow-up</div>
+        <h2 class="rise d1">Change the public price. Watch the bids.</h2>
+        <div class="rule rise d2"></div>
+        <p class="lede rise d3">Same models, same private values. One run heard 100. The other heard 70. The true value stayed 100.</p>
+        <p class="note rise d4">These were two-trader markets. Nobody traded. This is a first look at bidding, not a finished information experiment.</p>
+      </div>
+      <div class="visual">
+        <div class="card rise d5">
+          <table>
+            <thead>
+              <tr><th>Model</th><th>Heard 100</th><th>Heard 70</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>qwen3:8b</td><td>Bid 100</td><td>Bid 70</td></tr>
+              <tr><td>codellama:latest</td><td>Bid 90</td><td>Bid 90</td></tr>
+            </tbody>
+          </table>
+          <p class="note">The seller, llama3:latest, waited in every run.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" data-duration="10000">
+    <div class="grid2">
+      <div class="copy">
+        <div class="eyebrow rise">Still to do</div>
+        <h2 class="rise d1">Fix the files. Then run it again with ten traders.</h2>
+        <div class="rule rise d2"></div>
+        <p class="lede rise d3">We have a real ten-model market with real trades. We do not yet have a ten-model test of the public-price change.</p>
+      </div>
+      <div class="visual">
+        <div class="fix">
+          <div class="rise d4">
+            <b>1. Save the records cleanly</b>
+            <span>Some trade files have broken JSON. They can be read with a repair. They should be written correctly in the first place.</span>
+          </div>
+          <div class="rise d5">
+            <b>2. Let people open this run</b>
+            <span>The screen still shows the older 120-market archive. It should also open this new ten-model run.</span>
+          </div>
+          <div class="rise d6">
+            <b>3. Then repeat the price test</b>
+            <span>Do the 100 vs 70 comparison with ten traders, not two, after the files and the screen work.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="progress"><i id="bar"></i></div>
+</div>
+<script>
+(()=>{
+  const scenes=[...document.querySelectorAll('.scene')];
+  const bar=document.getElementById('bar'); const counter=document.getElementById('counter');
+  let idx=0,t0=performance.now(),duration=+scenes[0].dataset.duration, held=/[?&]hold=1/.test(location.search);
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function countUp(root){
+    root.querySelectorAll('[data-count]').forEach(el=>{
+      const to=+el.dataset.count; if(!to&&to!==0) return;
+      if(reduce){ el.textContent=String(to); return; }
+      const start=performance.now(), ms=700;
+      const step=now=>{
+        const p=Math.min(1,(now-start)/ms);
+        el.textContent=String(Math.round(to*(1-Math.pow(1-p,3))));
+        if(p<1) requestAnimationFrame(step);
+      };
+      el.textContent='0';
+      requestAnimationFrame(step);
+    });
+  }
+  function replay(scene){
+    scene.querySelectorAll('.rise,.etaBar>i').forEach(el=>{
+      el.style.animation='none';
+      void el.offsetWidth;
+      el.style.animation='';
+    });
+    countUp(scene);
+  }
+  function activate(n,now){
+    const next=((n%scenes.length)+scenes.length)%scenes.length;
+    scenes[idx].classList.remove('active');
+    idx=next;
+    scenes[idx].classList.add('active');
+    replay(scenes[idx]);
+    duration=+scenes[idx].dataset.duration||9000;
+    t0=now||performance.now();
+    if(!/[?&]hold=1/.test(location.search)) held=idx===scenes.length-1;
+    counter.textContent=String(idx+1).padStart(2,'0')+' / '+String(scenes.length).padStart(2,'0');
+    bar.style.width=held?'100%':'0';
+  }
+  function tick(now){
+    if(held){ bar.style.width='100%'; requestAnimationFrame(tick); return; }
+    let p=Math.min(1,(now-t0)/duration);
+    bar.style.width=(p*100)+'%';
+    if(p>=1){
+      if(idx<scenes.length-1) activate(idx+1,now);
+      else held=true;
+    }
+    requestAnimationFrame(tick);
+  }
+  function go(delta){
+    held=/[?&]hold=1/.test(location.search);
+    activate(idx+delta, performance.now());
+  }
+  document.addEventListener('click',()=>go(1));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='Enter'){ e.preventDefault(); go(1); }
+    if(e.key==='ArrowLeft'){ e.preventDefault(); go(-1); }
+  });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)t0=performance.now();});
+  replay(scenes[0]);
+  requestAnimationFrame(tick);
+})();
+</script>
+<script src="/access_wall.js"></script>
+</body>
+</html>

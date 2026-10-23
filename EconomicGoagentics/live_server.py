@@ -2601,6 +2601,12 @@ def _audit_write(event):
  AUDIT_PATH.parent.mkdir(parents=True,exist_ok=True)
  with AUDIT_PATH.open('a',encoding='utf-8') as f: f.write(json.dumps(event,ensure_ascii=False)+'\n')
 
+ACCESS_LEADS=ROOT/'data'/'access_leads.jsonl'
+GATE_COOKIE='coagentics_gate=ok'
+GATE_COOKIE_SET='coagentics_gate=ok; Path=/; Max-Age=2592000; SameSite=Lax'
+EMAIL_RE=re.compile(r'^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$')
+GATED_EXACT={'/','/index.html','/interface.html','/how.html','/how','/live.html','/market_lab.html','/matlab.html','/video_intro.html','/q1_results.html','/white-paper.pdf'}
+
 S=Session()
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*a):pass
@@ -2614,6 +2620,63 @@ class Handler(BaseHTTPRequestHandler):
    super().finish()
   except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, TimeoutError):
    pass
+ def _gate_off(self):
+  return os.environ.get('COAGENTICS_GATE','on').strip().lower() in ('0','off','false','no')
+ def _has_access(self):
+  return GATE_COOKIE in (self.headers.get('Cookie') or '')
+ def _needs_gate(self, path):
+  if self._gate_off() or self._has_access(): return False
+  if path in ('/favicon.ico','/gate.html','/access_wall.js'): return False
+  if path in GATED_EXACT: return True
+  return path.endswith('.html') or path.endswith('.pdf')
+ def _safe_next(self, nxt):
+  nxt=str(nxt or '/').strip() or '/'
+  if not re.match(r'^/[A-Za-z0-9_./?-]{0,200}$', nxt) or '//' in nxt:
+   return '/'
+  return nxt
+ def _serve_gate(self, nxt='/'):
+  html=(ROOT/'workbench'/'gate.html').read_text(encoding='utf-8')
+  nxt=self._safe_next(nxt)
+  html=html.replace('value="/"', f'value="{nxt}"', 1)
+  data=html.encode('utf-8')
+  self.send_response(200)
+  self.send_header('Content-Type','text/html; charset=utf-8')
+  self.send_header('Cache-Control','no-store')
+  self.send_header('Content-Length',str(len(data)))
+  self.end_headers(); self.wfile.write(data)
+ def _grant_access(self, raw):
+  ctype=(self.headers.get('Content-Type') or '').split(';')[0].strip().lower()
+  email=''; nxt='/'
+  if ctype=='application/x-www-form-urlencoded':
+   q=urllib.parse.parse_qs(raw.decode('utf-8','replace'))
+   email=(q.get('email') or [''])[0]
+   nxt=(q.get('next') or ['/'])[0]
+  else:
+   d=json.loads(raw.decode('utf-8','replace') or '{}')
+   email=str(d.get('email') or '')
+   nxt=str(d.get('next') or '/')
+  email=email.strip().lower()
+  if len(email)>200 or not EMAIL_RE.match(email):
+   if ctype=='application/x-www-form-urlencoded':
+    self._serve_gate(nxt); return
+   self.reply({'ok':False,'error':'Enter a valid email.'},400); return
+  nxt=self._safe_next(nxt)
+  rec={'timestamp':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'email':email,'next':nxt,'addr':self.client_address[0]}
+  ACCESS_LEADS.parent.mkdir(parents=True, exist_ok=True)
+  with ACCESS_LEADS.open('a',encoding='utf-8') as f: f.write(json.dumps(rec)+'\n')
+  if ctype=='application/x-www-form-urlencoded':
+   self.send_response(303)
+   self.send_header('Set-Cookie', GATE_COOKIE_SET)
+   self.send_header('Location', nxt)
+   self.send_header('Content-Length','0')
+   self.end_headers(); return
+  payload=json.dumps({'ok':True,'next':nxt}).encode()
+  self.send_response(200)
+  self.send_header('Set-Cookie', GATE_COOKIE_SET)
+  self.send_header('Content-Type','application/json')
+  self.send_header('Cache-Control','no-store')
+  self.send_header('Content-Length',str(len(payload)))
+  self.end_headers(); self.wfile.write(payload)
  def reply(self,obj,code=200):
   try:
    raw=json.dumps(obj).encode();self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
@@ -2646,6 +2709,10 @@ class Handler(BaseHTTPRequestHandler):
 
  def do_GET(self):
   url=urllib.parse.urlsplit(self.path)
+  if url.path=='/gate.html':
+   self._serve_gate(urllib.parse.parse_qs(url.query).get('next',['/'])[0]); return
+  if not url.path.startswith('/api/') and self._needs_gate(url.path):
+   self._serve_gate(url.path); return
   if url.path=='/api/llm/status':
    self.reply(_ollama_status());return
   if url.path=='/api/platform/audit':
@@ -2855,6 +2922,12 @@ class Handler(BaseHTTPRequestHandler):
    data=(ROOT/'workbench'/'market_lab.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
   if url.path=='/matlab.html':
    data=(ROOT/'workbench'/'matlab.html').read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path in ('/video_intro.html','/q1_results.html','/gate.html'):
+   data=(ROOT/'workbench'/url.path.lstrip('/')).read_bytes();self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/white-paper.pdf':
+   data=(ROOT/'workbench'/'white-paper.pdf').read_bytes();self.send_response(200);self.send_header('Content-Type','application/pdf');self.send_header('Content-Disposition','inline; filename="CoAgentics_DARPA_white_paper.pdf"');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+  if url.path=='/access_wall.js':
+   data=(ROOT/'workbench'/'access_wall.js').read_bytes();self.send_response(200);self.send_header('Content-Type','application/javascript; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
   if url.path=='/api.js':
    data=(ROOT/'workbench'/'api.js').read_bytes();self.send_response(200);self.send_header('Content-Type','application/javascript; charset=utf-8');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
   if url.path=='/favicon.ico':
@@ -2865,7 +2938,10 @@ class Handler(BaseHTTPRequestHandler):
   try:
    size=int(self.headers.get('Content-Length','0'))
    if size>65536:raise ValueError('Request too large')
-   d=json.loads(self.rfile.read(size) or b'{}')
+   raw=self.rfile.read(size) or b'{}'
+   if self.path in ('/api/access/email','/access'):
+    self._grant_access(raw); return
+   d=json.loads(raw)
    if self.path=='/api/llm/chat':
     msg=str(d.get('message','')).strip()
     if not msg or len(msg)>4000:

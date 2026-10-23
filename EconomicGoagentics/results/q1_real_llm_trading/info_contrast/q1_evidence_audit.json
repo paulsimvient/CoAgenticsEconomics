@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "cells_verified": 8,
+  "cells_expected": 8,
+  "inference_turns": 32,
+  "parse_success_turns": 32,
+  "errors": [],
+  "claim_boundary": "Archive integrity and assignment consistency only; no independent validation of AI provider, economic outcomes, or causal effects."
+}

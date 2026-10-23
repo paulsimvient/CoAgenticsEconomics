@@ -1,0 +1,170 @@
+{
+  "captured_at": "2026-10-22T12:20:41.556011+00:00",
+  "files": [
+    {
+      "path": "results/q1_real_llm_trading/live_cell0_prove.json",
+      "sha256": "346b90f2df1816063b7cd97bf4853f7cbbf9e09e6024c94d5f7a82153a23346d",
+      "bytes": 6514
+    },
+    {
+      "path": "results/q1_real_llm_trading/TRACE_trade0.md",
+      "sha256": "53c177fb1e8084ddd4f2722d272d5a4ce5e4fcb7708f8d65bb25cfb5f63f2e6a",
+      "bytes": 2033
+    },
+    {
+      "path": "results/q1_real_llm_trading/commands.txt",
+      "sha256": "a29ab14cc895a5c04615f6e7ac39e299d7df6766b9266d0bd9d9ea5c997f8a5a",
+      "bytes": 433
+    },
+    {
+      "path": "results/q1_real_llm_trading/original_run_hashes.json",
+      "sha256": "4d9e17176b0adc46bd336b047fe02cbf9425d2e2727685912300cedd16db9c81",
+      "bytes": 18118
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_protocol.md",
+      "sha256": "3a6183105572d8dfa50838d3b85df419c69dbbc357e900c7972709376dc81f06",
+      "bytes": 358
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_plan.json",
+      "sha256": "d943566fd22f619964debfc41c02b6abd395118eeb7f85c624d25b0795a91124",
+      "bytes": 1535
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/manifest.json",
+      "sha256": "c77726d91f5796e5b1ac6492aee126eb5010ab14caa4f710d06ed3d56411031b",
+      "bytes": 2926
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/q1_descriptive_scores.json",
+      "sha256": "f30e6d8904c183139b9b58b17d66d1cf212d5a904105947c2ed7ea6856e13378",
+      "bytes": 3111
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/q1_evidence_audit.json",
+      "sha256": "3a32a44a5cff4a97c033a8d2a9d1b5345ad896b0b8cb3166477460d7a1c476d8",
+      "bytes": 295
+    },
+    {
+      "path": "results/dv026_heterogeneous_campaign/runs/run_1792670868835_39411/cell_evidence/cell_0.json",
+      "sha256": "bbab0c9e335b3e8035bad35f70a351c3e6c6a8e5d176e860738b7e1efd6c2057",
+      "bytes": 231
+    },
+    {
+      "path": "results/dv026_heterogeneous_campaign/runs/run_1792670868835_39411/cell_observations/cell_0.json",
+      "sha256": "4d3ecd49968f9f147840a0d05090bfa462be673d1f0cc91a313f4d0a07cead33",
+      "bytes": 11826
+    },
+    {
+      "path": "results/dv026_heterogeneous_campaign/runs/run_1792670868835_39411/cell_snapshots/cell_0.json",
+      "sha256": "b3868fc29a87e4f944ea786ee4f5f7730c6cb035aee7cf416a05837ae2d5160b",
+      "bytes": 3221
+    },
+    {
+      "path": "results/dv026_heterogeneous_campaign/runs/run_1792582821581_6712/cell_evidence/cell_0.json",
+      "sha256": "0c9736ad930f114c322d9b71526d4c87427595bf427ea7c028f0412d5218ebb4",
+      "bytes": 223
+    },
+    {
+      "path": "results/dv026_heterogeneous_campaign/runs/run_1792582821581_6712/cell_evidence/cell_6.json",
+      "sha256": "78c95a3a9dcbd037c8bc83922d258cad63a7e652b8ce4281cb62a937425fffb0",
+      "bytes": 223
+    },
+    {
+      "path": "results/dv026_heterogeneous_campaign/runs/run_1792582821581_6712/cell_observations/cell_6.json",
+      "sha256": "fb8a482363cc93c10d51bbbbb51822f69899d25f18997f1e5eab55583b5af8da",
+      "bytes": 13735
+    },
+    {
+      "path": "results/q1_real_llm_trading/ui_archive_120.png",
+      "sha256": "d28da15df4c090bdf7a73a7410770068f784a343fc013690bfefd54f4c72005a",
+      "bytes": 232680
+    },
+    {
+      "path": "results/q1_real_llm_trading/ui_market6_tape.png",
+      "sha256": "a6fbbbf4f6c3a5e51972262ec2b53f10a15d60f8f611205f4c53f6187bd0855d",
+      "bytes": 73608
+    },
+    {
+      "path": "results/q1_real_llm_trading/ui_market6_both_orders.png",
+      "sha256": "bcc05926e0dbe746f9953a7b5f1c761502875f38b07c7fc3c5b1534179489178",
+      "bytes": 258894
+    },
+    {
+      "path": "results/q1_real_llm_trading/ui_market6_selected.png",
+      "sha256": "54724b522de4e351a90d497b3fa2be37a39aef5d17f2bafd1ee2c584c8c4fa1b",
+      "bytes": 233162
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0000/protocol_cell_0.json",
+      "sha256": "04db3340134555083dc8e58db0c05f9752e00876bcd456f37df8bf2b1aa4251d",
+      "bytes": 2866
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0001/protocol_cell_0.json",
+      "sha256": "1c17c005a6b052262a5cd7d2e0f9254005acf1b15c5857aeed1815bb6b69252d",
+      "bytes": 2860
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0002/protocol_cell_0.json",
+      "sha256": "b186a0631ae17f7a0ea20182d285566c950edb50d404efec7edde22a54591d14",
+      "bytes": 2905
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0003/protocol_cell_0.json",
+      "sha256": "a75521564a9c06c8503264850cea06df464304a4cbe672ffad60d25184f909c9",
+      "bytes": 2905
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0004/protocol_cell_0.json",
+      "sha256": "68f9f3bb99d5cf4021869ca49ca7f630b32e5ac4d9af8d61a39cc1a81e5eb54d",
+      "bytes": 2866
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0005/protocol_cell_0.json",
+      "sha256": "bb5625ec1dbca986baf1594b60ba4ae0e1f90ff43187d269506820912f7f4f08",
+      "bytes": 2860
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0006/protocol_cell_0.json",
+      "sha256": "5e0b7ecfdf91a220a65c217f2fb6f2811fb1b1dac4b32ce70c2ecd18ae021ac6",
+      "bytes": 2905
+    },
+    {
+      "path": "results/q1_real_llm_trading/info_contrast/cell_0007/protocol_cell_0.json",
+      "sha256": "2792a8faf524de568c7155802295a6c168ab047c7ca3d87c4101fcb19eff88c7",
+      "bytes": 2905
+    }
+  ],
+  "ui_api": {
+    "run_id": "run_1792582821581_6712",
+    "n_cells": 120,
+    "keys": [
+      "cells",
+      "n_completed",
+      "n_planned",
+      "n_remaining",
+      "archive",
+      "run_id",
+      "run_dir",
+      "read_only",
+      "protected",
+      "layout",
+      "source"
+    ],
+    "cell6": {
+      "index": 6,
+      "seed": 424243,
+      "repeat": 0,
+      "design": "frozen_snapshot",
+      "efficiency": 87.2727,
+      "trades": 4,
+      "turns": 16,
+      "agents": 10,
+      "status": "completed",
+      "evidence_file": "results/dv026_heterogeneous_campaign/runs/run_1792582821581_6712/cell_evidence/cell_6.json",
+      "efficiency_source": "cell_evidence"
+    }
+  }
+}

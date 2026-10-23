@@ -1,0 +1,102 @@
+{
+  "status": "completed",
+  "plan_sha256": "d943566fd22f619964debfc41c02b6abd395118eeb7f85c624d25b0795a91124",
+  "cells": [
+    {
+      "index": 0,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261022",
+        "model": "qwen3:8b",
+        "condition": "control",
+        "seed": 20261022
+      },
+      "returncode": 0,
+      "observation_sha256": "04db3340134555083dc8e58db0c05f9752e00876bcd456f37df8bf2b1aa4251d"
+    },
+    {
+      "index": 1,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261022",
+        "model": "qwen3:8b",
+        "condition": "intervention",
+        "seed": 20261022
+      },
+      "returncode": 0,
+      "observation_sha256": "1c17c005a6b052262a5cd7d2e0f9254005acf1b15c5857aeed1815bb6b69252d"
+    },
+    {
+      "index": 2,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261022",
+        "model": "codellama:latest",
+        "condition": "control",
+        "seed": 20261022
+      },
+      "returncode": 0,
+      "observation_sha256": "b186a0631ae17f7a0ea20182d285566c950edb50d404efec7edde22a54591d14"
+    },
+    {
+      "index": 3,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261022",
+        "model": "codellama:latest",
+        "condition": "intervention",
+        "seed": 20261022
+      },
+      "returncode": 0,
+      "observation_sha256": "a75521564a9c06c8503264850cea06df464304a4cbe672ffad60d25184f909c9"
+    },
+    {
+      "index": 4,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261023",
+        "model": "qwen3:8b",
+        "condition": "control",
+        "seed": 20261023
+      },
+      "returncode": 0,
+      "observation_sha256": "68f9f3bb99d5cf4021869ca49ca7f630b32e5ac4d9af8d61a39cc1a81e5eb54d"
+    },
+    {
+      "index": 5,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261023",
+        "model": "qwen3:8b",
+        "condition": "intervention",
+        "seed": 20261023
+      },
+      "returncode": 0,
+      "observation_sha256": "bb5625ec1dbca986baf1594b60ba4ae0e1f90ff43187d269506820912f7f4f08"
+    },
+    {
+      "index": 6,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261023",
+        "model": "codellama:latest",
+        "condition": "control",
+        "seed": 20261023
+      },
+      "returncode": 0,
+      "observation_sha256": "5e0b7ecfdf91a220a65c217f2fb6f2811fb1b1dac4b32ce70c2ecd18ae021ac6"
+    },
+    {
+      "index": 7,
+      "assignment": {
+        "scenario_id": "public-signal-70",
+        "trial": "seed-20261023",
+        "model": "codellama:latest",
+        "condition": "intervention",
+        "seed": 20261023
+      },
+      "returncode": 0,
+      "observation_sha256": "2792a8faf524de568c7155802295a6c168ab047c7ca3d87c4101fcb19eff88c7"
+    }
+  ]
+}

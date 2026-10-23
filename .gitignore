@@ -32,6 +32,7 @@ EconomicGoagentics-20261001-1555/
 .env.*
 credentials.json
 *.pem
+EconomicGoagentics/data/access_leads.jsonl
 
 # Compiler / clangd
 compile_commands.json

@@ -1,0 +1,8 @@
+# Q1 Phase 2 production command
+# cwd: EconomicGoagentics/EconomicGoagentics
+# binary: build-dv026/dv026-workbench-runner (mtime 2026-10-21 15:42)
+# Does NOT set COAGENTICS_RESUME_RUN_DIR (new run directory)
+# Does NOT set COAGENTICS_PROTOCOL_ID (would reduce to 2 seats)
+export COAGENTICS_INFERENCE_REPEATS=1
+export COAGENTICS_ACTIVATION_DESIGN=sequential_interaction
+./build-dv026/dv026-workbench-runner hetero-campaign 20261022 1

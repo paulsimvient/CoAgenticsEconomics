@@ -1,0 +1,283 @@
+{
+  "run_dir": "results/q1_milestone/native_archive",
+  "index": 6,
+  "seed": 424243,
+  "design": "frozen_snapshot",
+  "status": "completed",
+  "agents": 10,
+  "distinct_models": [
+    "codellama:latest",
+    "gemma2:2b",
+    "llama2:latest",
+    "llama3.1:8b",
+    "llama3.2:3b",
+    "llama3:latest",
+    "mistral:latest",
+    "phi3:mini",
+    "qwen2.5-coder:7b",
+    "qwen3:8b"
+  ],
+  "inference_calls": 16,
+  "submitted_orders": 10,
+  "executed_trades": 4,
+  "verified_llm_to_llm_trades": 4,
+  "reported_efficiency": 87.2727,
+  "independent_eta_percent": 87.27272727272727,
+  "competitive_surplus": 110.0,
+  "realized_surplus": 96,
+  "eta_matches_reported": true,
+  "conservation": {
+    "cash_sum": 100000.0,
+    "cash_sum_expected": 100000.0,
+    "inventory_sum": 5,
+    "inventory_sum_expected": 5,
+    "negative_inventory": [],
+    "negative_cash": []
+  },
+  "ending_cash": {
+    "LLM-SEAT-0": 9910.0,
+    "LLM-SEAT-1": 10090.0,
+    "LLM-SEAT-2": 9905.0,
+    "LLM-SEAT-3": 10090.0,
+    "LLM-SEAT-4": 10000.0,
+    "LLM-SEAT-5": 10095.0,
+    "LLM-SEAT-6": 9910.0,
+    "LLM-SEAT-7": 10090.0,
+    "LLM-SEAT-8": 9910.0,
+    "LLM-SEAT-9": 10000.0
+  },
+  "ending_inventory": {
+    "LLM-SEAT-0": 1,
+    "LLM-SEAT-1": 0,
+    "LLM-SEAT-2": 1,
+    "LLM-SEAT-3": 0,
+    "LLM-SEAT-4": 0,
+    "LLM-SEAT-5": 0,
+    "LLM-SEAT-6": 1,
+    "LLM-SEAT-7": 0,
+    "LLM-SEAT-8": 1,
+    "LLM-SEAT-9": 1
+  },
+  "trades": [
+    {
+      "index": 0,
+      "time": 0,
+      "quantity": 1,
+      "price": 95,
+      "buyer": "LLM-SEAT-2",
+      "seller": "LLM-SEAT-5",
+      "llm_to_llm": true,
+      "buyer_model": "qwen3:8b",
+      "seller_model": "codellama:latest",
+      "buyer_private_value": 116,
+      "seller_private_cost": 90,
+      "buyer_surplus": 21,
+      "seller_surplus": 5,
+      "total_surplus": 26,
+      "buyer_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-2",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 100,
+        "side": "buy"
+      },
+      "seller_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-5",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "sell"
+      },
+      "buyer_raw": "{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":100,\"time\":0}",
+      "seller_raw": "\n{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}",
+      "buyer_parsed": {
+        "action": "BUY",
+        "quantity": 1,
+        "price": 100,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "seller_parsed": {
+        "action": "SELL",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "buyer_request_id": "ollama:qwen3:8b:424243:0",
+      "seller_request_id": "ollama:codellama:latest:424243:0",
+      "buyer_latency_ms": 35903,
+      "seller_latency_ms": 2697
+    },
+    {
+      "index": 1,
+      "time": 0,
+      "quantity": 1,
+      "price": 90,
+      "buyer": "LLM-SEAT-0",
+      "seller": "LLM-SEAT-7",
+      "llm_to_llm": true,
+      "buyer_model": "llama2:latest",
+      "seller_model": "gemma2:2b",
+      "buyer_private_value": 120,
+      "seller_private_cost": 94,
+      "buyer_surplus": 30,
+      "seller_surplus": -4,
+      "total_surplus": 26,
+      "buyer_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-0",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "buy"
+      },
+      "seller_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-7",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "sell"
+      },
+      "buyer_raw": "\n{\"action\": \"BUY\", \"asset\": \"ASSET\", \"quantity\": 1, \"price\": 90, \"time\": 0}",
+      "seller_raw": "```json\n{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}\n```",
+      "buyer_parsed": {
+        "action": "BUY",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "seller_parsed": {
+        "action": "SELL",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "buyer_request_id": "ollama:llama2:latest:424243:0",
+      "seller_request_id": "ollama:gemma2:2b:424243:0",
+      "buyer_latency_ms": 5261,
+      "seller_latency_ms": 3368
+    },
+    {
+      "index": 2,
+      "time": 1,
+      "quantity": 1,
+      "price": 90,
+      "buyer": "LLM-SEAT-6",
+      "seller": "LLM-SEAT-1",
+      "llm_to_llm": true,
+      "buyer_model": "mistral:latest",
+      "seller_model": "llama3.2:3b",
+      "buyer_private_value": 108,
+      "seller_private_cost": 82,
+      "buyer_surplus": 18,
+      "seller_surplus": 8,
+      "total_surplus": 26,
+      "buyer_order": {
+        "time": 1,
+        "agent_id": "LLM-SEAT-6",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "buy"
+      },
+      "seller_order": {
+        "time": 1,
+        "agent_id": "LLM-SEAT-1",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "sell"
+      },
+      "buyer_raw": " {\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+      "seller_raw": "{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+      "buyer_parsed": {
+        "action": "BUY",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 1
+      },
+      "seller_parsed": {
+        "action": "SELL",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 1
+      },
+      "buyer_request_id": "ollama:mistral:latest:424243:1",
+      "seller_request_id": "ollama:llama3.2:3b:424243:1",
+      "buyer_latency_ms": 1269,
+      "seller_latency_ms": 2886
+    },
+    {
+      "index": 3,
+      "time": 1,
+      "quantity": 1,
+      "price": 90,
+      "buyer": "LLM-SEAT-8",
+      "seller": "LLM-SEAT-3",
+      "llm_to_llm": true,
+      "buyer_model": "phi3:mini",
+      "seller_model": "qwen2.5-coder:7b",
+      "buyer_private_value": 104,
+      "seller_private_cost": 86,
+      "buyer_surplus": 14,
+      "seller_surplus": 4,
+      "total_surplus": 18,
+      "buyer_order": {
+        "time": 1,
+        "agent_id": "LLM-SEAT-8",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "buy"
+      },
+      "seller_order": {
+        "time": 1,
+        "agent_id": "LLM-SEAT-3",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "sell"
+      },
+      "buyer_raw": "{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+      "seller_raw": "{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":1}",
+      "buyer_parsed": {
+        "action": "BUY",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 1
+      },
+      "seller_parsed": {
+        "action": "SELL",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 1
+      },
+      "buyer_request_id": "ollama:phi3:mini:424243:1",
+      "seller_request_id": "ollama:qwen2.5-coder:7b:424243:1",
+      "buyer_latency_ms": 3058,
+      "seller_latency_ms": 4197
+    }
+  ],
+  "files": {
+    "evidence": "results/q1_milestone/native_archive/cell_evidence/cell_6.json",
+    "observation": "results/q1_milestone/native_archive/cell_observations/cell_6.json",
+    "snapshot": "results/q1_milestone/native_archive/cell_snapshots/cell_6.json"
+  },
+  "sha256": {
+    "evidence": "78c95a3a9dcbd037c8bc83922d258cad63a7e652b8ce4281cb62a937425fffb0",
+    "observation": "fb8a482363cc93c10d51bbbbb51822f69899d25f18997f1e5eab55583b5af8da",
+    "snapshot": "0e025cd57c4fd88cc3df388d2fca62b521cf20134d786d7cfe1cd9d4901cad79"
+  },
+  "errors": [],
+  "qualified_llm_to_llm": true
+}

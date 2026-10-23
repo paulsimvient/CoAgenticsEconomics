@@ -1,0 +1,62 @@
+{
+  "protocol_id": "q1-real-llm-info-v1",
+  "protocol_sha256": "3a6183105572d8dfa50838d3b85df419c69dbbc357e900c7972709376dc81f06",
+  "assignments": [
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "qwen3:8b",
+      "condition": "control",
+      "seed": 20261022
+    },
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "qwen3:8b",
+      "condition": "intervention",
+      "seed": 20261022
+    },
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "codellama:latest",
+      "condition": "control",
+      "seed": 20261022
+    },
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "codellama:latest",
+      "condition": "intervention",
+      "seed": 20261022
+    },
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "qwen3:8b",
+      "condition": "control",
+      "seed": 20261023
+    },
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "qwen3:8b",
+      "condition": "intervention",
+      "seed": 20261023
+    },
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "codellama:latest",
+      "condition": "control",
+      "seed": 20261023
+    },
+    {
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "codellama:latest",
+      "condition": "intervention",
+      "seed": 20261023
+    }
+  ]
+}

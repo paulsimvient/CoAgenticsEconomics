@@ -1,0 +1,110 @@
+{
+  "status": "descriptive_only",
+  "cells": [
+    {
+      "index": 0,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "qwen3:8b",
+      "condition": "control",
+      "seed": 20261022,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    },
+    {
+      "index": 1,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "qwen3:8b",
+      "condition": "intervention",
+      "seed": 20261022,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    },
+    {
+      "index": 2,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "codellama:latest",
+      "condition": "control",
+      "seed": 20261022,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    },
+    {
+      "index": 3,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261022",
+      "model": "codellama:latest",
+      "condition": "intervention",
+      "seed": 20261022,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    },
+    {
+      "index": 4,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "qwen3:8b",
+      "condition": "control",
+      "seed": 20261023,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    },
+    {
+      "index": 5,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "qwen3:8b",
+      "condition": "intervention",
+      "seed": 20261023,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    },
+    {
+      "index": 6,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "codellama:latest",
+      "condition": "control",
+      "seed": 20261023,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    },
+    {
+      "index": 7,
+      "scenario_id": "public-signal-70",
+      "trial": "seed-20261023",
+      "model": "codellama:latest",
+      "condition": "intervention",
+      "seed": 20261023,
+      "trade_count": 0,
+      "trade_volume": 0,
+      "realized_surplus": 0.0,
+      "mean_abs_price_deviation": null,
+      "reported_allocative_efficiency": 0
+    }
+  ],
+  "claim_boundary": "Surplus and price deviations recalculated from archived trades and assigned values. No benchmark comparison, inferential uncertainty, model-specific attribution of market-wide outcomes, or causal conclusion."
+}

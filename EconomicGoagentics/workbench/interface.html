@@ -455,12 +455,15 @@ html.lab-light .enterprise-nav{background:#f7f3ea!important;border-right:1px sol
 html.lab-light .enterprise-nav button.active{background:#e7efe4!important;border-color:transparent!important;color:var(--text)!important;box-shadow:none!important;font-weight:600}
 html.lab-light .enterprise-nav .nav-icon{color:var(--muted)!important}
 html.lab-light .enterprise-nav button.active .nav-icon{color:var(--accent)!important}
+html.lab-light .enterprise-nav a.film-link{width:100%;display:flex;align-items:center;gap:9px;text-align:left;padding:8px 9px;margin-top:2px;background:transparent;border:1px solid transparent;border-radius:6px;color:var(--muted);font-size:11px;text-decoration:none}
+html.lab-light .enterprise-nav a.film-link:hover{background:#fff;color:var(--text)}
+html.lab-light .enterprise-nav a.film-link .nav-icon{color:var(--muted)}
 html.lab-light .enterprise-context{background:transparent;border:0;padding:10px 22px 0;color:var(--muted)}
 html.lab-light .enterprise-badge{display:none}
 html.lab-light .lifecycle-card,html.lab-light .live-ribbon,html.lab-light .instrument-bar,html.lab-light .instrument-section,
 html.lab-light .enterprise-launch,html.lab-light .v15-guide-button,html.lab-light .v17-launch,html.lab-light .v20-launch,
 html.lab-light .lab-tabs,html.lab-light .v21-zoom,html.lab-light .lab-banner,html.lab-light .lab-meta,html.lab-light #labDesignTable,
-html.lab-light #labEvidencePanel,html.lab-light #labWhy,html.lab-light .lab-why,html.lab-light #labPriceSvg,html.lab-light #labPriceCap,
+html.lab-light #labWhy,html.lab-light .lab-why,html.lab-light #labPriceSvg,html.lab-light #labPriceCap,
 html.lab-light #labSciencePanel .lab-plot,html.lab-light #labEventBox,html.lab-light #labSciencePanel .lab-metrics,
 html.lab-light .lab-canvas,html.lab-light .v22-book-strip,html.lab-light .v22-tape,html.lab-light .lab-legend,html.lab-light .lab-controls,
 html.lab-light .v23-panel,html.lab-light #v23-agent-trace,html.lab-light #v24-cell-select{display:none!important}
@@ -972,6 +975,9 @@ window.CoAgenticsEvidenceReplayV26 = (function(){
 </header>
 <div class="enterprise-shell"><div class="enterprise-nav" id="enterpriseNav">
   <button class="active" data-view="lab"><span class="nav-icon">◈</span>Visualize & Analyze</button>
+  <a class="film-link" href="/video_intro.html"><span class="nav-icon">▶</span>Intro film</a>
+  <a class="film-link" href="/q1_results.html"><span class="nav-icon">▣</span>Q1 results</a>
+  <a class="film-link" href="/white-paper.pdf"><span class="nav-icon">≡</span>White paper</a>
   <button id="mobileClose" class="mobile-menu"><span class="nav-icon">×</span>Close Navigation</button>
 </div><div class="enterprise-main"><div class="enterprise-context"><span>Workspace</span><span class="sep">/</span><b>DV026 Economic Behavior</b><span class="sep">/</span><span id="contextExperiment">No experiment selected</span><span class="spacer"></span><span class="enterprise-badge">ROLE · RESEARCH OWNER</span><span class="enterprise-badge live" id="contextStatus">READY</span></div>
 <div class="app">
@@ -2380,18 +2386,41 @@ function showLabCampaignTip(ev, index){
  y=Math.max(6,y-36);
  tip.style.left=x+'px'; tip.style.top=y+'px';
 }
+function labTurnFor(turns, agentId, time){
+ if(!agentId) return null;
+ const exact=(turns||[]).find(t=>t.agent_id===agentId && (time==null || t.time===time));
+ return exact || (turns||[]).find(t=>t.agent_id===agentId) || null;
+}
+function labTurnBlock(label, turn){
+ if(!turn) return `${label}\nno archived turn`;
+ return `${label} ${turn.agent_id} · ${turn.model||'model unrecorded'} · t=${turn.time}`;
+}
 function renderLabEvidence(){
  const c=lab.cell, events=c?.events||[], turns=c?.turns||[];
  const ev=events[lab.selectedEvent??lab.event]||events[lab.event];
+ const parse=c?.observation_parse||{};
+ const src=c?.graphs_backed_by_observation?(parse.repaired_on_read?'Observation loaded with on-read JSON repair; archive file unchanged.':'Native archived observation.'):'Observation file unreadable; floor/tape show no invented events. η still comes from cell_evidence.';
+ if(ev && ev.kind==='trade'){
+  const buyer=labTurnFor(turns, ev.buyer, ev.time);
+  const seller=labTurnFor(turns, ev.seller, ev.time);
+  setText('labAsked', [
+   labTurnBlock('BUYER', buyer)+'\n'+(buyer?.canonical_request||'—'),
+   labTurnBlock('SELLER', seller)+'\n'+(seller?.canonical_request||'—')
+  ].join('\n\n'));
+  setText('labReplied', [
+   labTurnBlock('BUYER', buyer)+'\n'+(buyer?.raw_provider_response||'—'),
+   labTurnBlock('SELLER', seller)+'\n'+(seller?.raw_provider_response||'—')
+  ].join('\n\n'));
+  const missing=[!buyer?'buyer':'', !seller?'seller':''].filter(Boolean);
+  setText('labEvidenceNote', `Trade @ ${ev.price} · ${ev.buyer||'?'} ↔ ${ev.seller||'?'}`+(missing.length?` · missing archived turn: ${missing.join(', ')}`:' · both archived model orders')+`. ${src}`);
+  return;
+ }
  let turn=null;
  if(lab.selectedAgent) turn=turns.find(t=>t.agent_id===lab.selectedAgent);
  if(!turn && ev && ev.kind==='decision' && ev.turn_i!=null) turn=turns.find(t=>t.i===ev.turn_i);
  if(!turn && ev && ev.agent_id) turn=turns.find(t=>t.agent_id===ev.agent_id && t.time===ev.time);
- if(!turn && ev && (ev.buyer||ev.seller)) turn=turns.find(t=>t.agent_id===ev.buyer||t.agent_id===ev.seller);
  setText('labAsked', turn?.canonical_request || (ev?JSON.stringify(ev,null,2):'Select an agent, trade, or event.'));
- setText('labReplied', turn?.raw_provider_response || (ev?.kind==='trade'?'Trade record has no LLM reply — counterparties and price are in the observation file.':'—'));
- const parse=c?.observation_parse||{};
- const src=c?.graphs_backed_by_observation?(parse.repaired_on_read?'Observation loaded with on-read JSON repair; archive file unchanged.':'Native archived observation.'):'Observation file unreadable; floor/tape show no invented events. η still comes from cell_evidence.';
+ setText('labReplied', turn?.raw_provider_response || '—');
  setText('labEvidenceNote', turn?`Archived turn for ${turn.agent_id} at t=${turn.time} · ${turn.model||''}. ${src}`:(ev?src:'Click an agent, trade line, or replay event to inspect the stored observation.'));
 }
 function selectLabAgent(id){
@@ -3464,4 +3493,5 @@ trouble:['Troubleshooting',`<h3>Graph is empty</h3><p>Confirm the experiment has
   render();
 })();
 </script>
+<script src="/access_wall.js"></script>
 </body></html>

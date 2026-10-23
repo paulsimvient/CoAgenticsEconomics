@@ -1,0 +1,233 @@
+{
+  "run_dir": "results/dv026_heterogeneous_campaign/runs/run_1792670868835_39411",
+  "index": 0,
+  "seed": 20261022,
+  "design": "sequential_interaction",
+  "status": "completed",
+  "agents": 10,
+  "distinct_models": [
+    "codellama:latest",
+    "gemma2:2b",
+    "llama2:latest",
+    "llama3.1:8b",
+    "llama3.2:3b",
+    "llama3:latest",
+    "mistral:latest",
+    "phi3:mini",
+    "qwen2.5-coder:7b",
+    "qwen3:8b"
+  ],
+  "inference_calls": 14,
+  "submitted_orders": 7,
+  "executed_trades": 3,
+  "verified_llm_to_llm_trades": 3,
+  "reported_efficiency": 45.4545,
+  "independent_eta_percent": 45.45454545454545,
+  "competitive_surplus": 110.0,
+  "realized_surplus": 50,
+  "eta_matches_reported": true,
+  "conservation": {
+    "cash_sum": 100000.0,
+    "cash_sum_expected": 100000.0,
+    "inventory_sum": 5,
+    "inventory_sum_expected": 5,
+    "negative_inventory": [],
+    "negative_cash": []
+  },
+  "ending_cash": {
+    "LLM-SEAT-0": 10000.0,
+    "LLM-SEAT-1": 10000.0,
+    "LLM-SEAT-2": 9910.0,
+    "LLM-SEAT-3": 10090.0,
+    "LLM-SEAT-4": 10000.0,
+    "LLM-SEAT-5": 10000.0,
+    "LLM-SEAT-6": 9910.0,
+    "LLM-SEAT-7": 10090.0,
+    "LLM-SEAT-8": 9910.0,
+    "LLM-SEAT-9": 10090.0
+  },
+  "ending_inventory": {
+    "LLM-SEAT-0": 0,
+    "LLM-SEAT-1": 1,
+    "LLM-SEAT-2": 1,
+    "LLM-SEAT-3": 0,
+    "LLM-SEAT-4": 0,
+    "LLM-SEAT-5": 1,
+    "LLM-SEAT-6": 1,
+    "LLM-SEAT-7": 0,
+    "LLM-SEAT-8": 1,
+    "LLM-SEAT-9": 0
+  },
+  "trades": [
+    {
+      "index": 0,
+      "time": 0,
+      "quantity": 1,
+      "price": 90,
+      "buyer": "LLM-SEAT-2",
+      "seller": "LLM-SEAT-3",
+      "llm_to_llm": true,
+      "buyer_model": "llama3.2:3b",
+      "seller_model": "qwen3:8b",
+      "buyer_private_value": 116,
+      "seller_private_cost": 86,
+      "buyer_surplus": 26,
+      "seller_surplus": 4,
+      "total_surplus": 30,
+      "buyer_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-2",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "buy"
+      },
+      "seller_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-3",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "sell"
+      },
+      "buyer_raw": "{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}",
+      "seller_raw": "{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}",
+      "buyer_parsed": {
+        "action": "BUY",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "seller_parsed": {
+        "action": "SELL",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "buyer_request_id": "ollama:llama3.2:3b:20261022:0",
+      "seller_request_id": "ollama:qwen3:8b:20261022:0",
+      "buyer_latency_ms": 2545,
+      "seller_latency_ms": 11541
+    },
+    {
+      "index": 1,
+      "time": 0,
+      "quantity": 1,
+      "price": 90,
+      "buyer": "LLM-SEAT-6",
+      "seller": "LLM-SEAT-7",
+      "llm_to_llm": true,
+      "buyer_model": "codellama:latest",
+      "seller_model": "mistral:latest",
+      "buyer_private_value": 108,
+      "seller_private_cost": 94,
+      "buyer_surplus": 18,
+      "seller_surplus": -4,
+      "total_surplus": 14,
+      "buyer_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-6",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "buy"
+      },
+      "seller_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-7",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "sell"
+      },
+      "buyer_raw": "\n{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}",
+      "seller_raw": " {\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}",
+      "buyer_parsed": {
+        "action": "BUY",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "seller_parsed": {
+        "action": "SELL",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "buyer_request_id": "ollama:codellama:latest:20261022:0",
+      "seller_request_id": "ollama:mistral:latest:20261022:0",
+      "buyer_latency_ms": 3495,
+      "seller_latency_ms": 4093
+    },
+    {
+      "index": 2,
+      "time": 0,
+      "quantity": 1,
+      "price": 90,
+      "buyer": "LLM-SEAT-8",
+      "seller": "LLM-SEAT-9",
+      "llm_to_llm": true,
+      "buyer_model": "gemma2:2b",
+      "seller_model": "phi3:mini",
+      "buyer_private_value": 104,
+      "seller_private_cost": 98,
+      "buyer_surplus": 14,
+      "seller_surplus": -8,
+      "total_surplus": 6,
+      "buyer_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-8",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "buy"
+      },
+      "seller_order": {
+        "time": 0,
+        "agent_id": "LLM-SEAT-9",
+        "asset": "ASSET",
+        "quantity": 1,
+        "price": 90,
+        "side": "sell"
+      },
+      "buyer_raw": "```json\n{\"action\":\"BUY\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}\n```",
+      "seller_raw": "{\"action\":\"SELL\",\"asset\":\"ASSET\",\"quantity\":1,\"price\":90,\"time\":0}",
+      "buyer_parsed": {
+        "action": "BUY",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "seller_parsed": {
+        "action": "SELL",
+        "quantity": 1,
+        "price": 90,
+        "asset": "ASSET",
+        "time": 0
+      },
+      "buyer_request_id": "ollama:gemma2:2b:20261022:0",
+      "seller_request_id": "ollama:phi3:mini:20261022:0",
+      "buyer_latency_ms": 3240,
+      "seller_latency_ms": 7191
+    }
+  ],
+  "files": {
+    "evidence": "results/dv026_heterogeneous_campaign/runs/run_1792670868835_39411/cell_evidence/cell_0.json",
+    "observation": "results/dv026_heterogeneous_campaign/runs/run_1792670868835_39411/cell_observations/cell_0.json",
+    "snapshot": "results/dv026_heterogeneous_campaign/runs/run_1792670868835_39411/cell_snapshots/cell_0.json"
+  },
+  "sha256": {
+    "evidence": "bbab0c9e335b3e8035bad35f70a351c3e6c6a8e5d176e860738b7e1efd6c2057",
+    "observation": "4d3ecd49968f9f147840a0d05090bfa462be673d1f0cc91a313f4d0a07cead33",
+    "snapshot": "b3868fc29a87e4f944ea786ee4f5f7730c6cb035aee7cf416a05837ae2d5160b"
+  },
+  "observation_repaired_on_read": true,
+  "wrote_archive": false,
+  "errors": [],
+  "qualified_llm_to_llm": true
+}
